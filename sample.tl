@@ -1,10 +1,4 @@
-a=1;
-b=2;
-print(a);
-print(b);
-c=a;
-a=b;
-b=c;
-print(a);
-print(b);
-
+abc=1;
+hello=2;
+world=3;
+print(abc+hello*world);
