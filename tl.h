@@ -39,11 +39,15 @@ typedef enum {
   BREAK_TYPE,
   CONTINUE_TYPE,
   MOD_TYPE,
+  LIST_TYPE,
+  LIST_ACCESS_TYPE,
+  LIST_ASSIGN_TYPE,
 } NodeType;
 
 typedef enum {
   INT_VALUE_TYPE,
   FUN_VALUE_TYPE,
+  LIST_VALUE_TYPE,
 } ValueType;
 
 typedef struct {
@@ -55,7 +59,6 @@ typedef struct {
   ValueType type;
   void* data;
 } Value;
-
 
 typedef struct Env Env;
 
@@ -85,9 +88,15 @@ void envPut(Env* e, char* key, Value* value);
 
 Closure* newClosure(Node* f, Env* e);
 
+// pass in a list of values
+Value* newListValue(List* lst);
+
 Value* eval(Env* e, Node* p);
 
 void printValue(Value* v);
+
+Node* chld(Node* e, int i);
+int chldNum(Node* t);
 
 #define YYSTYPE Node*
 

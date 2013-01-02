@@ -109,7 +109,24 @@ Value* eval(Env* e, Node* p) {
       return 0;
     case PRINT_TYPE:
       printValue(eval(e, (Node*) p->data));
+      printf("\n");
       return 0;
+    case LIST_TYPE:{
+      Node* t = chld(p, 0);             
+      List* vs = newList();
+      for(i=0;i<chldNum(t);i++)
+        listPush(vs, eval(e, chld(t,i)));
+      return newListValue(vs);
+    }
+    case LIST_ACCESS_TYPE:{
+      List* l = eval(e, chld(p, 0))->data;                      
+      return listGet(l, (int) eval(e, chld(p, 1))->data);
+    }
+    case LIST_ASSIGN_TYPE:{
+      List* l = eval(e, chld(p, 0))->data;                      
+      listSet(l, (int) eval(e, chld(p, 1))->data, eval(e, chld(p, 2)));
+      return listGet(l, (int) eval(e, chld(p, 1))->data);
+    }
     case APP_TYPE: {
       Closure *c = envGet(e, chld(p, 0)->data)->data;
       Node* f = c->f, *args = chld(p, 1);
@@ -222,16 +239,23 @@ Value* eval(Env* e, Node* p) {
   }
 }
 
+Value* newListValue(List* list) {
+  Value* res = MALLOC(Value);
+  res->type = LIST_VALUE_TYPE;
+  res->data = list;
+  return res;
+}
+
 void printValue(Value* v) {
   if(!v){
-    printf("none\n");
+    printf("none");
     return;
   }
   Node* t;
   int i;
   switch(v->type) {
     case INT_TYPE:
-      printf("%d\n", v->data);
+      printf("%d", v->data);
       break;
     case FUN_VALUE_TYPE: {
       Node* f = ((Closure*) v->data)->f;
@@ -241,7 +265,17 @@ void printValue(Value* v) {
         if(i)printf(" ");
         printf("%s", chld(t, i)->data);
       }
-      printf(")\n");
+      printf(")");
+      break;
+    }
+    case LIST_VALUE_TYPE: {
+      List* l = v->data;
+      printf("[");
+      for(i=0; i<listSize(l);i++){
+        if(i)printf(", ");
+        printValue(listGet(l, i));
+      }
+      printf("]");
       break;
     }
     default:

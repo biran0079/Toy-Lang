@@ -37,3 +37,8 @@ void* listLast(List* lst){
   assert(lst->size>0);
   return lst->arr[lst->size - 1];
 }
+
+void listSet(List* lst, int idx, void* v) {
+  assert(idx < lst->size && idx >= 0);
+  lst->arr[idx] = v;
+}

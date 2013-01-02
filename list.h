@@ -12,5 +12,6 @@ void* listGet(List* lst, int idx);
 void* listPop(List* lst); 
 int listSize(List* lst);
 void* listLast(List* lst);
+void listSet(List* lst, int i, void* v);
 
 #endif

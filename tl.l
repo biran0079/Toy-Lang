@@ -25,7 +25,7 @@ return    {return RETURN;}
 "!"          {return NOT;}
 ">"          {return GT;}
 "<"          {return LT;}
-[-+*/%();{},]  {return *yytext;}
+[-+*/%();{},\[\]]  {return *yytext;}
 [ \t\n]     ;
 %%
 int yywrap(){

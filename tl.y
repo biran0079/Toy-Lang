@@ -83,8 +83,15 @@ non_empty_exp_list:
   | exp         { $$ = newNode2(EXP_LIST_TYPE, 1, $1); }
   ;
 
+list_access:
+  | exp '[' exp ']'    { $$ = newNode2(LIST_ACCESS_TYPE, 2, $1, $3); }
+  ;
+
 exp:
   INT { $$ = $1; }
+  | '[' exp_list ']'    { $$ = newNode2(LIST_TYPE, 1, $2); }
+  | list_access         { $$ = $1; }
+  | list_access ASSIGN exp    { $$ = newNode2(LIST_ASSIGN_TYPE, 3, chld($1, 0), chld($1, 1), $3); }
   | ID '(' exp_list ')' { $$ = newNode2(APP_TYPE, 2, $1, $3); }
   | '(' exp ')' { $$ = $2; }
   | exp '+' exp { $$ = newNode2(ADD_TYPE, 2, $1, $3); } 
