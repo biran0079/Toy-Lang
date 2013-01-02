@@ -6,9 +6,26 @@ L       [a-zA-Z]
 %}
 %%
 print       {return PRINT;}
+if         {return IF;}
+else       {return ELSE;}
+while     {return WHILE;}
+break     {return BREAK;}
+continue  {return CONTINUE;}
+fun       {return FUN;}
+return    {return RETURN;}
 {D}+        {yylval = newNode(INT_TYPE, (void*)atoi(yytext)); return INT;}
 {L}({D}|{L})*   {yylval = newNode(ID_TYPE, copy(yytext, 1+strlen(yytext))); return ID;}
-[-+=*/();]         {return *yytext;}
+">="         {return GE;}
+"<="         {return LE;}
+"=="         {return EQ;}
+"="          {return ASSIGN;}
+"!="         {return NE;}
+"&&"         {return AND;}
+"||"         {return OR;}
+"!"          {return NOT;}
+">"          {return GT;}
+"<"          {return LT;}
+[-+*/%();{},]  {return *yytext;}
 [ \t\n]     ;
 %%
 int yywrap(){

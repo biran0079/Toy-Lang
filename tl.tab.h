@@ -40,7 +40,24 @@
    enum yytokentype {
      INT = 258,
      PRINT = 259,
-     ID = 260
+     ID = 260,
+     IF = 261,
+     ELSE = 262,
+     WHILE = 263,
+     FUN = 264,
+     RETURN = 265,
+     BREAK = 266,
+     CONTINUE = 267,
+     LE = 268,
+     GE = 269,
+     LT = 270,
+     GT = 271,
+     NE = 272,
+     EQ = 273,
+     NOT = 274,
+     ASSIGN = 275,
+     OR = 276,
+     AND = 277
    };
 #endif
 

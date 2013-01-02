@@ -1,16 +1,16 @@
 #ifndef _LIST_H_
 #define _LIST_H_
 
-#include "tl.h"
-// list of node
 typedef struct List {
-  Node** arr;
+  void** arr;
   int size, cap;
 } List;
 
 List* newList();
-void listAdd(List* lst, Node* e);
-Node* listGet(List* lst, int idx);
+void listPush(List* lst, void* e);
+void* listGet(List* lst, int idx);
+void* listPop(List* lst); 
 int listSize(List* lst);
+void* listLast(List* lst);
 
 #endif

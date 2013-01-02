@@ -8,11 +8,12 @@ struct LinkedList{
 };
 
 typedef struct HashTable {
-  unsigned int size;
+  unsigned int cap, size;
   LinkedList** a;
 } HashTable;
 
 HashTable* newHashTable();
 void hashTablePut(HashTable* t, char* key, void* value);
 void* hashTableGet(HashTable* t, char* key);
+HashTable* hashTableCopy(HashTable* t);
 #endif

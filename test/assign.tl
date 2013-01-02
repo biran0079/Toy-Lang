@@ -1,0 +1,11 @@
+hello=1;
+world=2;
+toy=hello+world;
+toy=toy*toy;
+print(toy);
+lang=toy*(hello+world);
+print(lang);
+print(lang=12345);
+a=b=123;
+print(a);
+print(b);
