@@ -441,11 +441,11 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    20,    20,    26,    30,    33,    36,    39,    42,    45,
-      48,    49,    50,    54,    55,    59,    63,    66,    70,    71,
-      75,    76,    80,    84,    88,    89,    90,    91,    92,    93,
-      94,    95,    96,    97,    98,    99,   100,   101,   102,   103,
-     104,   105,   106,   107
+       0,    20,    20,    25,    29,    32,    35,    38,    41,    44,
+      47,    48,    49,    53,    54,    58,    62,    65,    69,    70,
+      74,    75,    79,    83,    87,    88,    89,    90,    91,    92,
+      93,    94,    95,    96,    97,    98,    99,   100,   101,   102,
+     103,   104,   105,   106
 };
 #endif
 
@@ -1444,15 +1444,14 @@ yyreduce:
 /* Line 1464 of yacc.c  */
 #line 20 "tl.y"
     {
-    init();
-    eval(global, (yyvsp[(1) - (1)]));
+    eval(newEnv(0), (yyvsp[(1) - (1)]));
   ;}
     break;
 
   case 3:
 
 /* Line 1464 of yacc.c  */
-#line 26 "tl.y"
+#line 25 "tl.y"
     {
     listPush((List*) (yyvsp[(1) - (2)])->data, (yyvsp[(2) - (2)]));
     (yyval) = (yyvsp[(1) - (2)]);
@@ -1462,14 +1461,14 @@ yyreduce:
   case 4:
 
 /* Line 1464 of yacc.c  */
-#line 30 "tl.y"
+#line 29 "tl.y"
     {(yyvsp[(1) - (1)])->type = STMTS_TYPE; (yyval) = (yyvsp[(1) - (1)]);;}
     break;
 
   case 5:
 
 /* Line 1464 of yacc.c  */
-#line 33 "tl.y"
+#line 32 "tl.y"
     {
     (yyval) = (yyvsp[(1) - (2)]);
   ;}
@@ -1478,7 +1477,7 @@ yyreduce:
   case 6:
 
 /* Line 1464 of yacc.c  */
-#line 36 "tl.y"
+#line 35 "tl.y"
     {
     (yyval) = newNode2(IF_TYPE, 2, (yyvsp[(3) - (5)]), (yyvsp[(5) - (5)]));
   ;}
@@ -1487,7 +1486,7 @@ yyreduce:
   case 7:
 
 /* Line 1464 of yacc.c  */
-#line 39 "tl.y"
+#line 38 "tl.y"
     {
     (yyval) = newNode2(IF_TYPE, 3, (yyvsp[(3) - (7)]), (yyvsp[(5) - (7)]), (yyvsp[(7) - (7)]));
   ;}
@@ -1496,7 +1495,7 @@ yyreduce:
   case 8:
 
 /* Line 1464 of yacc.c  */
-#line 42 "tl.y"
+#line 41 "tl.y"
     {
     (yyval) = newNode2(WHILE_TYPE, 2, (yyvsp[(3) - (5)]), (yyvsp[(5) - (5)]));
   ;}
@@ -1505,7 +1504,7 @@ yyreduce:
   case 9:
 
 /* Line 1464 of yacc.c  */
-#line 45 "tl.y"
+#line 44 "tl.y"
     {
     (yyval) = newNode2(FUN_TYPE, 3, (yyvsp[(2) - (8)]), (yyvsp[(4) - (8)]), (yyvsp[(7) - (8)]));
   ;}
@@ -1514,42 +1513,42 @@ yyreduce:
   case 10:
 
 /* Line 1464 of yacc.c  */
-#line 48 "tl.y"
+#line 47 "tl.y"
     {(yyval) = newNode2(RETURN_TYPE, 1, (yyvsp[(2) - (3)]));;}
     break;
 
   case 11:
 
 /* Line 1464 of yacc.c  */
-#line 49 "tl.y"
+#line 48 "tl.y"
     {(yyval) = newNode2(BREAK_TYPE, 0);;}
     break;
 
   case 12:
 
 /* Line 1464 of yacc.c  */
-#line 50 "tl.y"
+#line 49 "tl.y"
     {(yyval) = newNode2(CONTINUE_TYPE, 0);;}
     break;
 
   case 13:
 
 /* Line 1464 of yacc.c  */
-#line 54 "tl.y"
+#line 53 "tl.y"
     {(yyval) = (yyvsp[(1) - (1)]);;}
     break;
 
   case 14:
 
 /* Line 1464 of yacc.c  */
-#line 55 "tl.y"
+#line 54 "tl.y"
     { (yyvsp[(1) - (1)])->type = ID_LIST_TYPE; (yyval) = (yyvsp[(1) - (1)]); ;}
     break;
 
   case 15:
 
 /* Line 1464 of yacc.c  */
-#line 59 "tl.y"
+#line 58 "tl.y"
     { 
     listPush((List*) (yyvsp[(1) - (3)])->data, (yyvsp[(3) - (3)]));
     (yyval) = (yyvsp[(1) - (3)]);
@@ -1559,49 +1558,49 @@ yyreduce:
   case 16:
 
 /* Line 1464 of yacc.c  */
-#line 63 "tl.y"
+#line 62 "tl.y"
     { (yyval) = newNode2(ID_LIST_TYPE, 1, (yyvsp[(1) - (1)])); ;}
     break;
 
   case 17:
 
 /* Line 1464 of yacc.c  */
-#line 66 "tl.y"
+#line 65 "tl.y"
     {(yyval) = newNode2(-1, 0);;}
     break;
 
   case 18:
 
 /* Line 1464 of yacc.c  */
-#line 70 "tl.y"
+#line 69 "tl.y"
     { (yyval) = (yyvsp[(1) - (1)]); ;}
     break;
 
   case 19:
 
 /* Line 1464 of yacc.c  */
-#line 71 "tl.y"
+#line 70 "tl.y"
     { (yyval) = (yyvsp[(2) - (3)]); ;}
     break;
 
   case 20:
 
 /* Line 1464 of yacc.c  */
-#line 75 "tl.y"
+#line 74 "tl.y"
     { (yyval) = (yyvsp[(1) - (1)]); ;}
     break;
 
   case 21:
 
 /* Line 1464 of yacc.c  */
-#line 76 "tl.y"
+#line 75 "tl.y"
     { (yyvsp[(1) - (1)])->type = EXP_LIST_TYPE; (yyval)=(yyvsp[(1) - (1)]); ;}
     break;
 
   case 22:
 
 /* Line 1464 of yacc.c  */
-#line 80 "tl.y"
+#line 79 "tl.y"
     { 
     listPush((List*) (yyvsp[(1) - (3)])->data, (yyvsp[(3) - (3)]));
     (yyval) = (yyvsp[(1) - (3)]);
@@ -1611,147 +1610,147 @@ yyreduce:
   case 23:
 
 /* Line 1464 of yacc.c  */
-#line 84 "tl.y"
+#line 83 "tl.y"
     { (yyval) = newNode2(EXP_LIST_TYPE, 1, (yyvsp[(1) - (1)])); ;}
     break;
 
   case 24:
 
 /* Line 1464 of yacc.c  */
-#line 88 "tl.y"
+#line 87 "tl.y"
     { (yyval) = (yyvsp[(1) - (1)]); ;}
     break;
 
   case 25:
 
 /* Line 1464 of yacc.c  */
-#line 89 "tl.y"
+#line 88 "tl.y"
     { (yyval) = newNode2(APP_TYPE, 2, (yyvsp[(1) - (4)]), (yyvsp[(3) - (4)])); ;}
     break;
 
   case 26:
 
 /* Line 1464 of yacc.c  */
-#line 90 "tl.y"
+#line 89 "tl.y"
     { (yyval) = (yyvsp[(2) - (3)]); ;}
     break;
 
   case 27:
 
 /* Line 1464 of yacc.c  */
-#line 91 "tl.y"
+#line 90 "tl.y"
     { (yyval) = newNode2(ADD_TYPE, 2, (yyvsp[(1) - (3)]), (yyvsp[(3) - (3)])); ;}
     break;
 
   case 28:
 
 /* Line 1464 of yacc.c  */
-#line 92 "tl.y"
+#line 91 "tl.y"
     { (yyval) = newNode2(SUB_TYPE, 2, (yyvsp[(1) - (3)]), (yyvsp[(3) - (3)])); ;}
     break;
 
   case 29:
 
 /* Line 1464 of yacc.c  */
-#line 93 "tl.y"
+#line 92 "tl.y"
     { (yyval) = newNode2(MUL_TYPE, 2, (yyvsp[(1) - (3)]), (yyvsp[(3) - (3)])); ;}
     break;
 
   case 30:
 
 /* Line 1464 of yacc.c  */
-#line 94 "tl.y"
+#line 93 "tl.y"
     { (yyval) = newNode2(DIV_TYPE, 2, (yyvsp[(1) - (3)]), (yyvsp[(3) - (3)])); ;}
     break;
 
   case 31:
 
 /* Line 1464 of yacc.c  */
-#line 95 "tl.y"
+#line 94 "tl.y"
     { (yyval) = newNode2(MOD_TYPE, 2, (yyvsp[(1) - (3)]), (yyvsp[(3) - (3)])); ;}
     break;
 
   case 32:
 
 /* Line 1464 of yacc.c  */
-#line 96 "tl.y"
+#line 95 "tl.y"
     { (yyval) = newNode2(GT_TYPE, 2, (yyvsp[(1) - (3)]), (yyvsp[(3) - (3)])); ;}
     break;
 
   case 33:
 
 /* Line 1464 of yacc.c  */
-#line 97 "tl.y"
+#line 96 "tl.y"
     { (yyval) = newNode2(LT_TYPE, 2, (yyvsp[(1) - (3)]), (yyvsp[(3) - (3)])); ;}
     break;
 
   case 34:
 
 /* Line 1464 of yacc.c  */
-#line 98 "tl.y"
+#line 97 "tl.y"
     { (yyval) = newNode2(GE_TYPE, 2, (yyvsp[(1) - (3)]), (yyvsp[(3) - (3)])); ;}
     break;
 
   case 35:
 
 /* Line 1464 of yacc.c  */
-#line 99 "tl.y"
+#line 98 "tl.y"
     { (yyval) = newNode2(LE_TYPE, 2, (yyvsp[(1) - (3)]), (yyvsp[(3) - (3)])); ;}
     break;
 
   case 36:
 
 /* Line 1464 of yacc.c  */
-#line 100 "tl.y"
+#line 99 "tl.y"
     { (yyval) = newNode2(EQ_TYPE, 2, (yyvsp[(1) - (3)]), (yyvsp[(3) - (3)])); ;}
     break;
 
   case 37:
 
 /* Line 1464 of yacc.c  */
-#line 101 "tl.y"
+#line 100 "tl.y"
     { (yyval) = newNode2(NE_TYPE, 2, (yyvsp[(1) - (3)]), (yyvsp[(3) - (3)])); ;}
     break;
 
   case 38:
 
 /* Line 1464 of yacc.c  */
-#line 102 "tl.y"
+#line 101 "tl.y"
     { (yyval) = newNode2(AND_TYPE, 2, (yyvsp[(1) - (3)]), (yyvsp[(3) - (3)])); ;}
     break;
 
   case 39:
 
 /* Line 1464 of yacc.c  */
-#line 103 "tl.y"
+#line 102 "tl.y"
     { (yyval) = newNode2(OR_TYPE, 2, (yyvsp[(1) - (3)]), (yyvsp[(3) - (3)])); ;}
     break;
 
   case 40:
 
 /* Line 1464 of yacc.c  */
-#line 104 "tl.y"
+#line 103 "tl.y"
     { (yyval) = newNode2(NOT_TYPE, 1, (yyvsp[(2) - (2)])); ;}
     break;
 
   case 41:
 
 /* Line 1464 of yacc.c  */
-#line 105 "tl.y"
+#line 104 "tl.y"
     { (yyval) = newNode2(ASSIGN_TYPE, 2, (yyvsp[(1) - (3)]), (yyvsp[(3) - (3)])); ;}
     break;
 
   case 42:
 
 /* Line 1464 of yacc.c  */
-#line 106 "tl.y"
+#line 105 "tl.y"
     { (yyval) = (yyvsp[(1) - (1)]); ;}
     break;
 
   case 43:
 
 /* Line 1464 of yacc.c  */
-#line 107 "tl.y"
+#line 106 "tl.y"
     {
     (yyval) = newNode(PRINT_TYPE, (yyvsp[(3) - (4)]));
   ;}
@@ -1760,7 +1759,7 @@ yyreduce:
 
 
 /* Line 1464 of yacc.c  */
-#line 1764 "tl.tab.c"
+#line 1763 "tl.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -1972,7 +1971,7 @@ yyreturn:
 
 
 /* Line 1684 of yacc.c  */
-#line 111 "tl.y"
+#line 110 "tl.y"
 
 int yyerror(char *s) {
   fprintf(stderr, "%s\n",s);

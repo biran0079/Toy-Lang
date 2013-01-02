@@ -40,7 +40,6 @@ void* hashTableGet(HashTable* t, char* key){
     printf("get %s\n",key);
   }
   unsigned idx = hash(key) % t->cap;
-  if(idx<0)idx+=t->cap;
   LinkedList* l = t->a[idx];
   while(l){
     if(strcmp(l->key, key)==0) return l->value;
@@ -60,3 +59,4 @@ HashTable* hashTableCopy(HashTable* t) {
   }
   return res;
 }
+

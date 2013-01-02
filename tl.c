@@ -6,11 +6,6 @@
 #include"tl.h"
 #include"list.h"
 
-Env* global;
-
-void init(){
-  global = newEnv();
-}
 
 static Node* createNode() {
   Node* res = MALLOC(Node);
@@ -60,26 +55,44 @@ Value* newIntValue(int x){
   return res;
 }
 
-Value* newFunValue(Node* t){
-  Value* res=MALLOC(Value);
-  res->type = FUN_VALUE_TYPE;
-  res->data = (void*) t;
+Closure* newClosure(Node* f, Env* e){
+  Closure* res = MALLOC(Closure);
+  res->f = f;
+  res->e = e;
   return res;
 }
 
-Env* newEnv(){
+Value* newFunValue(Node* t, Env* e){
+  Value* res=MALLOC(Value);
+  res->type = FUN_VALUE_TYPE;
+  res->data = newClosure(t, e);
+  return res;
+}
+
+Env* newEnv(Env* parent){
   Env* res = MALLOC(Env);
   res->t = newHashTable();
+  res->parent = parent;
   res->loopStates = newList();
   return res;
 }
 
 Value* envGet(Env* e, char* key){
+  if(!e)return 0;
   Value* res = (Value*) hashTableGet(e->t, key);
-  return res || e==global ? res : envGet(global, key);
+  return res ? res : envGet(e->parent, key);
 }
 
 void envPut(Env* e, char* key, Value* value){
+  Env* e2 = e;
+  while(e2){
+    if(hashTableGet(e2->t, key)){
+      hashTablePut(e2->t, key, (void*) value);
+      return;
+    }else{
+      e2 = e2->parent;
+    }
+  }
   hashTablePut(e->t, key, (void*) value);
 }
 
@@ -98,11 +111,13 @@ Value* eval(Env* e, Node* p) {
       printValue(eval(e, (Node*) p->data));
       return 0;
     case APP_TYPE: {
-      Env* e2 = newEnv();
-      Node *f = envGet(e, chld(p, 0)->data)->data, *args = chld(p, 1);
+      Closure *c = envGet(e, chld(p, 0)->data)->data;
+      Node* f = c->f, *args = chld(p, 1);
+      Env* e2 = newEnv(0);
       Node *ids = chld(f,1);
       for(i=0; i<chldNum(ids); i++)
         envPut(e2, chld(ids, i)->data, eval(e, chld(args, i)));
+      e2->parent = c->e;
       Value* ret = (Value*) setjmp(e2->retState);
       if(!ret){
         eval(e2, chld(f, 2));
@@ -199,7 +214,7 @@ Value* eval(Env* e, Node* p) {
     case NOT_TYPE:
       return newIntValue(! eval(e, chld(p, 0))->data);
     case FUN_TYPE:
-      envPut(e, (char*) chld(p, 0)->data, newFunValue(p));
+      envPut(e, (char*) chld(p, 0)->data, newFunValue(p, e));
       return envGet(e, (char*) chld(p, 0)->data);
     default:
       fprintf(stderr, "cannot eval unknown node type\n");
@@ -218,15 +233,17 @@ void printValue(Value* v) {
     case INT_TYPE:
       printf("%d\n", v->data);
       break;
-    case FUN_VALUE_TYPE:
-      printf("fun %s(", chld(v->data, 0)->data);
-      t = chld(v->data, 1);
+    case FUN_VALUE_TYPE: {
+      Node* f = ((Closure*) v->data)->f;
+      printf("fun %s(", chld(f, 0)->data);
+      t = chld(f, 1);
       for(i=0;i<chldNum(t);i++){
         if(i)printf(" ");
         printf("%s", chld(t, i)->data);
       }
       printf(")\n");
       break;
+    }
     default:
       fprintf(stderr, "cannot print unknown value type\n");
       break;

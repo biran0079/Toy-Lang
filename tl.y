@@ -18,8 +18,7 @@
 %%
 prog: 
   stmts {
-    init();
-    eval(global, $1);
+    eval(newEnv(0), $1);
   }
   ;
 stmts:

@@ -46,20 +46,28 @@ typedef enum {
   FUN_VALUE_TYPE,
 } ValueType;
 
-typedef struct Node {
+typedef struct {
   NodeType type;
   void* data;
 } Node;
 
-typedef struct Value {
+typedef struct {
   ValueType type;
   void* data;
 } Value;
 
+
 typedef struct Env Env;
+
+typedef struct {
+  Node* f;
+  Env* e;
+} Closure;
+
 struct Env {
   HashTable* t;
   List* loopStates;
+  Env* parent;
   jmp_buf retState;
 };
 
@@ -69,18 +77,17 @@ Node* newNode2(NodeType type, int n, ...);
 void* copy(void* t, int size);
 
 Value* newIntValue(int x);
-Value* newFunValue(Node* t);
+Value* newFunValue(Node* t, Env* e);
 
-Env* newEnv();
+Env* newEnv(Env* parent);
 Value* envGet(Env* e, char* key);
 void envPut(Env* e, char* key, Value* value);
 
-void init();
+Closure* newClosure(Node* f, Env* e);
+
 Value* eval(Env* e, Node* p);
 
 void printValue(Value* v);
-
-extern Env* global;
 
 #define YYSTYPE Node*
 

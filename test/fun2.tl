@@ -1,4 +1,3 @@
-a=3;
 fun f(){
   a=1;
   print(a);
@@ -11,4 +10,3 @@ fun g(){
   print(a);
 }
 f();
-print(b);
