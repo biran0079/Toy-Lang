@@ -2,13 +2,14 @@
 %token PRINT
 %token ID
 %token IF ELSE
-%token WHILE FUN RETURN LAMBDA
+%token WHILE FOR FUN RETURN LAMBDA
 %token LEN 
 %token BREAK CONTINUE
+%right COMMA
 %left OR
 %left AND
 %left NOT EQ NE GT LT GE LE
-%right ASSIGN
+%right ASSIGN ADDEQ
 %left '+' '-'
 %left '*' '/' '%'
 %{
@@ -39,6 +40,9 @@ stmt:
   | IF '(' exp ')' block ELSE block {
     $$ = newNode2(IF_TYPE, 3, $3, $5, $7);
   }
+  | FOR '(' exp_list ';' exp_list ';' exp_list ')' block {
+    $$ = newNode2(FOR_TYPE, 4, $3, $5, $7, $9);
+  }
   | WHILE '(' exp ')' block {
     $$ = newNode2(WHILE_TYPE, 2, $3, $5);
   }
@@ -57,7 +61,7 @@ id_list:
   ;
 
 non_empty_id_list:
-  non_empty_id_list ',' ID  { 
+  non_empty_id_list COMMA ID  { 
     listPush((List*) $1->data, $3);
     $$ = $1;
   }
@@ -78,7 +82,7 @@ exp_list:
   ;
 
 non_empty_exp_list:
-  non_empty_exp_list ',' exp  { 
+  non_empty_exp_list COMMA exp  { 
     listPush((List*) $1->data, $3);
     $$ = $1;
   }
@@ -95,7 +99,8 @@ exp:
   | LAMBDA '(' id_list ')' '{' stmts '}' { $$ = newNode2(FUN_TYPE, 3, newNode(ID_TYPE, "lambda"), $3, $6); }
   | '[' exp_list ']'    { $$ = newNode2(LIST_TYPE, 1, $2); }
   | list_access         { $$ = $1; }
-  | list_access ASSIGN exp    { $$ = newNode2(LIST_ASSIGN_TYPE, 3, chld($1, 0), chld($1, 1), $3); }
+  | list_access ASSIGN exp { $$ = newNode2(LIST_ASSIGN_TYPE, 3, chld($1, 0), chld($1, 1), $3); }
+  | list_access ADDEQ exp  { $$ = newNode2(LIST_ADDEQ_TYPE, 3, chld($1, 0), chld($1, 1), $3); }
   | ID '(' exp_list ')' { $$ = newNode2(APP_TYPE, 2, $1, $3); }
   | '(' exp ')' { $$ = $2; }
   | exp '+' exp { $$ = newNode2(ADD_TYPE, 2, $1, $3); } 
@@ -113,6 +118,7 @@ exp:
   | exp OR exp { $$ = newNode2(OR_TYPE, 2, $1, $3); } 
   | NOT exp    { $$ = newNode2(NOT_TYPE, 1, $2); } 
   | ID ASSIGN exp  { $$ = newNode2(ASSIGN_TYPE, 2, $1, $3); }
+  | ID ADDEQ exp { $$ = newNode2(ADDEQ_TYPE, 2, $1, $3); }
   | ID          { $$ = $1; }
   | PRINT '(' exp ')' {
     $$ = newNode2(PRINT_TYPE, 1, $3);

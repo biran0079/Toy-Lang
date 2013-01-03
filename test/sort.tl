@@ -6,20 +6,20 @@ fun merge(l1, l2){
   j=0;
   while(i<len1 && j<len2){
     if(l1[i]<l2[j]){
-      res = res + l1[i];  
-      i = i+1;
+      res += l1[i];  
+      i += 1;
     }else{
-      res = res + l2[j];
+      res += l2[j];
       j = j+1;
     }
   }
   while(i<len1) {
-    res = res + l1[i];  
-    i = i+1;
+    res += l1[i];  
+    i += 1;
   }
   while(j<len2) {
-    res = res+l2[j];
-    j=j+1;
+    res += l2[j];
+    j += 1;
   }
   return res;
 }
@@ -27,8 +27,8 @@ fun prefix(l, n){
   res = [];
   i=0;
   while(i<n){
-    res = res+l[i];
-    i=i+1;
+    res += l[i];
+    i += 1;
   }
   return res;
 }
@@ -37,8 +37,8 @@ fun suffix(l,n){
   length = len(l);
   i=n;
   while(i<length){
-    res = res + l[i];
-    i = i+1;
+    res += l[i];
+    i += 1;
   }
   return res;
 }
@@ -72,7 +72,7 @@ fun getRandomList(n){
   rand = getRandGenerator(1);
   res=[];
   while(n>0){
-    res = res + rand();  
+    res += rand();  
     n = n - 1;
   }
   return res;
@@ -87,10 +87,6 @@ fun isSorted(l){
   }
   return 1;
 }
-l = getRandomList(1000);
-print(isSorted(l));
-msort(l);
-print(isSorted(l));
 
 fun swap(a,i,j){
   t=a[i];
@@ -119,7 +115,12 @@ fun qsort(l){
   internalQsort(l,0,len(l)-1);  
 }
 
-l = getRandomList(1000);
+l = getRandomList(10000);
+print(isSorted(l));
+msort(l);
+print(isSorted(l));
+
+l = getRandomList(10000);
 print(isSorted(l));
 qsort(l);
 print(isSorted(l));

@@ -107,6 +107,12 @@ Value* eval(Env* e, Node* p) {
         eval(e, listGet(l,i));
       }
       return 0;
+    case EXP_LIST_TYPE: {
+      Value* res = 0;
+      for(i=0;i<chldNum(p);i++)
+        res = eval(e, chld(p, i));
+      return res;
+    }
     case PRINT_TYPE:
       printValue(eval(e, chld(p, 0)));
       printf("\n");
@@ -126,13 +132,36 @@ Value* eval(Env* e, Node* p) {
     case LIST_ACCESS_TYPE:{
       List* l = eval(e, chld(p, 0))->data;                      
       Value* idx = eval(e, chld(p, 1));
-      if(!idx) error("none value for array index encountered\n");
+      if(!idx) error("list index cannot be none\n");
       return listGet(l, (int) idx->data);
     }
-    case LIST_ASSIGN_TYPE:{
+    case LIST_ASSIGN_TYPE: {
       List* l = eval(e, chld(p, 0))->data;                      
-      listSet(l, (int) eval(e, chld(p, 1))->data, eval(e, chld(p, 2)));
+      Value* idx = eval(e, chld(p, 1));
+      if(!idx) error("list index cannot be none\n");
+      listSet(l, (int) idx->data, eval(e, chld(p, 2)));
       return listGet(l, (int) eval(e, chld(p, 1))->data);
+    }
+    case LIST_ADDEQ_TYPE: {
+      List* l = eval(e, chld(p, 0))->data;                      
+      Value* idx = eval(e, chld(p, 1));
+      if(!idx) error("list index cannot be none\n");
+      Value* e1 = listGet(l, (int) idx->data);
+      Value* e2 = eval(e, chld(p, 2));
+      if(!e1 || !e2) error("+= does not work for none\n");
+      Value* res = 0;
+      switch(e1->type) {
+        case INT_VALUE_TYPE:
+          res = valueAdd(e1, e2);
+          listSet(l, (int) idx->data, res);
+          break;
+        case LIST_VALUE_TYPE:
+          listPush((List*) e1->data, e2);
+          res=e1;
+          break;
+        default: error("unknown type for operator +=");
+      }
+      return res;
     }
     case APP_TYPE: {
       Value* closureValue = envGet(e, chld(p, 0)->data);
@@ -164,9 +193,30 @@ Value* eval(Env* e, Node* p) {
       return envGet(e, (char*) p->data);
     case INT_TYPE:
       return newIntValue((int) p->data);
-    case ASSIGN_TYPE:
-      envPut(e, (char*) chld(p, 0)->data, eval(e, chld(p, 1)));
-      return envGet(e, (char*) chld(p, 0)->data);
+    case ASSIGN_TYPE: {
+      Value* res = eval(e, chld(p, 1));
+      envPut(e, (char*) chld(p, 0)->data, res);
+      return res;
+    }
+    case ADDEQ_TYPE: {
+      char* key = (char *) chld(p, 0)->data;
+      Value* e1 = envGet(e, key);
+      Value* e2 = eval(e, chld(p, 1));
+      if(!e1 || !e2) error("+= does not work for none\n");
+      Value* res = 0;
+      switch(e1->type) {
+        case INT_VALUE_TYPE:
+          res = valueAdd(e1, e2);
+          envPut(e, key, res);
+          break;
+        case LIST_VALUE_TYPE:
+          listPush((List*) e1->data, e2);
+          res=e1;
+          break;
+        default: error("unknown type for operator +=");
+      }
+      return res;
+    }
     case ADD_TYPE:
       return valueAdd(eval(e, chld(p, 0)), eval(e, chld(p, 1)));
     case SUB_TYPE:
@@ -195,6 +245,33 @@ Value* eval(Env* e, Node* p) {
       else if(chldNum(p)==3)
         eval(e, chld(p, 2));
       return 0;
+    case FOR_TYPE:
+      {
+        jmp_buf buf;
+        listPush(e->loopStates, buf);
+        eval(e, chld(p,0));
+        int jmp = setjmp(buf);
+        while(1){
+          if(jmp==0){
+            // regular case
+            int cond = (int) eval(e, chld(p, 1))->data;
+            if(!cond) break;
+            eval(e, chld(p, 3));
+            eval(e, chld(p, 2));
+          } else if(jmp==1) {
+            // continue
+            eval(e, chld(p, 2));
+            jmp=0;
+          } else if(jmp==2) {
+            // break
+            break;
+          } else {
+            error("unknown value passed from longjmp\n");
+          }
+        }
+        listPop(e->loopStates);
+        return 0;
+      }
     case WHILE_TYPE:
       {
         jmp_buf buf;
@@ -203,9 +280,9 @@ Value* eval(Env* e, Node* p) {
         while(1){
           if(jmp==0 || jmp==1) {
             // regular case or continue
-            int cond = (int) eval(e, chld(p,0))->data;
-            if(!cond)break;
-            eval(e, chld(p,1));
+            int cond = (int) eval(e, chld(p, 0))->data;
+            if(!cond) break;
+            eval(e, chld(p, 1));
           } else if(jmp==2) {
             // break
             break;
@@ -284,6 +361,7 @@ int valueEquals(Value* v1, Value* v2){
 }
 
 Value* valueAdd(Value* v1, Value* v2) {
+  if(!v1 || !v2) error("+ operator does not work for none\n");
   switch(v1->type){
     case INT_VALUE_TYPE:
       switch(v2->type){
