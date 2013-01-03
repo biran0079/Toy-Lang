@@ -156,7 +156,13 @@ Value* eval(Env* e, Node* p) {
           listSet(l, (int) idx->data, res);
           break;
         case LIST_VALUE_TYPE:
-          listPush((List*) e1->data, e2);
+          if(e2->type == LIST_VALUE_TYPE) {
+            List* l = (List*) e2->data;
+            for(i=0;i<listSize(l);i++)
+              listPush((List*) e1->data, listGet(l, i));
+          } else {
+            listPush((List*) e1->data, e2);
+          }
           res=e1;
           break;
         default: error("unknown type for operator +=");
@@ -210,7 +216,13 @@ Value* eval(Env* e, Node* p) {
           envPut(e, key, res);
           break;
         case LIST_VALUE_TYPE:
-          listPush((List*) e1->data, e2);
+          if(e2->type == LIST_VALUE_TYPE) {
+            List* l = (List*) e2->data;
+            for(i=0;i<listSize(l);i++)
+              listPush((List*) e1->data, listGet(l, i));
+          }else{
+            listPush((List*) e1->data, e2);
+          }
           res=e1;
           break;
         default: error("unknown type for operator +=");
