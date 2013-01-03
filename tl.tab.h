@@ -46,18 +46,20 @@
      WHILE = 263,
      FUN = 264,
      RETURN = 265,
-     BREAK = 266,
-     CONTINUE = 267,
-     LE = 268,
-     GE = 269,
-     LT = 270,
-     GT = 271,
-     NE = 272,
-     EQ = 273,
-     NOT = 274,
-     ASSIGN = 275,
-     OR = 276,
-     AND = 277
+     LAMBDA = 266,
+     LEN = 267,
+     BREAK = 268,
+     CONTINUE = 269,
+     OR = 270,
+     AND = 271,
+     LE = 272,
+     GE = 273,
+     LT = 274,
+     GT = 275,
+     NE = 276,
+     EQ = 277,
+     NOT = 278,
+     ASSIGN = 279
    };
 #endif
 

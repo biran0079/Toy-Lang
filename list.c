@@ -42,3 +42,11 @@ void listSet(List* lst, int idx, void* v) {
   assert(idx < lst->size && idx >= 0);
   lst->arr[idx] = v;
 }
+
+List* listCopy(List* lst){
+  List* res = newList();
+  int i, len = listSize(lst);
+  for(i=0;i<len;i++)
+    listPush(res, listGet(lst, i));
+  return res;
+}

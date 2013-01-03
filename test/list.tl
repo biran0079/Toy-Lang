@@ -5,3 +5,7 @@ print(a[1]);
 print(a[2]);
 a[0]=4;
 print(a[0]);
+print(a==[4,2,3]);
+a[0]=a[0]+1;
+print(a==[4,2,3]);
+print(a==[5,2,3]);

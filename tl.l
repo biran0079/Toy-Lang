@@ -12,7 +12,9 @@ while     {return WHILE;}
 break     {return BREAK;}
 continue  {return CONTINUE;}
 fun       {return FUN;}
+lambda       {return LAMBDA;}
 return    {return RETURN;}
+len       {return LEN;}
 {D}+        {yylval = newNode(INT_TYPE, (void*)atoi(yytext)); return INT;}
 {L}({D}|{L})*   {yylval = newNode(ID_TYPE, copy(yytext, 1+strlen(yytext))); return ID;}
 ">="         {return GE;}

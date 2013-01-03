@@ -42,6 +42,7 @@ typedef enum {
   LIST_TYPE,
   LIST_ACCESS_TYPE,
   LIST_ASSIGN_TYPE,
+  LEN_TYPE,
 } NodeType;
 
 typedef enum {
@@ -98,6 +99,10 @@ void printValue(Value* v);
 Node* chld(Node* e, int i);
 int chldNum(Node* t);
 
+int valueEquals(Value* v1, Value* v2);
+Value* valueAdd(Value* v1, Value* v2);
+
+void error(char* msg);
 #define YYSTYPE Node*
 
 #endif
