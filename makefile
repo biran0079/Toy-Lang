@@ -1,4 +1,4 @@
-gccflag = -DYYDEBUG=0 -O0
+gccflag = -DYYDEBUG=0
 all: exe
 test: exe
 	./test.sh
