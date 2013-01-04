@@ -1,5 +1,13 @@
+<<<<<<< HEAD
 tl
 *.o
 *.exe
 *.tab.c
 *.tab.h
+=======
+tl
+*.o
+*.exe
+*.tab.c
+*.tab.h
+>>>>>>> origin/Temp
