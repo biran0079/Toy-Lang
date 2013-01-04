@@ -130,6 +130,9 @@ int yyerror(char *s) {
   return 0;
 }
 int main(){
+#if YYDEBUG
+  yydebug = 1;
+#endif
   yyparse();
   return 0;
 }
