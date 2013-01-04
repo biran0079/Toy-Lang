@@ -12,6 +12,7 @@ List* newList() {
   res->size = 0;
   res->cap = 1;
   res->arr = MALLOC(void*);
+  return res;
 }
 
 void listPush(List* lst, void* e) {
