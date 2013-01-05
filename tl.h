@@ -76,6 +76,7 @@ struct Env {
   List* loopStates;
   Env* parent;
   jmp_buf retState;
+  Value* returnValue;
 };
 
 typedef struct {
@@ -87,8 +88,9 @@ ReturnValue* newReturnValue(Value* v);
 Node* newNode(NodeType type, void* data);
 Node* newNode2(NodeType type, int n, ...);
 void* copy(void* t, int size);
+long strToLong(char* s);
 
-Value* newIntValue(int x);
+Value* newIntValue(long x);
 Value* newFunValue(Node* t, Env* e);
 
 Env* newEnv(Env* parent);
@@ -112,6 +114,7 @@ Value* valueAdd(Value* v1, Value* v2);
 Value* valueAddEq(Env* e, Node* v1, Node* v2);
 
 void error(char* msg);
+
 #define YYSTYPE Node*
 
 #endif

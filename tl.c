@@ -6,7 +6,6 @@
 #include"tl.h"
 #include"list.h"
 
-
 static Node* createNode() {
   Node* res = MALLOC(Node);
   res->data = (void*) 0;
@@ -17,6 +16,21 @@ void* copy(void* t, int size) {
   void* res = malloc(size);
   memcpy(res, t, size);
   return res;
+}
+
+long strToLong(char* s){
+  long res = 0;
+  int negative = 0;
+  if(*s == '-') {
+    negative = 1;
+    s++;
+  }
+  while(*s) {
+    res*=10;
+    res+=*s-'0';
+    s++;
+  }
+  return negative ? -res : res;
 }
 
 int chldNum(Node* t) {
@@ -48,7 +62,7 @@ Node* newNode2(NodeType t, int n, ... ) {
   return res;
 }
 
-Value* newIntValue(int x){
+Value* newIntValue(long x){
   Value* res=MALLOC(Value);
   res->type = INT_VALUE_TYPE;
   res->data = (void*) x;
@@ -74,6 +88,7 @@ Env* newEnv(Env* parent){
   res->t = newHashTable();
   res->parent = parent;
   res->loopStates = newList();
+  res->returnValue = 0;
   return res;
 }
 
@@ -139,27 +154,27 @@ Value* eval(Env* e, Node* p) {
       List* l = eval(e, chld(p, 0))->data;                      
       Value* idx = eval(e, chld(p, 1));
       if(!idx) error("list index cannot be none\n");
-      return listGet(l, (int) idx->data);
+      return listGet(l, (long) idx->data);
     }
     case LIST_ASSIGN_TYPE: {
       List* l = eval(e, chld(p, 0))->data;                      
       Value* idx = eval(e, chld(p, 1));
       if(!idx) error("list index cannot be none\n");
-      listSet(l, (int) idx->data, eval(e, chld(p, 2)));
-      return listGet(l, (int) eval(e, chld(p, 1))->data);
+      listSet(l, (long) idx->data, eval(e, chld(p, 2)));
+      return listGet(l, (long) eval(e, chld(p, 1))->data);
     }
     case LIST_ADDEQ_TYPE: {
       List* l = eval(e, chld(p, 0))->data;                      
       Value* idx = eval(e, chld(p, 1));
       if(!idx) error("list index cannot be none\n");
-      Value* e1 = listGet(l, (int) idx->data);
+      Value* e1 = listGet(l, (long) idx->data);
       Value* e2 = eval(e, chld(p, 2));
       if(!e1 || !e2) error("+= does not work for none\n");
       Value* res = 0;
       switch(e1->type) {
         case INT_VALUE_TYPE:
           res = valueAdd(e1, e2);
-          listSet(l, (int) idx->data, res);
+          listSet(l, (long) idx->data, res);
           break;
         case LIST_VALUE_TYPE:
           if(e2->type == LIST_VALUE_TYPE) {
@@ -186,12 +201,15 @@ Value* eval(Env* e, Node* p) {
       for(i=0; i<chldNum(ids); i++)
         envPut(e2, chld(ids, i)->data, eval(e, chld(args, i)));
       e2->parent = c->e;
-      ReturnValue* ret = (ReturnValue*) setjmp(e2->retState);
+      int ret = setjmp(e2->retState);
       if(!ret){
         eval(e2, chld(f, 2));
+        // if reach here, no return statement is called, so none is returned 
         return 0;
-      }else{
-        return ret->v;
+      } else if(ret == 1) {
+        return e2->returnValue;
+      } else {
+        error("unknown  return value from longjmp in function call\n");
       }
     }
     case RETURN_TYPE:{
@@ -199,12 +217,13 @@ Value* eval(Env* e, Node* p) {
          if(chldNum(p) == 1) {
            res = eval(e, chld(p, 0));
          }
-         longjmp(e->retState, (int) newReturnValue(res));
+         e->returnValue = res;
+         longjmp(e->retState, 1);
      }
     case ID_TYPE:
       return envGet(e, (char*) p->data);
     case INT_TYPE:
-      return newIntValue((int) p->data);
+      return newIntValue((long) p->data);
     case ASSIGN_TYPE: {
       Value* res = eval(e, chld(p, 1));
       envPut(e, (char*) chld(p, 0)->data, res);
@@ -239,21 +258,21 @@ Value* eval(Env* e, Node* p) {
       return valueAdd(eval(e, chld(p, 0)), eval(e, chld(p, 1)));
     case SUB_TYPE:
       return newIntValue(
-          (int) eval(e, chld(p, 0))->data -
-          (int) eval(e, chld(p, 1))->data);
+          (long) eval(e, chld(p, 0))->data -
+          (long) eval(e, chld(p, 1))->data);
     case MUL_TYPE:
       return newIntValue(
-          (int) eval(e, chld(p, 0))->data *
-          (int) eval(e, chld(p, 1))->data);
+          (long) eval(e, chld(p, 0))->data *
+          (long) eval(e, chld(p, 1))->data);
     case DIV_TYPE: {
-      int a = (int) eval(e, chld(p, 0))->data;
-      int b = (int) eval(e, chld(p, 1))->data;
+      int a = (long) eval(e, chld(p, 0))->data;
+      int b = (long) eval(e, chld(p, 1))->data;
       if(!b) error("divisor equals to zero\n");
       return newIntValue(a/b);
     }
     case MOD_TYPE: {
-      int a = (int) eval(e, chld(p, 0))->data;
-      int b = (int) eval(e, chld(p, 1))->data;
+      int a = (long) eval(e, chld(p, 0))->data;
+      int b = (long) eval(e, chld(p, 1))->data;
       if(!b) error("divisor equals zero in %%\n");
       return newIntValue(a%b);
     }
@@ -272,7 +291,7 @@ Value* eval(Env* e, Node* p) {
         while(1){
           if(jmp==0){
             // regular case
-            int cond = (int) eval(e, chld(p, 1))->data;
+            int cond = (long) eval(e, chld(p, 1))->data;
             if(!cond) break;
             eval(e, chld(p, 3));
             eval(e, chld(p, 2));
@@ -298,7 +317,7 @@ Value* eval(Env* e, Node* p) {
         while(1){
           if(jmp==0 || jmp==1) {
             // regular case or continue
-            int cond = (int) eval(e, chld(p, 0))->data;
+            int cond = (long) eval(e, chld(p, 0))->data;
             if(!cond) break;
             eval(e, chld(p, 1));
           } else if(jmp==2) {
@@ -317,16 +336,16 @@ Value* eval(Env* e, Node* p) {
       longjmp(listLast(e->loopStates), 2);
     case GT_TYPE:
       return newIntValue(
-           (int) eval(e, chld(p, 0))->data > (int) eval(e, chld(p, 1))->data);
+           (long) eval(e, chld(p, 0))->data > (long) eval(e, chld(p, 1))->data);
     case LT_TYPE:
       return newIntValue(
-           (int) eval(e, chld(p, 0))->data < (int) eval(e, chld(p, 1))->data);
+           (long) eval(e, chld(p, 0))->data < (long) eval(e, chld(p, 1))->data);
     case GE_TYPE:
       return newIntValue(
-           (int) eval(e, chld(p, 0))->data >= (int) eval(e, chld(p, 1))->data);
+           (long) eval(e, chld(p, 0))->data >= (long) eval(e, chld(p, 1))->data);
     case LE_TYPE:
       return newIntValue(
-           (int) eval(e, chld(p, 0))->data <= (int) eval(e, chld(p, 1))->data);
+           (long) eval(e, chld(p, 0))->data <= (long) eval(e, chld(p, 1))->data);
     case EQ_TYPE:
       return newIntValue(
            valueEquals(eval(e, chld(p, 0)), eval(e, chld(p, 1))));
@@ -384,7 +403,7 @@ Value* valueAdd(Value* v1, Value* v2) {
     case INT_VALUE_TYPE:
       switch(v2->type){
         case INT_VALUE_TYPE: 
-          return newIntValue((int) v1->data + (int) v2->data);
+          return newIntValue((long) v1->data + (long) v2->data);
         default: error("int can only add to int\n");
       }
     case LIST_VALUE_TYPE:{

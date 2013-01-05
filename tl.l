@@ -16,7 +16,7 @@ for       {return FOR;}
 lambda       {return LAMBDA;}
 return    {return RETURN;}
 len       {return LEN;}
-{D}+        {yylval = newNode(INT_TYPE, (void*)atoi(yytext)); return INT;}
+{D}+        {yylval = newNode(INT_TYPE, (void*) strToLong(yytext)); return INT;}
 {L}({D}|{L})*   {yylval = newNode(ID_TYPE, copy(yytext, 1+strlen(yytext))); return ID;}
 "+="         {return ADDEQ;}
 ">="         {return GE;}
