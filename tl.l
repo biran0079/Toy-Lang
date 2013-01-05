@@ -31,7 +31,7 @@ len       {return LEN;}
 "<"          {return LT;}
 ","          {return COMMA;}
 [-+*/%();{}\[\]]  {return *yytext;}
-[ \t\n]     ;
+[ \t\n\r]     ;
 %%
 int yywrap(){
   return 1;  
