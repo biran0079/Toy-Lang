@@ -34,7 +34,8 @@ typedef enum {
   FUN_TYPE,
   EXP_LIST_TYPE,
   ID_LIST_TYPE,
-  APP_TYPE,
+  CALL_TYPE,
+  TAIL_CALL_TYPE,
   RETURN_TYPE,
   BREAK_TYPE,
   CONTINUE_TYPE,
@@ -46,6 +47,7 @@ typedef enum {
   FOR_TYPE,
   ADDEQ_TYPE,
   LIST_ADDEQ_TYPE,
+  TIME_TYPE,
 } NodeType;
 
 typedef enum {
@@ -77,13 +79,9 @@ struct Env {
   Env* parent;
   jmp_buf retState;
   Value* returnValue;
+  // tail call closure with arguments set.  used to pass the tail recursion call node to upper stack frame
+  Closure* tailCall;
 };
-
-typedef struct {
-  Value* v;
-} ReturnValue;
-
-ReturnValue* newReturnValue(Value* v);
 
 Node* newNode(NodeType type, void* data);
 Node* newNode2(NodeType type, int n, ...);
@@ -94,6 +92,7 @@ Value* newIntValue(long x);
 Value* newFunValue(Node* t, Env* e);
 
 Env* newEnv(Env* parent);
+void clearEnv();
 Value* envGet(Env* e, char* key);
 void envPut(Env* e, char* key, Value* value);
 
@@ -111,7 +110,13 @@ int chldNum(Node* t);
 
 int valueEquals(Value* v1, Value* v2);
 Value* valueAdd(Value* v1, Value* v2);
+Value* valueSub(Value* v1, Value* v2);
+Value* valueMul(Value* v1, Value* v2);
+Value* valueDiv(Value* v1, Value* v2);
+Value* valueMod(Value* v1, Value* v2);
 Value* valueAddEq(Env* e, Node* v1, Node* v2);
+
+void markTailRecursions(Node* t);
 
 void error(char* msg);
 

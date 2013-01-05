@@ -3,7 +3,7 @@
 %token ID
 %token IF ELSE
 %token WHILE FOR FUN RETURN LAMBDA
-%token LEN 
+%token LEN TIME
 %token BREAK CONTINUE
 %right COMMA
 %left OR
@@ -47,12 +47,14 @@ stmt:
     $$ = newNode2(WHILE_TYPE, 2, $3, $5);
   }
   | FUN ID '(' id_list ')' '{' stmts '}' {
+    markTailRecursions($7);
     $$ = newNode2(FUN_TYPE, 3, $2, $4, $7);
   }
   | RETURN exp ';' {$$ = newNode2(RETURN_TYPE, 1, $2);}
   | RETURN ';' {$$ = newNode2(RETURN_TYPE, 0);}
   | BREAK ';' {$$ = newNode2(BREAK_TYPE, 0);}
   | CONTINUE ';' {$$ = newNode2(CONTINUE_TYPE, 0);}
+  | TIME '(' exp ')' ';' {$$ = newNode2(TIME_TYPE, 1, $3);}
   ;
 
 id_list:
@@ -101,7 +103,7 @@ exp:
   | list_access         { $$ = $1; }
   | list_access ASSIGN exp { $$ = newNode2(LIST_ASSIGN_TYPE, 3, chld($1, 0), chld($1, 1), $3); }
   | list_access ADDEQ exp  { $$ = newNode2(LIST_ADDEQ_TYPE, 3, chld($1, 0), chld($1, 1), $3); }
-  | ID '(' exp_list ')' { $$ = newNode2(APP_TYPE, 2, $1, $3); }
+  | ID '(' exp_list ')' { $$ = newNode2(CALL_TYPE, 2, $1, $3); }
   | '(' exp ')' { $$ = $2; }
   | exp '+' exp { $$ = newNode2(ADD_TYPE, 2, $1, $3); } 
   | exp '-' exp { $$ = newNode2(SUB_TYPE, 2, $1, $3); } 

@@ -51,3 +51,7 @@ List* listCopy(List* lst){
     listPush(res, listGet(lst, i));
   return res;
 }
+
+void listClear(List* lst){
+  lst->size=0;
+}

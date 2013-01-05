@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <setjmp.h>
+#include <time.h>
 #include"tl.h"
 #include"list.h"
 
@@ -89,6 +90,7 @@ Env* newEnv(Env* parent){
   res->parent = parent;
   res->loopStates = newList();
   res->returnValue = 0;
+  res->tailCall = 0;
   return res;
 }
 
@@ -111,10 +113,37 @@ void envPut(Env* e, char* key, Value* value){
   hashTablePut(e->t, key, (void*) value);
 }
 
-ReturnValue* newReturnValue(Value* v){
-  ReturnValue* res = MALLOC(ReturnValue);
-  res->v = v;
-  return res;
+void markTailRecursions(Node* t) {
+  switch(t->type) {
+    case STMTS_TYPE: {
+      int n = chldNum(t);
+      if(n) markTailRecursions(chld(t, n-1));
+      break;
+    }
+    case IF_TYPE: {
+      markTailRecursions(chld(t, 1));
+      if(chldNum(t) > 2) // has "else"
+        markTailRecursions(chld(t, 2));
+      break;
+    }
+    case RETURN_TYPE: {
+      if(chldNum(t)) markTailRecursions(chld(t, 0));
+      break;
+    }
+    case CALL_TYPE: {
+      t->type = TAIL_CALL_TYPE;
+      break;
+    }
+    default: break;
+  }
+}
+
+void clearEnv(Env* e){
+  hashTableClear(e->t);
+  listClear(e->loopStates);
+  e->parent=0;
+  e->returnValue = 0;
+  e->tailCall = 0;
 }
 
 Value* eval(Env* e, Node* p) {
@@ -190,7 +219,7 @@ Value* eval(Env* e, Node* p) {
       }
       return res;
     }
-    case APP_TYPE: {
+    case TAIL_CALL_TYPE: {
       Value* closureValue = envGet(e, chld(p, 0)->data);
       if(!closureValue) error("fun value is none in function application\n");
       Closure *c = closureValue->data;
@@ -201,15 +230,37 @@ Value* eval(Env* e, Node* p) {
       for(i=0; i<chldNum(ids); i++)
         envPut(e2, chld(ids, i)->data, eval(e, chld(args, i)));
       e2->parent = c->e;
-      int ret = setjmp(e2->retState);
-      if(!ret){
-        eval(e2, chld(f, 2));
-        // if reach here, no return statement is called, so none is returned 
-        return 0;
-      } else if(ret == 1) {
-        return e2->returnValue;
-      } else {
-        error("unknown  return value from longjmp in function call\n");
+      e->tailCall = newClosure(f, e2);
+      longjmp(e->retState, 2);
+    }
+    case CALL_TYPE: {
+      Value* closureValue = envGet(e, chld(p, 0)->data);
+      if(!closureValue) error("fun value is none in function application\n");
+      Closure *c = closureValue->data;
+      Node* f = c->f, *args = chld(p, 1);
+      Env* e2 = newEnv(0);
+      Node *ids = chld(f,1);
+      if(chldNum(ids)!=chldNum(args)) error("function parameter number incorrecr\n");
+      for(i=0; i<chldNum(ids); i++)
+        envPut(e2, chld(ids, i)->data, eval(e, chld(args, i)));
+      e2->parent = c->e;
+      while(1){
+        int ret = setjmp(e2->retState);
+        if(!ret){
+          eval(e2, chld(f, 2));
+          // if reach here, no return statement is called, so none is returned 
+          return 0;
+        } else if(ret == 1) {
+          return e2->returnValue;
+        } if(ret == 2) {
+          // tail recursive call
+          Closure* tc = e2->tailCall;
+          f = tc->f;
+          e2 = tc->e;
+          continue;
+        } else {
+          error("unknown  return value from longjmp in function call\n");
+        }
       }
     }
     case RETURN_TYPE:{
@@ -257,25 +308,13 @@ Value* eval(Env* e, Node* p) {
     case ADD_TYPE:
       return valueAdd(eval(e, chld(p, 0)), eval(e, chld(p, 1)));
     case SUB_TYPE:
-      return newIntValue(
-          (long) eval(e, chld(p, 0))->data -
-          (long) eval(e, chld(p, 1))->data);
+      return valueSub(eval(e, chld(p, 0)), eval(e, chld(p, 1)));
     case MUL_TYPE:
-      return newIntValue(
-          (long) eval(e, chld(p, 0))->data *
-          (long) eval(e, chld(p, 1))->data);
-    case DIV_TYPE: {
-      int a = (long) eval(e, chld(p, 0))->data;
-      int b = (long) eval(e, chld(p, 1))->data;
-      if(!b) error("divisor equals to zero\n");
-      return newIntValue(a/b);
-    }
-    case MOD_TYPE: {
-      int a = (long) eval(e, chld(p, 0))->data;
-      int b = (long) eval(e, chld(p, 1))->data;
-      if(!b) error("divisor equals zero in %%\n");
-      return newIntValue(a%b);
-    }
+      return valueMul(eval(e, chld(p, 0)), eval(e, chld(p, 1)));
+    case DIV_TYPE: 
+      return valueDiv(eval(e, chld(p, 0)), eval(e, chld(p, 1)));
+    case MOD_TYPE: 
+      return valueMod(eval(e, chld(p, 0)), eval(e, chld(p, 1)));
     case IF_TYPE:
       if(eval(e, chld(p, 0))->data)
         eval(e, chld(p, 1));
@@ -363,6 +402,12 @@ Value* eval(Env* e, Node* p) {
     case FUN_TYPE:
       envPut(e, (char*) chld(p, 0)->data, newFunValue(p, e));
       return envGet(e, (char*) chld(p, 0)->data);
+    case TIME_TYPE: {
+        clock_t st = clock();                
+        Value* res = eval(e, chld(p, 0));
+        fprintf(stderr, "time: %lf secs\n", (clock() - st) * 1.0 / CLOCKS_PER_SEC);
+        return res;
+    }
     default:
       error("cannot eval unknown node type\n");
   }
@@ -396,6 +441,37 @@ int valueEquals(Value* v1, Value* v2){
     default: error("unknown value type passed to valueEquals\n");
   }
 }
+
+Value* valueSub(Value* v1, Value* v2) {
+  if(!v1 || !v2) error("- operator does not work for none\n");
+  if(v1->type != INT_VALUE_TYPE || v2->type != INT_VALUE_TYPE)
+    error("- operator only works for int");
+  return newIntValue((long) v1->data - (long) v2->data);
+}
+
+Value* valueMul(Value* v1, Value* v2) {
+  if(!v1 || !v2) error("* operator does not work for none\n");
+  if(v1->type != INT_VALUE_TYPE || v2->type != INT_VALUE_TYPE)
+    error("* operator only works for int");
+  return newIntValue((long) v1->data * (long) v2->data);
+}
+
+Value* valueDiv(Value* v1, Value* v2) {
+  if(!v1 || !v2) error("/ operator does not work for none\n");
+  if(v1->type != INT_VALUE_TYPE || v2->type != INT_VALUE_TYPE)
+    error("/ operator only works for int");
+  if(!v2->data) error("denominator cannot be zero\n");
+  return newIntValue((long) v1->data / (long) v2->data);
+}
+
+Value* valueMod(Value* v1, Value* v2) {
+  if(!v1 || !v2) error("%% operator does not work for none\n");
+  if(v1->type != INT_VALUE_TYPE || v2->type != INT_VALUE_TYPE)
+    error("%% operator only works for int");
+  if(!v2->data) error("denominator cannot be zero\n");
+  return newIntValue((long) v1->data % (long) v2->data);
+}
+
 
 Value* valueAdd(Value* v1, Value* v2) {
   if(!v1 || !v2) error("+ operator does not work for none\n");

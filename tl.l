@@ -16,6 +16,7 @@ for       {return FOR;}
 lambda       {return LAMBDA;}
 return    {return RETURN;}
 len       {return LEN;}
+time       {return TIME;}
 {D}+        {yylval = newNode(INT_TYPE, (void*) strToLong(yytext)); return INT;}
 {L}({D}|{L})*   {yylval = newNode(ID_TYPE, copy(yytext, 1+strlen(yytext))); return ID;}
 "+="         {return ADDEQ;}
@@ -32,6 +33,7 @@ len       {return LEN;}
 ","          {return COMMA;}
 [-+*/%();{}\[\]]  {return *yytext;}
 [ \t\n\r]     ;
+.            {printf("unknown character for lex: %s\n", yytext);exit(-1);}
 %%
 int yywrap(){
   return 1;  

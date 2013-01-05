@@ -13,9 +13,11 @@ static unsigned int hash(char *s) {
   return h;
 }
 
+static int TABLE_CAPACITY = 89;
+
 HashTable* newHashTable() {
   HashTable* res = MALLOC(HashTable);
-  res->cap = 89;
+  res->cap = TABLE_CAPACITY;
   res->size = 0;
   res->a = (LinkedList**) malloc(res->cap * sizeof(LinkedList*));
   memset(res->a, 0, res->cap * sizeof(LinkedList*));
@@ -60,3 +62,16 @@ HashTable* hashTableCopy(HashTable* t) {
   return res;
 }
 
+void hashTableClear(HashTable* t) {
+  int i;
+  for(i=0;i<t->cap;i++) {
+    LinkedList *l = t->a[i], *nl;
+    while(l){
+      nl = l->next;
+      free(l);
+      l = nl;
+    }
+    t->a[i]=0;
+  }
+  t->size = 0;
+}

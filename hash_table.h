@@ -16,4 +16,5 @@ HashTable* newHashTable();
 void hashTablePut(HashTable* t, char* key, void* value);
 void* hashTableGet(HashTable* t, char* key);
 HashTable* hashTableCopy(HashTable* t);
+void hashTableClear(HashTable* t);
 #endif
