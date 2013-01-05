@@ -78,6 +78,11 @@ struct Env {
   jmp_buf retState;
 };
 
+typedef struct {
+  Value* v;
+} ReturnValue;
+
+ReturnValue* newReturnValue(Value* v);
 
 Node* newNode(NodeType type, void* data);
 Node* newNode2(NodeType type, int n, ...);

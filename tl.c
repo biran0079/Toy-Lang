@@ -96,6 +96,12 @@ void envPut(Env* e, char* key, Value* value){
   hashTablePut(e->t, key, (void*) value);
 }
 
+ReturnValue* newReturnValue(Value* v){
+  ReturnValue* res = MALLOC(ReturnValue);
+  res->v = v;
+  return res;
+}
+
 Value* eval(Env* e, Node* p) {
   List* l;
   Value* res = 0;
@@ -180,12 +186,12 @@ Value* eval(Env* e, Node* p) {
       for(i=0; i<chldNum(ids); i++)
         envPut(e2, chld(ids, i)->data, eval(e, chld(args, i)));
       e2->parent = c->e;
-      Value* ret = (Value*) setjmp(e2->retState);
+      ReturnValue* ret = (ReturnValue*) setjmp(e2->retState);
       if(!ret){
         eval(e2, chld(f, 2));
         return 0;
       }else{
-        return ret;
+        return ret->v;
       }
     }
     case RETURN_TYPE:{
@@ -193,7 +199,7 @@ Value* eval(Env* e, Node* p) {
          if(chldNum(p) == 1) {
            res = eval(e, chld(p, 0));
          }
-         longjmp(e->retState, (int) res);
+         longjmp(e->retState, (int) newReturnValue(res));
      }
     case ID_TYPE:
       return envGet(e, (char*) p->data);

@@ -15,3 +15,6 @@ fun main(){
   }
 }
 main();
+fun f(){}
+fun g(){return f();}
+print(g());
