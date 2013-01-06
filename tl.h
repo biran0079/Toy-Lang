@@ -48,12 +48,14 @@ typedef enum {
   ADDEQ_TYPE,
   LIST_ADDEQ_TYPE,
   TIME_TYPE,
+  STRING_TYPE,
 } NodeType;
 
 typedef enum {
   INT_VALUE_TYPE,
   FUN_VALUE_TYPE,
   LIST_VALUE_TYPE,
+  STRING_VALUE_TYPE,
 } ValueType;
 
 typedef struct {
@@ -87,9 +89,12 @@ Node* newNode(NodeType type, void* data);
 Node* newNode2(NodeType type, int n, ...);
 void* copy(void* t, int size);
 long strToLong(char* s);
+char* literalStringToString(char *s);
 
 Value* newIntValue(long x);
+Value* newListValue(List* lst);   // pass in a list of values
 Value* newFunValue(Node* t, Env* e);
+Value* newStringValue(char* s);
 
 Env* newEnv(Env* parent);
 void clearEnv();
@@ -98,8 +103,6 @@ void envPut(Env* e, char* key, Value* value);
 
 Closure* newClosure(Node* f, Env* e);
 
-// pass in a list of values
-Value* newListValue(List* lst);
 
 Value* eval(Env* e, Node* p);
 

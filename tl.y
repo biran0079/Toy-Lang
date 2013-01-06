@@ -1,4 +1,4 @@
-%token INT
+%token INT STRING
 %token PRINT
 %token ID
 %token IF ELSE
@@ -97,6 +97,7 @@ list_access:
 
 exp:
   INT { $$ = $1; }
+  | STRING { $$ = $1; }
   | LEN '(' exp ')'     { $$ = newNode2(LEN_TYPE, 1, $3); }
   | LAMBDA '(' id_list ')' '{' stmts '}' { $$ = newNode2(FUN_TYPE, 3, newNode(ID_TYPE, "lambda"), $3, $6); }
   | '[' exp_list ']'    { $$ = newNode2(LIST_TYPE, 1, $2); }

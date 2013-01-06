@@ -19,6 +19,7 @@ len       {return LEN;}
 time       {return TIME;}
 {D}+        {yylval = newNode(INT_TYPE, (void*) strToLong(yytext)); return INT;}
 {L}({D}|{L})*   {yylval = newNode(ID_TYPE, copy(yytext, 1+strlen(yytext))); return ID;}
+\"(\\.|[^\"])*\"  {yylval = newNode(STRING_TYPE, literalStringToString(yytext)); return STRING;}
 "+="         {return ADDEQ;}
 ">="         {return GE;}
 "<="         {return LE;}

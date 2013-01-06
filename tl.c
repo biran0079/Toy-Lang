@@ -34,6 +34,29 @@ long strToLong(char* s){
   return negative ? -res : res;
 }
 
+char* literalStringToString(char *s) {
+  char *ss = malloc(strlen(s)+1);
+  int l = 0;
+  s++;  // skil "
+  while(*s!='"') {
+    if(*s == '\\') {
+      s++;
+      switch(*s){
+        case 'n' : ss[l++] = '\n'; break;
+        case 'r' : ss[l++] = '\r'; break;
+        case '"' : ss[l++] = '"'; break;
+        case '\\' : ss[l++] = '\\'; break;
+        default:  ss[l++] = *s; break;
+      }
+    }else{
+      ss[l++] = *s;
+    }
+    s++;
+  }
+  ss[l++] = 0;
+  return realloc(ss, l);
+}
+
 int chldNum(Node* t) {
   return listSize((List*) t->data);
 }
@@ -67,6 +90,13 @@ Value* newIntValue(long x){
   Value* res=MALLOC(Value);
   res->type = INT_VALUE_TYPE;
   res->data = (void*) x;
+  return res;
+}
+
+Value* newStringValue(char *s){
+  Value* res=MALLOC(Value);
+  res->type = STRING_VALUE_TYPE;
+  res->data = (void*) s;
   return res;
 }
 
@@ -275,6 +305,8 @@ Value* eval(Env* e, Node* p) {
       return envGet(e, (char*) p->data);
     case INT_TYPE:
       return newIntValue((long) p->data);
+    case STRING_TYPE:
+      return newStringValue((char*) p->data);
     case ASSIGN_TYPE: {
       Value* res = eval(e, chld(p, 1));
       envPut(e, (char*) chld(p, 0)->data, res);
@@ -533,6 +565,10 @@ void printValue(Value* v) {
         printValue(listGet(l, i));
       }
       printf("]");
+      break;
+    }
+    case STRING_VALUE_TYPE: {
+      printf("%s", v->data);
       break;
     }
     default: error("cannot print unknown value type\n");
