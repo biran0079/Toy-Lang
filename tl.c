@@ -199,8 +199,14 @@ Value* eval(Env* e, Node* p) {
       return 0;
     case LEN_TYPE: {
       Value* v = eval(e, chld(p, 0));
-      if(v->type != LIST_VALUE_TYPE) error("len can only apply to list type\n");
-      return newIntValue(listSize((List*) v->data));
+      switch(v->type) {
+        case LIST_VALUE_TYPE: return newIntValue(listSize((List*) v->data));
+        case STRING_VALUE_TYPE: return newIntValue(strlen((char*) v->data));
+        default: error("unsupported type for 'len' operator\n");
+      }
+    }
+    case STR_TYPE: {
+      return newStringValue(valueToString(eval(e, chld(p,0))));
     }
     case LIST_TYPE: {
       Node* t = chld(p, 0);             
@@ -210,10 +216,23 @@ Value* eval(Env* e, Node* p) {
       return newListValue(vs);
     }
     case LIST_ACCESS_TYPE:{
-      List* l = eval(e, chld(p, 0))->data;                      
-      Value* idx = eval(e, chld(p, 1));
-      if(!idx) error("list index cannot be none\n");
-      return listGet(l, (long) idx->data);
+      Value* v = eval(e, chld(p, 0));
+      Value* idxValue = eval(e, chld(p, 1));
+      if(!idxValue) error("list index cannot be none\n");
+      long idx = (long) idxValue->data;
+      switch(v->type) {
+        case LIST_VALUE_TYPE: {
+          List* l = (List*) v->data;                      
+          return listGet(l, idx);
+        }
+        case STRING_VALUE_TYPE: {
+          char *s = (char*) v->data;
+          char *ss = (char*) malloc(2 * sizeof(char));
+          ss[0] = s[idx];
+          ss[1] = 0;
+          return newStringValue(ss);
+        }
+      }
     }
     case LIST_ASSIGN_TYPE: {
       List* l = eval(e, chld(p, 0))->data;                      
@@ -232,6 +251,7 @@ Value* eval(Env* e, Node* p) {
       Value* res = 0;
       switch(e1->type) {
         case INT_VALUE_TYPE:
+        case STRING_VALUE_TYPE:
           res = valueAdd(e1, e2);
           listSet(l, (long) idx->data, res);
           break;
@@ -320,6 +340,7 @@ Value* eval(Env* e, Node* p) {
       Value* res = 0;
       switch(e1->type) {
         case INT_VALUE_TYPE:
+        case STRING_VALUE_TYPE:
           res = valueAdd(e1, e2);
           envPut(e, key, res);
           break;
@@ -333,7 +354,7 @@ Value* eval(Env* e, Node* p) {
           }
           res=e1;
           break;
-        default: error("unknown type for operator +=");
+        default: error("unknown type for operator +=\n");
       }
       return res;
     }
@@ -470,6 +491,8 @@ int valueEquals(Value* v1, Value* v2){
           return 0;
       return 1;
     }
+    case STRING_VALUE_TYPE: 
+      return strcmp((char*) v1->data, (char*) v2->data) == 0;
     default: error("unknown value type passed to valueEquals\n");
   }
 }
@@ -530,49 +553,92 @@ Value* valueAdd(Value* v1, Value* v2) {
       }
       return newListValue(res);
     }
+    case STRING_VALUE_TYPE: {
+      if(v2->type == STRING_VALUE_TYPE) {
+        char *s1 = (char*) v1->data, *s2 = (char*) v2->data;
+        char *res = (char*) malloc(strlen(s1) + strlen(s2) + 1);
+        *res=0;
+        strcat(res, s1);
+        strcat(res, s2);
+        return newStringValue(res);
+      } else {
+        error("can only add string to string\n");
+      }
+    }
     case FUN_VALUE_TYPE: error("Function value cannot add to anything\n");
     default: error("unknown value type passed to valueAdd\n");
   }
 }
 
-void printValue(Value* v) {
+static int getStringLength(char *format, ...) {
+  va_list ap;
+  int len = 0;
+  va_start(ap, format);
+  len = vsnprintf(0, 0, format, ap);
+  va_end(ap);
+  return len;
+}
+static int mySnprintf(char *s, int n, char *format, ...){
+  va_list ap;
+  va_start(ap, format);
+  if(n > 0) {
+    return vsnprintf(s, n, format, ap);
+  } else {
+    return vsnprintf(0, 0, format, ap);
+  }
+  va_end(ap);
+}
+static int valueToStringInternal(Value* v, char *s, int n) {
   if(!v){
-    printf("none");
-    return;
+    return mySnprintf(s, n, "none");
   }
   Node* t;
   int i;
   switch(v->type) {
     case INT_TYPE:
-      printf("%d", v->data);
-      break;
+      return mySnprintf(s, n, "%d", v->data);
     case FUN_VALUE_TYPE: {
+      int len = 0;
       Node* f = ((Closure*) v->data)->f;
-      printf("fun %s(", chld(f, 0)->data);
+      len += mySnprintf(s + len, n - len, "fun %s(", chld(f, 0)->data);
       t = chld(f, 1);
       for(i=0;i<chldNum(t);i++){
-        if(i)printf(" ");
-        printf("%s", chld(t, i)->data);
+        if(i){
+          len += mySnprintf(s+len, n-len, ", ");
+        }
+        len += mySnprintf(s+len, n-len, "%s", chld(t, i)->data);
       }
-      printf(")");
-      break;
+      len += mySnprintf(s+len, n-len, ")");
+      return len;
     }
     case LIST_VALUE_TYPE: {
+      int len=0;
       List* l = v->data;
-      printf("[");
+      len += mySnprintf(s+len, n-len, "[");
       for(i=0; i<listSize(l);i++){
-        if(i)printf(", ");
-        printValue(listGet(l, i));
+        if(i){
+          len += mySnprintf(s+len, n-len, ", ");
+        }
+        len += valueToStringInternal(listGet(l, i), s+len, n-len);
       }
-      printf("]");
-      break;
+      len += mySnprintf(s+len, n-len, "]");
+      return len;
     }
     case STRING_VALUE_TYPE: {
-      printf("%s", v->data);
-      break;
+      return mySnprintf(s, n, "%s", v->data);
     }
     default: error("cannot print unknown value type\n");
   }
+}
+char* valueToString(Value* v) {
+  int l = valueToStringInternal(v, 0, 0) + 1;
+  char *s = (char*) malloc(l);
+  valueToStringInternal(v, s, l);
+  return s;
+}
+
+void printValue(Value* v) {
+  printf("%s", valueToString(v));
 }
 
 void error(char* msg) {

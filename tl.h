@@ -48,7 +48,8 @@ typedef enum {
   ADDEQ_TYPE,
   LIST_ADDEQ_TYPE,
   TIME_TYPE,
-  STRING_TYPE,
+  STRING_TYPE, // liter string
+  STR_TYPE,    // str() operator
 } NodeType;
 
 typedef enum {
@@ -106,6 +107,7 @@ Closure* newClosure(Node* f, Env* e);
 
 Value* eval(Env* e, Node* p);
 
+char* valueToString(Value* v);
 void printValue(Value* v);
 
 Node* chld(Node* e, int i);
