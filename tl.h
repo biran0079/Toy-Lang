@@ -50,6 +50,8 @@ typedef enum {
   TIME_TYPE,
   STRING_TYPE, // liter string
   STR_TYPE,    // str() operator
+  ORD_TYPE,
+  NONE_TYPE,
 } NodeType;
 
 typedef enum {

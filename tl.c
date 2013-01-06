@@ -207,6 +207,13 @@ Value* eval(Env* e, Node* p) {
     case STR_TYPE: {
       return newStringValue(valueToString(eval(e, chld(p,0))));
     }
+    case ORD_TYPE: {
+      Value* v = eval(e, chld(p, 0));
+      if(v->type != STRING_VALUE_TYPE || strlen((char*) v->data) != 1)
+        error("ord() can only apply to string with length 1\n");
+      return newIntValue(*((char*) v->data));
+    }
+    case NONE_TYPE: return 0;
     case LIST_TYPE: {
       Node* t = chld(p, 0);             
       List* vs = newList();

@@ -6,7 +6,7 @@
 static unsigned int hash(char *s) {
   int h=0;
   while(*s){
-    h*=132;
+    h*=131;
     h+=*s;
     s++;
   }

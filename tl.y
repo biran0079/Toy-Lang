@@ -3,7 +3,8 @@
 %token ID
 %token IF ELSE
 %token WHILE FOR FUN RETURN LAMBDA
-%token LEN TIME STR
+%token NONE;
+%token LEN TIME STR ORD
 %token BREAK CONTINUE
 %right COMMA
 %left OR
@@ -99,7 +100,9 @@ exp:
   | STRING { $$ = $1; }
   | LEN '(' exp ')'     { $$ = newNode2(LEN_TYPE, 1, $3); }
   | STR '(' exp ')'     { $$ = newNode2(STR_TYPE, 1, $3); }
+  | ORD '(' exp ')'     { $$ = newNode2(ORD_TYPE, 1, $3); }
   | TIME '(' exp ')'    { $$ = newNode2(TIME_TYPE, 1, $3); }
+  | NONE                { $$ = newNode2(NONE_TYPE, 0); }
   | LAMBDA '(' id_list ')' '{' stmts '}' { $$ = newNode2(FUN_TYPE, 3, newNode(ID_TYPE, "lambda"), $3, $6); }
   | '[' exp_list ']'    { $$ = newNode2(LIST_TYPE, 1, $2); }
   | list_access         { $$ = $1; }
