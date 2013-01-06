@@ -477,7 +477,7 @@ Value* eval(Env* e, Node* p) {
            valueEquals(eval(e, chld(p, 0)), eval(e, chld(p, 1))));
     case NE_TYPE:
       return newIntValue(
-           eval(e, chld(p, 0))->data != eval(e, chld(p, 1))->data);
+           !valueEquals(eval(e, chld(p, 0)), eval(e, chld(p, 1))));
     case AND_TYPE:
       return newIntValue(
            eval(e, chld(p, 0))->data && eval(e, chld(p, 1))->data);
