@@ -52,6 +52,7 @@ typedef enum {
   STR_TYPE,    // str() operator
   ORD_TYPE,
   NONE_TYPE,
+  FOREACH_TYPE,
 } NodeType;
 
 typedef enum {

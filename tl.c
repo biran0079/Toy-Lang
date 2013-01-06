@@ -193,9 +193,16 @@ Value* eval(Env* e, Node* p) {
         res = eval(e, chld(p, i));
       return res;
     }
-    case PRINT_TYPE:
-      printf("%s\n", valueToString(eval(e, chld(p, 0))));
+    case PRINT_TYPE: {
+      Node* exps = chld(p,0);
+      int i;
+      for(i=0;i<chldNum(exps);i++) {
+        if(i)putchar(' ');
+        printf("%s", valueToString(eval(e, chld(exps, i))));
+      }
+      printf("\n");
       return 0;
+    }
     case LEN_TYPE: {
       Value* v = eval(e, chld(p, 0));
       switch(v->type) {
@@ -380,44 +387,65 @@ Value* eval(Env* e, Node* p) {
       else if(chldNum(p)==3)
         eval(e, chld(p, 2));
       return 0;
-    case FOR_TYPE:
-      {
-        jmp_buf buf;
-        listPush(e->loopStates, buf);
-        eval(e, chld(p,0));
-        int jmp = setjmp(buf);
-        while(1){
+    case FOR_TYPE: {
+      jmp_buf buf;
+      listPush(e->loopStates, buf);
+      for(eval(e, chld(p,0)); eval(e, chld(p, 1))->data; eval(e, chld(p, 2))){
+          int jmp = setjmp(buf);
           if(jmp==0){
             // regular case
-            int cond = (long) eval(e, chld(p, 1))->data;
-            if(!cond) break;
             eval(e, chld(p, 3));
-            eval(e, chld(p, 2));
           } else if(jmp==1) {
             // continue
-            eval(e, chld(p, 2));
-            jmp=0;
+            continue;
           } else if(jmp==2) {
             // break
             break;
           } else {
             error("unknown value passed from longjmp\n");
           }
-        }
-        listPop(e->loopStates);
-        return 0;
       }
+      listPop(e->loopStates);
+      return 0;
+    }
+    case FOREACH_TYPE:{
+      jmp_buf buf;
+      listPush(e->loopStates, buf);
+      Node* id = chld(p, 0);
+      Value* lv = eval(e, chld(p, 1));
+      if(id->type != ID_TYPE || lv->type != LIST_VALUE_TYPE) {
+        error("param type incorrect for for( : ) statement\n ");
+      }
+      List* l = (List*) lv->data;
+      int i, len = listSize(l);
+      for(i=0;i<len;i++) {
+        envPut(e, (char*) id->data, listGet(l, i));
+        int jmp = setjmp(buf);
+        if(jmp==0) {
+          eval(e, chld(p, 2));
+        } else if(jmp==1) {
+          continue;
+        } else if(jmp==2) {
+          break;
+        } else {
+          error("unknown longjmp state\n");
+        }
+      }
+      listPop(e->loopStates);
+      return 0;
+    }
     case WHILE_TYPE:
       {
         jmp_buf buf;
         listPush(e->loopStates, buf);
-        int jmp = setjmp(buf);
-        while(1){
-          if(jmp==0 || jmp==1) {
-            // regular case or continue
-            int cond = (long) eval(e, chld(p, 0))->data;
-            if(!cond) break;
+        while(eval(e, chld(p, 0))->data){
+          int jmp = setjmp(buf);
+          if(jmp==0) {
+            // regular case 
             eval(e, chld(p, 1));
+          } else if(jmp==1) {
+            // continue
+            continue;
           } else if(jmp==2) {
             // break
             break;

@@ -44,6 +44,9 @@ stmt:
   | FOR '(' exp_list ';' exp_list ';' exp_list ')' block {
     $$ = newNode2(FOR_TYPE, 4, $3, $5, $7, $9);
   }
+  | FOR '(' ID ':' exp ')' block {
+    $$ = newNode2(FOREACH_TYPE, 3, $3, $5, $7);
+  }
   | WHILE '(' exp ')' block {
     $$ = newNode2(WHILE_TYPE, 2, $3, $5);
   }
@@ -127,7 +130,7 @@ exp:
   | ID ASSIGN exp  { $$ = newNode2(ASSIGN_TYPE, 2, $1, $3); }
   | ID ADDEQ exp { $$ = newNode2(ADDEQ_TYPE, 2, $1, $3); }
   | ID          { $$ = $1; }
-  | PRINT '(' exp ')' {
+  | PRINT '(' exp_list ')' {
     $$ = newNode2(PRINT_TYPE, 1, $3);
   }
   ;

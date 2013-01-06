@@ -13,7 +13,7 @@ break     {return BREAK;}
 continue  {return CONTINUE;}
 fun       {return FUN;}
 for       {return FOR;}
-lambda       {return LAMBDA;}
+lambda    {return LAMBDA;}
 return    {return RETURN;}
 len       {return LEN;}
 str       {return STR;}
@@ -35,7 +35,7 @@ none       {return NONE;}
 ">"          {return GT;}
 "<"          {return LT;}
 ","          {return COMMA;}
-[-+*/%();{}\[\]]  {return *yytext;}
+[-+*/%();{}\[\]:]  {return *yytext;}
 [ \t\n\r]     ;
 .            {printf("unknown character for lex: %s\n", yytext);exit(-1);}
 %%
