@@ -108,7 +108,6 @@ Closure* newClosure(Node* f, Env* e);
 Value* eval(Env* e, Node* p);
 
 char* valueToString(Value* v);
-void printValue(Value* v);
 
 Node* chld(Node* e, int i);
 int chldNum(Node* t);

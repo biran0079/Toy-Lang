@@ -194,8 +194,7 @@ Value* eval(Env* e, Node* p) {
       return res;
     }
     case PRINT_TYPE:
-      printValue(eval(e, chld(p, 0)));
-      printf("\n");
+      printf("%s\n", valueToString(eval(e, chld(p, 0))));
       return 0;
     case LEN_TYPE: {
       Value* v = eval(e, chld(p, 0));
@@ -635,10 +634,6 @@ char* valueToString(Value* v) {
   char *s = (char*) malloc(l);
   valueToStringInternal(v, s, l);
   return s;
-}
-
-void printValue(Value* v) {
-  printf("%s", valueToString(v));
 }
 
 void error(char* msg) {
