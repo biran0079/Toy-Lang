@@ -4,3 +4,5 @@ lex.yy.c
 *.exe
 *.tab.c
 *.tab.h
+*.dot
+*.jpg

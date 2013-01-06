@@ -12,3 +12,5 @@ clear:
 	rm tl.exe tl *.o
 bench: exe
 	./benchmark.sh
+draw: exe
+	./draw.sh

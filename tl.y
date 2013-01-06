@@ -17,11 +17,12 @@
 #include<stdio.h>
 #include"tl.h"
 #include"list.h"
+Node* parseTree;
 %}
 %%
 prog: 
   stmts {
-    eval(newEnv(0), $1);
+    parseTree = $1;
   }
   ;
 stmts:
@@ -55,7 +56,7 @@ stmt:
     $$ = newNode2(FUN_TYPE, 3, $2, $4, $7);
   }
   | RETURN exp ';' {$$ = newNode2(RETURN_TYPE, 1, $2);}
-  | RETURN ';' {$$ = newNode2(RETURN_TYPE, 0);}
+  | RETURN ';' {$$ = newNode2(RETURN_TYPE, 1, newNode2(NONE_TYPE, 0));}
   | BREAK ';' {$$ = newNode2(BREAK_TYPE, 0);}
   | CONTINUE ';' {$$ = newNode2(CONTINUE_TYPE, 0);}
   ;
@@ -107,7 +108,7 @@ exp:
   | TIME '(' exp ')'    { $$ = newNode2(TIME_TYPE, 1, $3); }
   | NONE                { $$ = newNode2(NONE_TYPE, 0); }
   | LAMBDA '(' id_list ')' '{' stmts '}' { $$ = newNode2(FUN_TYPE, 3, newNode(ID_TYPE, "lambda"), $3, $6); }
-  | '[' exp_list ']'    { $$ = newNode2(LIST_TYPE, 1, $2); }
+  | '[' exp_list ']'    { $2->type = LIST_TYPE; $$ = $2; }
   | list_access         { $$ = $1; }
   | list_access ASSIGN exp { $$ = newNode2(LIST_ASSIGN_TYPE, 3, chld($1, 0), chld($1, 1), $3); }
   | list_access ADDEQ exp  { $$ = newNode2(LIST_ADDEQ_TYPE, 3, chld($1, 0), chld($1, 1), $3); }
@@ -139,10 +140,48 @@ int yyerror(char *s) {
   fprintf(stderr, "%s\n",s);
   return 0;
 }
-int main(){
+void help(){
+  fprintf(stderr, "Usage: tl [<options>] <filename>\n");
+  fprintf(stderr, "\t-d\tinstead of evaluating the program, it converts tabstract syntax tree to dot language, \n"
+                  "\t\twhich can be compiled to image using dot tool\n");
+  exit(-1);
+}
+int main(int argc, char** argv){
 #if YYDEBUG
   yydebug = 1;
 #endif
+  int toDot = 0;
+  int i;
+  char* src = 0;
+  for(i=1; i<argc;i++) {
+    if(argv[i][0]=='-') {
+      switch(argv[i][1]) {
+        case 'd' : toDot = 1;break;
+        default: help();
+      }
+    } else {
+      src = argv[i];
+    }
+  }
+  if(src){
+    if(0 == freopen(src, "r", stdin)) {
+      error("cannot open input file\n");
+    }
+  } else {
+    src = "stdin";
+  }
   yyparse();
+  if(toDot) {
+    int l = strlen(src);
+    char* s = (char*) malloc(l + 4);
+    s[0]=0;
+    strcpy(s, src);
+    strcat(s, ".dot");
+    FILE* f=fopen(s, "w");
+    nodeToDot(f, parseTree);
+    fclose(f);
+  } else {
+    eval(newEnv(0), parseTree);
+  }
   return 0;
 }
