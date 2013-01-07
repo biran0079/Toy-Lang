@@ -2,7 +2,8 @@
 %token PRINT
 %token ID
 %token WHILE FOR FUN RETURN LAMBDA
-%token NONE;
+%token NONE
+%token LOCAL
 %token LEN TIME STR ORD
 %token BREAK CONTINUE
 %token TRY CATCH FINALLY THROW
@@ -60,6 +61,7 @@ stmt:
     markTailRecursions($7);
     $$ = newNode2(FUN_TYPE, 3, $2, $4, $7);
   }
+  | LOCAL id_list ';' { $$ = newNode2(LOCAL_TYPE, 1, $2); }
   | TRY block CATCH '(' ID ')' block { $$ = newNode2(TRY_TYPE, 3, $2, $5, $7); }
   | TRY block CATCH '(' ID ')' block FINALLY block { $$ = newNode2(TRY_TYPE, 4, $2, $5, $7, $9); }
   | THROW exp ';'  { $$ = newNode2(THROW_TYPE, 1, $2); }
@@ -109,6 +111,10 @@ list_access:
   | string_exp '[' exp ']'    { $$ = newNode2(LIST_ACCESS_TYPE, 2, $1, $3); }
   ;
 
+left_value:
+  list_access  { $$ = $1; }
+  | ID         { $$ = $1; }
+
 int_exp:
   INT { $$ = $1; }
   | ID ADDADD  { $$ = newNode2(ADDADD_TYPE, 1, $1); }
@@ -152,13 +158,11 @@ none_exp:
 general_exp:
   TIME '(' exp ')'    { $$ = newNode2(TIME_TYPE, 1, $3); }
   | list_access         { $$ = $1; }
-  | list_access ASSIGN exp { $$ = newNode2(LIST_ASSIGN_TYPE, 3, chld($1, 0), chld($1, 1), $3); }
-  | list_access ADDEQ exp  { $$ = newNode2(LIST_ADDEQ_TYPE, 3, chld($1, 0), chld($1, 1), $3); }
   | ID '(' exp_list ')' { $$ = newNode2(CALL_TYPE, 2, $1, $3); }
   | '(' exp ')' { $$ = $2; }
   | exp '+' exp { $$ = newNode2(ADD_TYPE, 2, $1, $3); } 
-  | ID ASSIGN exp  { $$ = newNode2(ASSIGN_TYPE, 2, $1, $3); }
-  | ID ADDEQ exp { $$ = newNode2(ADDEQ_TYPE, 2, $1, $3); }
+  | left_value ASSIGN exp  { $$ = newNode2(ASSIGN_TYPE, 2, $1, $3); }
+  | left_value ADDEQ exp { $$ = newNode2(ADDEQ_TYPE, 2, $1, $3); }
   | ID          { $$ = $1; }
   ;
 

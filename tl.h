@@ -42,11 +42,9 @@ typedef enum {
   MOD_TYPE,
   LIST_TYPE,
   LIST_ACCESS_TYPE,
-  LIST_ASSIGN_TYPE,
   LEN_TYPE,
   FOR_TYPE,
   ADDEQ_TYPE,
-  LIST_ADDEQ_TYPE,
   TIME_TYPE,
   STRING_TYPE, // liter string
   STR_TYPE,    // str() operator
@@ -56,13 +54,15 @@ typedef enum {
   TRY_TYPE,
   THROW_TYPE,
   ADDADD_TYPE,
+  LOCAL_TYPE,
 } NodeType;
 
 typedef enum {
   INT_VALUE_TYPE,
-  FUN_VALUE_TYPE,
+  CLOSURE_VALUE_TYPE,
   LIST_VALUE_TYPE,
   STRING_VALUE_TYPE,
+  NONE_VALUE_TYPE,
 } ValueType;
 
 typedef struct {
@@ -83,6 +83,7 @@ typedef struct {
 } Closure;
 
 struct Env {
+  int ref;
   HashTable* t;
   List* loopStates;
   List* exceptionStates;
@@ -105,11 +106,18 @@ Value* newListValue(List* lst);   // pass in a list of values
 Value* newFunValue(Node* t, Env* e);
 Value* newStringValue(char* s);
 
+Value* newNoneValue();
+
 Env* newEnv(Env* parent);
+void envRefInc(Env* e);
+void envRefDec(Env* e);
+void freeEnv(Env* e);
 Value* envGet(Env* e, char* key);
 void envPut(Env* e, char* key, Value* value);
+void envPutLocal(Env* e, char* key, Value* value);
 
 Closure* newClosure(Node* f, Env* e);
+void freeClosure(Closure* c);
 
 
 Value* eval(Env* e, Node* p);

@@ -36,6 +36,7 @@ void listPush(List* lst, void* e) {
 }
 
 void* listGet(List* lst, int idx) {
+  if(idx >= lst->size || idx < 0) error("list index out of boundary");
   return lst->arr[idx];
 }
 
