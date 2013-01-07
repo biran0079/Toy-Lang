@@ -128,7 +128,9 @@ Value* valueMod(Value* v1, Value* v2);
 Value* valueAddEq(Env* e, Node* v1, Node* v2);
 
 void markTailRecursions(Node* t);
+
 char* nodeTypeToString(NodeType type);
+
 void nodeToDot(FILE* o, Node* t);
 
 void error(char* msg, ...);

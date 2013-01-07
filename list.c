@@ -7,12 +7,25 @@ static void resize(List* lst, int cap) {
   lst->cap = cap;
 }
 
+int newListC = 0, freeListC = 0;
+
 List* newList() {
+  newListC++;
   List* res = MALLOC(List);
   res->size = 0;
   res->cap = 1;
   res->arr = MALLOC(void*);
   return res;
+}
+
+void freeList(List* lst) {
+  freeListC++;
+  int i;
+  free(lst->arr);
+  lst->arr = 0;
+  lst-> cap = 0;
+  lst-> size = 0;
+  free(lst);
 }
 
 void listPush(List* lst, void* e) {

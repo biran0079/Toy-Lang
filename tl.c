@@ -266,13 +266,34 @@ Node* chld(Node* e, int i) {
   return listGet((List*) e->data, i);
 }
 
+int newNodeC = 0, newNode2C = 0, newIntValueC = 0, newStringValueC = 0, newFunValueC = 0, 
+    newListValueC = 0, newClosureC = 0, newEnvC=0;
+int freeNodeC = 0, freeNode2C = 0, freeIntValueC = 0, freeStringValueC = 0, freeFunValueC = 0, 
+    freeListValueC = 0, freeClosureC = 0, freeEnvC=0;
+extern int newListC, newHashTableC, freeListC, freeHashTableC;
+
+void listCreatedObjectsCount(){
+  fprintf(stderr, "\tNode: %d %d\n", newNodeC, freeNodeC);
+  fprintf(stderr, "\tNode2: %d %d\n", newNode2C, freeNode2C);
+  fprintf(stderr, "\tIntValue: %d %d\n", newIntValueC, freeIntValueC);
+  fprintf(stderr, "\tStringValue: %d %d\n", newStringValueC, freeStringValueC);
+  fprintf(stderr, "\tFunValue: %d %d\n", newFunValueC, freeFunValueC);
+  fprintf(stderr, "\tListValue: %d %d\n", newListValueC, freeListValueC);
+  fprintf(stderr, "\tClosure: %d %d\n", newClosureC, freeClosureC);
+  fprintf(stderr, "\tEnv: %d %d\n", newEnvC, freeEnvC);
+  fprintf(stderr, "\tList: %d %d\n", newListC, freeListC);
+  fprintf(stderr, "\tHashTable: %d %d\n", newHashTableC, freeHashTableC);
+}
+
 Node* newNode(NodeType t, void* i) {
+  newNodeC++;
   Node* res = createNode();
   res->type = t;
   res->data = i;
   return res;
 }
 Node* newNode2(NodeType t, int n, ... ) {
+  newNode2C++;
   Node* res = createNode();
   List* l = newList();
   va_list v;
@@ -288,6 +309,7 @@ Node* newNode2(NodeType t, int n, ... ) {
 }
 
 Value* newIntValue(long x){
+  newIntValueC++;
   Value* res=MALLOC(Value);
   res->type = INT_VALUE_TYPE;
   res->data = (void*) x;
@@ -295,27 +317,39 @@ Value* newIntValue(long x){
 }
 
 Value* newStringValue(char *s){
+  newStringValueC++;
   Value* res=MALLOC(Value);
   res->type = STRING_VALUE_TYPE;
   res->data = (void*) s;
   return res;
 }
 
-Closure* newClosure(Node* f, Env* e){
-  Closure* res = MALLOC(Closure);
-  res->f = f;
-  res->e = e;
+Value* newListValue(List* list) {
+  newListValueC++;
+  Value* res = MALLOC(Value);
+  res->type = LIST_VALUE_TYPE;
+  res->data = list;
   return res;
 }
 
 Value* newFunValue(Node* t, Env* e){
+  newFunValueC++;
   Value* res=MALLOC(Value);
   res->type = FUN_VALUE_TYPE;
   res->data = newClosure(t, e);
   return res;
 }
 
+Closure* newClosure(Node* f, Env* e){
+  newClosureC++;
+  Closure* res = MALLOC(Closure);
+  res->f = f;
+  res->e = e;
+  return res;
+}
+
 Env* newEnv(Env* parent){
+  newEnvC++;
   Env* res = MALLOC(Env);
   res->t = newHashTable();
   res->parent = parent;
@@ -525,9 +559,11 @@ Value* eval(Env* e, Node* p) {
           // if reach here, no return statement is called, so none is returned 
           return 0;
         } else if(ret == 1) {
-          return e2->returnValue;
+          // return is called;
+          Value* returnValue = e2->returnValue;
+          return returnValue;
         } if(ret == 2) {
-          // tail recursive call
+          // tail recursive call, reuse environment e2
           Closure* tc = e2->tailCall;
           f = tc->f;
           e2 = tc->e;
@@ -754,13 +790,6 @@ Value* eval(Env* e, Node* p) {
     default:
       error("cannot eval unknown node type\n");
   }
-}
-
-Value* newListValue(List* list) {
-  Value* res = MALLOC(Value);
-  res->type = LIST_VALUE_TYPE;
-  res->data = list;
-  return res;
 }
 
 int valueEquals(Value* v1, Value* v2){

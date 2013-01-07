@@ -15,13 +15,35 @@ static unsigned int hash(char *s) {
 
 static int TABLE_CAPACITY = 89;
 
+int newHashTableC = 0, freeHashTableC = 0;
+
 HashTable* newHashTable() {
+  newHashTableC++;
   HashTable* res = MALLOC(HashTable);
   res->cap = TABLE_CAPACITY;
   res->size = 0;
   res->a = (LinkedList**) malloc(res->cap * sizeof(LinkedList*));
   memset(res->a, 0, res->cap * sizeof(LinkedList*));
   return res;
+}
+
+void freeHashTable(HashTable* t) {
+  freeHashTableC++;
+  int i;
+  for(i = 0;i < t->cap; i++){
+    LinkedList* l = t->a[i];
+    while(l){
+      LinkedList* nl = l->next;
+      l->key = 0;
+      l->value = 0;
+      free(l);
+      l = nl;
+    }
+  }
+  free(t->a);
+  t->a = 0;
+  t->cap = t->size = 0;
+  free(t);
 }
 
 void hashTablePut(HashTable* t, char* key, void* value) {

@@ -13,6 +13,7 @@ typedef struct HashTable {
 } HashTable;
 
 HashTable* newHashTable();
+void freeHashTable(HashTable* t);
 void hashTablePut(HashTable* t, char* key, void* value);
 void* hashTableGet(HashTable* t, char* key);
 HashTable* hashTableCopy(HashTable* t);

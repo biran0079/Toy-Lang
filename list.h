@@ -7,6 +7,7 @@ typedef struct List {
 } List;
 
 List* newList();
+void freeList(List* lst);
 void listPush(List* lst, void* e);
 void* listGet(List* lst, int idx);
 void* listPop(List* lst); 

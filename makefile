@@ -1,7 +1,7 @@
 gccflag = -DYYDEBUG=0 -g
 all: exe
 test: exe
-	./test.sh
+	./test.sh -l
 exe: flex bison
 	gcc $(gccflag) *.c -o tl
 bison: tl.y tl.h

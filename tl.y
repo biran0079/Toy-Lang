@@ -179,7 +179,8 @@ int yyerror(char *s) {
 void help(){
   fprintf(stderr, "Usage: tl [<options>] <filename>\n");
   fprintf(stderr, "\t-d\tinstead of evaluating the program, it converts tabstract syntax tree to dot language, \n"
-                  "\t\twhich can be compiled to image using dot tool\n");
+                  "\t\twhich can be compiled to image using dot tool\n"
+                  "\t-l\tlist number of created objects\n");
   exit(-1);
 }
 int main(int argc, char** argv){
@@ -187,12 +188,14 @@ int main(int argc, char** argv){
   yydebug = 1;
 #endif
   int toDot = 0;
+  int listCreatedObj = 0;
   int i;
   char* src = 0;
   for(i=1; i<argc;i++) {
     if(argv[i][0]=='-') {
       switch(argv[i][1]) {
         case 'd' : toDot = 1;break;
+        case 'l' : listCreatedObj = 1; break;
         default: help();
       }
     } else {
@@ -218,6 +221,9 @@ int main(int argc, char** argv){
     fclose(f);
   } else {
     eval(newEnv(0), parseTree);
+  }
+  if(listCreatedObj) {
+    listCreatedObjectsCount();
   }
   return 0;
 }
