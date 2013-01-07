@@ -53,6 +53,9 @@ typedef enum {
   ORD_TYPE,
   NONE_TYPE,
   FOREACH_TYPE,
+  TRY_TYPE,
+  THROW_TYPE,
+  ADDADD_TYPE,
 } NodeType;
 
 typedef enum {
@@ -82,6 +85,8 @@ typedef struct {
 struct Env {
   HashTable* t;
   List* loopStates;
+  List* exceptionStates;
+  Value* exceptionValue;
   Env* parent;
   jmp_buf retState;
   Value* returnValue;
@@ -101,7 +106,6 @@ Value* newFunValue(Node* t, Env* e);
 Value* newStringValue(char* s);
 
 Env* newEnv(Env* parent);
-void clearEnv();
 Value* envGet(Env* e, char* key);
 void envPut(Env* e, char* key, Value* value);
 
@@ -127,7 +131,7 @@ void markTailRecursions(Node* t);
 char* nodeTypeToString(NodeType type);
 void nodeToDot(FILE* o, Node* t);
 
-void error(char* msg);
+void error(char* msg, ...);
 
 #define YYSTYPE Node*
 

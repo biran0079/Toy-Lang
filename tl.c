@@ -79,7 +79,10 @@ char* nodeTypeToString(NodeType type){
     case STRING_TYPE: return "string";
     case NONE_TYPE: return "none";
     case FOREACH_TYPE: return "foreach";
-    default: return "unknown";
+    case TRY_TYPE: return "try";
+    case THROW_TYPE: return "throw";
+    case ADDADD_TYPE: return "(id)++";
+    default: error("unknown node type %d\n", type);
   }
 }
 
@@ -96,7 +99,7 @@ static char* maybeTruncateString(char *s){
 }
 
 static int dotNeedEscape(char c){
-  return c=='<' || c=='>' || c=='"' || c=='\n';
+  return c=='<' || c=='>' || c=='"' || c=='\n' || c=='|';
 }
 
 static char* escapeForDot(char*s){
@@ -108,7 +111,7 @@ static char* escapeForDot(char*s){
   char *res = (char*) malloc(strlen(s) + ct + 1);
   int j=0;
   for(i=0;s[i];i++){
-    if(dotNeedEscape(s[j]))
+    if(dotNeedEscape(s[i]))
       res[j++]='\\';
     res[j++]=s[i];
   }
@@ -189,7 +192,10 @@ static int nodeToDotInternal(FILE* o, Node* t, int* nextId){
     case STR_TYPE:
     case ORD_TYPE:
     case LEN_TYPE:
-    case RETURN_TYPE:
+    case THROW_TYPE: 
+    case RETURN_TYPE: nodeToDotHelper(o, t, nextId, 1, "exp"); break;
+    case NOT_TYPE: nodeToDotHelper(o, t, nextId, 1, "exp"); break;
+    case ADDADD_TYPE: nodeToDotHelper(o, t, nextId, 1, "id"); break;
     case PRINT_TYPE: nodeToDotHelper(o, t, nextId, 1, "exps"); break;
     case IF_TYPE: {
       int n = chldNum(t), to;
@@ -200,13 +206,23 @@ static int nodeToDotInternal(FILE* o, Node* t, int* nextId){
       }
       break;
     }
+    case TRY_TYPE: {
+      int n = chldNum(t), to;
+      if(n==3) {
+        nodeToDotHelper(o, t, nextId, 3, "try","excep id", "catch");
+      }else{
+        nodeToDotHelper(o, t, nextId, 4, "try", "excep id", "catch", "finally");
+      }
+      break;
+    }
     case WHILE_TYPE: nodeToDotHelper(o, t, nextId, 2, "cond", "do"); break;
     case FUN_TYPE: nodeToDotHelper(o, t, nextId, 3, "name", "args", "body"); break; 
     case CALL_TYPE: 
     case TAIL_CALL_TYPE: nodeToDotHelper(o, t, nextId, 2, "name", "args"); break; 
     case LIST_ACCESS_TYPE: nodeToDotHelper(o, t, nextId, 2, "list", "index"); break; 
     case FOR_TYPE: nodeToDotHelper(o, t, nextId, 4, "init", "cond", "incr", "body"); break; 
-    case FOREACH_TYPE: nodeToDotHelper(o, t, nextId, 3, "id", "list", "body");
+    case FOREACH_TYPE: nodeToDotHelper(o, t, nextId, 3, "id", "list", "body"); break;
+    default: error("unknown type %d in valueToStringInternal\n", t->type);
   }
   return id;
 }
@@ -304,6 +320,8 @@ Env* newEnv(Env* parent){
   res->t = newHashTable();
   res->parent = parent;
   res->loopStates = newList();
+  res->exceptionStates = newList();
+  res->exceptionValue = 0;
   res->returnValue = 0;
   res->tailCall = 0;
   return res;
@@ -353,12 +371,20 @@ void markTailRecursions(Node* t) {
   }
 }
 
-void clearEnv(Env* e){
-  hashTableClear(e->t);
-  listClear(e->loopStates);
-  e->parent=0;
-  e->returnValue = 0;
-  e->tailCall = 0;
+void throwValue(Env* e, Value* v) {
+  e->exceptionValue = v;  // pass exception value through enviconment
+  if(listSize(e->exceptionStates)) {
+    // currently in try block
+    longjmp(listLast(e->exceptionStates), 1);
+  } else {
+    // If has parent stack frame, pass to it. Report error otherwise
+    if (e->parent) {
+      longjmp(e->retState, 3);
+    } else {
+      error("uncaught exception:\n%s\n", valueToString(v));
+    }
+  }
+  error("should never reach here\n");
 }
 
 Value* eval(Env* e, Node* p) {
@@ -479,6 +505,7 @@ Value* eval(Env* e, Node* p) {
       e2->parent = c->e;
       e->tailCall = newClosure(f, e2);
       longjmp(e->retState, 2);
+      // actuall call is handled by CALL_TYPE
     }
     case CALL_TYPE: {
       Value* closureValue = envGet(e, chld(p, 0)->data);
@@ -505,6 +532,11 @@ Value* eval(Env* e, Node* p) {
           f = tc->f;
           e2 = tc->e;
           continue;
+        } if(ret == 3) {
+          // exception passed out
+          Value* v = e2->exceptionValue;
+          e2->exceptionValue = 0;
+          throwValue(e, v);
         } else {
           error("unknown  return value from longjmp in function call\n");
         }
@@ -672,10 +704,52 @@ Value* eval(Env* e, Node* p) {
       envPut(e, (char*) chld(p, 0)->data, newFunValue(p, e));
       return envGet(e, (char*) chld(p, 0)->data);
     case TIME_TYPE: {
-        clock_t st = clock();                
-        Value* res = eval(e, chld(p, 0));
-        fprintf(stderr, "time: %lf secs\n", (clock() - st) * 1.0 / CLOCKS_PER_SEC);
-        return res;
+      clock_t st = clock();                
+      Value* res = eval(e, chld(p, 0));
+      fprintf(stderr, "time: %lf secs\n", (clock() - st) * 1.0 / CLOCKS_PER_SEC);
+      return res;
+    }
+    case TRY_TYPE: {
+      jmp_buf buf;
+      listPush(e->exceptionStates, buf);
+      Node* tryBlock = chld(p, 0);
+      char* catchId = (char*) chld(p, 1)->data;
+      Node* catchBlock = chld(p, 2);
+      Node* finallyBlock = chldNum(p) == 4 ? chld(p, 3) : 0;
+      switch(setjmp(buf)){
+        case 0: {
+          // try block
+          eval(e, tryBlock);
+          listPop(e->exceptionStates); // pop when out of try block
+          break;
+        }
+        case 1: {
+          // catch block
+          listPop(e->exceptionStates); // pop when out of try block
+          // exception caught        
+          Value* v = e->exceptionValue;
+          e->exceptionValue = 0;
+          envPut(e, catchId, v);
+          eval(e, catchBlock);
+          break;
+        }
+        default: error("unknown state passed from longjmp in try statement\n");
+                 break;
+      }
+      if(finallyBlock) eval(e, finallyBlock);
+      return 0;
+    }
+    case THROW_TYPE: {
+      Value* v = eval(e, chld(p, 0));           
+      throwValue(e, v);
+    }
+    case ADDADD_TYPE: {
+      // i++ type                  
+      char* id = (char*) chld(p, 0)->data;
+      Value* i = envGet(e, id);
+      if(!id) { error("%s is not defined in current environment\n", id); }
+      envPut(e, id, newIntValue((long) i->data + 1));
+      return i;
     }
     default:
       error("cannot eval unknown node type\n");
@@ -853,7 +927,10 @@ char* valueToString(Value* v) {
   return s;
 }
 
-void error(char* msg) {
-  fprintf(stderr, msg);
+void error(char* format,...) {
+  va_list ap;
+  va_start(ap, format);
+  vfprintf(stderr, format, ap);
+  va_end(ap);
   exit(-1);
 }

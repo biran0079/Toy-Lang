@@ -20,9 +20,14 @@ str       {return STR;}
 ord       {return ORD;}
 time       {return TIME;}
 none       {return NONE;}
+try       {return TRY;}
+catch       {return CATCH;}
+finally       {return FINALLY;}
+throw       {return THROW;}
 {D}+        {yylval = newNode(INT_TYPE, (void*) strToLong(yytext)); return INT;}
 {L}({D}|{L})*   {yylval = newNode(ID_TYPE, copy(yytext, 1+strlen(yytext))); return ID;}
 \"(\\.|[^\"])*\"  {yylval = newNode(STRING_TYPE, literalStringToString(yytext)); return STRING;}
+"++"         {return ADDADD;}
 "+="         {return ADDEQ;}
 ">="         {return GE;}
 "<="         {return LE;}

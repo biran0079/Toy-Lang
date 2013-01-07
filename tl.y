@@ -5,7 +5,10 @@
 %token NONE;
 %token LEN TIME STR ORD
 %token BREAK CONTINUE
+%token TRY CATCH FINALLY THROW
 %token IF ELSE
+%token ADDADD
+
 %right COMMA
 %left OR
 %left AND
@@ -57,6 +60,9 @@ stmt:
     markTailRecursions($7);
     $$ = newNode2(FUN_TYPE, 3, $2, $4, $7);
   }
+  | TRY block CATCH '(' ID ')' block { $$ = newNode2(TRY_TYPE, 3, $2, $5, $7); }
+  | TRY block CATCH '(' ID ')' block FINALLY block { $$ = newNode2(TRY_TYPE, 4, $2, $5, $7, $9); }
+  | THROW exp ';'  { $$ = newNode2(THROW_TYPE, 1, $2); }
   | RETURN exp ';' {$$ = newNode2(RETURN_TYPE, 1, $2);}
   | RETURN ';' {$$ = newNode2(RETURN_TYPE, 1, newNode2(NONE_TYPE, 0));}
   | BREAK ';' {$$ = newNode2(BREAK_TYPE, 0);}
@@ -105,7 +111,8 @@ list_access:
 
 int_exp:
   INT { $$ = $1; }
-  | LEN '(' exp ')'     { $$ = newNode2(LEN_TYPE, 1, $3); }
+  | ID ADDADD  { $$ = newNode2(ADDADD_TYPE, 1, $1); }
+  | LEN '(' exp ')' { $$ = newNode2(LEN_TYPE, 1, $3); }
   | exp GT exp { $$ = newNode2(GT_TYPE, 2, $1, $3); } 
   | exp LT exp { $$ = newNode2(LT_TYPE, 2, $1, $3); } 
   | exp GE exp { $$ = newNode2(GE_TYPE, 2, $1, $3); } 
@@ -163,6 +170,7 @@ exp:
   | none_exp { $$ = $1; }
   | general_exp { $$ = $1; }
   ;
+
 %%
 int yyerror(char *s) {
   fprintf(stderr, "%s\n",s);
