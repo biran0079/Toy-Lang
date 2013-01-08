@@ -117,6 +117,7 @@ left_value:
 
 int_exp:
   INT { $$ = $1; }
+  | '-' exp    { $2->data = (void*) (- (long) ($2->data)); $$ = $2; }
   | ID ADDADD  { $$ = newNode2(ADDADD_TYPE, 1, $1); }
   | LEN '(' exp ')' { $$ = newNode2(LEN_TYPE, 1, $3); }
   | exp GT exp { $$ = newNode2(GT_TYPE, 2, $1, $3); } 
