@@ -15,7 +15,7 @@ static unsigned int hash(char *s) {
 
 static int TABLE_CAPACITY = 89;
 
-int newHashTableC = 0, freeHashTableC = 0;
+extern int newHashTableC, freeHashTableC;
 
 HashTable* newHashTable() {
   newHashTableC++;

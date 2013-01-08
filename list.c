@@ -7,7 +7,7 @@ static void resize(List* lst, int cap) {
   lst->cap = cap;
 }
 
-int newListC = 0, freeListC = 0;
+extern int newListC, freeListC;
 
 List* newList() {
   newListC++;

@@ -6,6 +6,8 @@
 #include<stdio.h>
 #include<assert.h>
 #include<setjmp.h>
+#include<time.h>
+#include<stdarg.h>
 #include"hash_table.h"
 #include"list.h"
 #define MALLOC(T) (T*)malloc(sizeof(T))
@@ -71,6 +73,7 @@ typedef struct {
 } Node;
 
 typedef struct {
+  int ref;
   ValueType type;
   void* data;
 } Value;
@@ -78,6 +81,7 @@ typedef struct {
 typedef struct Env Env;
 
 typedef struct {
+  int ref;
   Node* f;
   Env* e;
 } Closure;
@@ -103,8 +107,11 @@ char* literalStringToString(char *s);
 
 Value* newIntValue(long x);
 Value* newListValue(List* lst);   // pass in a list of values
-Value* newFunValue(Node* t, Env* e);
+Value* newClosureValue(Node* t, Env* e);
 Value* newStringValue(char* s);
+void valueRefInc(Value* v);
+void valueRefDec(Value* v);
+void freeValue(Value* v);
 
 Value* newNoneValue();
 
@@ -117,6 +124,8 @@ void envPut(Env* e, char* key, Value* value);
 void envPutLocal(Env* e, char* key, Value* value);
 
 Closure* newClosure(Node* f, Env* e);
+void closureRefInc(Closure* c);
+void closureRefDec(Closure* c);
 void freeClosure(Closure* c);
 
 
