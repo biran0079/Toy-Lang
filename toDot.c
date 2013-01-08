@@ -1,55 +1,6 @@
-#include "tl.h"
-
-char* nodeTypeToString(NodeType type){
-  switch(type) {
-    case ADD_TYPE: return "+";
-    case SUB_TYPE: return "-";
-    case MUL_TYPE: return "*";
-    case DIV_TYPE: return "/";
-    case MOD_TYPE: return "%";
-    case GT_TYPE:  return ">";
-    case LT_TYPE:  return "<";
-    case GE_TYPE:  return ">=";
-    case LE_TYPE:  return "<=";
-    case EQ_TYPE:  return "==";
-    case NE_TYPE:  return "!=";
-    case AND_TYPE: return "&&";
-    case OR_TYPE:  return "||";
-    case ASSIGN_TYPE: return "=";
-    case ADDEQ_TYPE:  return "+=";
-    case TIME_TYPE: return "time";
-    case STR_TYPE: return "str";
-    case ORD_TYPE: return "ord";
-    case LEN_TYPE: return "len";
-    case RETURN_TYPE: return "return";
-    case EXP_LIST_TYPE: return "exps";
-    case ID_LIST_TYPE: return "ids";
-    case STMTS_TYPE: return "stmts";
-    case LIST_TYPE: return "list";
-    case INT_TYPE: return "int";
-    case ID_TYPE: return "id";
-    case PRINT_TYPE: return "print";
-    case IF_TYPE: return "if";
-    case NOT_TYPE: return "not";
-    case WHILE_TYPE: return "while";
-    case ARGS_TYPE: return "args";
-    case FUN_TYPE: return "fun";
-    case CALL_TYPE: return "call";
-    case TAIL_CALL_TYPE: return "tail_call";
-    case BREAK_TYPE: return "break";
-    case CONTINUE_TYPE: return "continue";
-    case LIST_ACCESS_TYPE: return "list_access";
-    case FOR_TYPE: return "for";
-    case STRING_TYPE: return "string";
-    case NONE_TYPE: return "none";
-    case FOREACH_TYPE: return "foreach";
-    case TRY_TYPE: return "try";
-    case THROW_TYPE: return "throw";
-    case ADDADD_TYPE: return "(id)++";
-    case LOCAL_TYPE: return "local";
-    default: error("unknown node type %d\n", type);
-  }
-}
+#include "toDot.h"
+#include "util.h"
+#include "ast.h"
 
 static char* maybeTruncateString(char *s){
   int len = strlen(s);
@@ -150,42 +101,42 @@ static int nodeToDotInternal(FILE* o, Node* t, int* nextId){
     case NE_TYPE:
     case AND_TYPE:
     case OR_TYPE:
-    case ADDEQ_TYPE: nodeToDotHelper(o, t, nextId, 2, "op1", "op2");break;
+    case ADDEQ_TYPE: nodeToDotHelper(o, t, nextId, 2L, "op1", "op2");break;
     case TIME_TYPE:
     case STR_TYPE:
     case ORD_TYPE:
     case LEN_TYPE:
     case THROW_TYPE: 
-    case RETURN_TYPE: nodeToDotHelper(o, t, nextId, 1, "exp"); break;
-    case NOT_TYPE: nodeToDotHelper(o, t, nextId, 1, "exp"); break;
-    case ADDADD_TYPE: nodeToDotHelper(o, t, nextId, 1, "id"); break;
+    case RETURN_TYPE: nodeToDotHelper(o, t, nextId, 1L, "exp"); break;
+    case NOT_TYPE: nodeToDotHelper(o, t, nextId, 1L, "exp"); break;
+    case ADDADD_TYPE: nodeToDotHelper(o, t, nextId, 1L, "id"); break;
     case PRINT_TYPE: 
-    case LOCAL_TYPE: nodeToDotHelper(o, t, nextId, 1, "exps"); break;
+    case LOCAL_TYPE: nodeToDotHelper(o, t, nextId, 1L, "exps"); break;
     case IF_TYPE: {
       int n = chldNum(t), to;
       if(n==2) {
-        nodeToDotHelper(o, t, nextId, 2, "cond", "then");
+        nodeToDotHelper(o, t, nextId, 2L, "cond", "then");
       }else{
-        nodeToDotHelper(o, t, nextId, 3, "cond", "then", "else");
+        nodeToDotHelper(o, t, nextId, 3L, "cond", "then", "else");
       }
       break;
     }
     case TRY_TYPE: {
       int n = chldNum(t), to;
       if(n==3) {
-        nodeToDotHelper(o, t, nextId, 3, "try","excep id", "catch");
+        nodeToDotHelper(o, t, nextId, 3L, "try","excep id", "catch");
       }else{
-        nodeToDotHelper(o, t, nextId, 4, "try", "excep id", "catch", "finally");
+        nodeToDotHelper(o, t, nextId, 4L, "try", "excep id", "catch", "finally");
       }
       break;
     }
-    case WHILE_TYPE: nodeToDotHelper(o, t, nextId, 2, "cond", "do"); break;
-    case FUN_TYPE: nodeToDotHelper(o, t, nextId, 3, "name", "args", "body"); break; 
+    case WHILE_TYPE: nodeToDotHelper(o, t, nextId, 2L, "cond", "do"); break;
+    case FUN_TYPE: nodeToDotHelper(o, t, nextId, 3L, "name", "args", "body"); break; 
     case CALL_TYPE: 
-    case TAIL_CALL_TYPE: nodeToDotHelper(o, t, nextId, 2, "name", "args"); break; 
-    case LIST_ACCESS_TYPE: nodeToDotHelper(o, t, nextId, 2, "list", "index"); break; 
-    case FOR_TYPE: nodeToDotHelper(o, t, nextId, 4, "init", "cond", "incr", "body"); break; 
-    case FOREACH_TYPE: nodeToDotHelper(o, t, nextId, 3, "id", "list", "body"); break;
+    case TAIL_CALL_TYPE: nodeToDotHelper(o, t, nextId, 2L, "name", "args"); break; 
+    case LIST_ACCESS_TYPE: nodeToDotHelper(o, t, nextId, 2L, "list", "index"); break; 
+    case FOR_TYPE: nodeToDotHelper(o, t, nextId, 4L, "init", "cond", "incr", "body"); break; 
+    case FOREACH_TYPE: nodeToDotHelper(o, t, nextId, 3L, "id", "list", "body"); break;
     default: error("unknown type %d in valueToStringInternal\n", t->type);
   }
   return id;

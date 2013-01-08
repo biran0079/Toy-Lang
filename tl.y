@@ -19,9 +19,11 @@
 %left '*' '/' '%'
 
 %{
-#include<stdio.h>
-#include"tl.h"
-#include"list.h"
+#include <stdio.h>
+#include "tl.h"
+#include "ast.h"
+#include "list.h"
+#include "util.h"
 Node* parseTree;
 %}
 

@@ -1,7 +1,7 @@
 #ifndef _HASH_TABLE_H_
 #define _HASH_TABLE_H_
 typedef struct LinkedList LinkedList;
-struct LinkedList{
+struct LinkedList {
   char *key;
   void* value;
   LinkedList* next;

@@ -1,15 +1,18 @@
-#include"tl.h"
+#include "tl.h"
+#include "value.h"
+#include "list.h"
+#include "util.h"
+#include "closure.h"
+#include "ast.h"
 
-extern int newNodeC, newNode2C, newIntValueC, newStringValueC, newClosureValueC, 
-    newListValueC, newClosureC, newEnvC;
+extern int newIntValueC, newStringValueC, newClosureValueC, newListValueC;
 
 Value* newNoneValue(){
-  static Value* res = 0;
+  Value* res = 0;
   if(res) {
     return res;
   } else {
     res = MALLOC(Value);
-    res->ref = 0;
     res->type = NONE_VALUE_TYPE;
     res->data = 0;
     return res;
@@ -19,7 +22,6 @@ Value* newNoneValue(){
 Value* newIntValue(long x){
   newIntValueC++;
   Value* res=MALLOC(Value);
-  res->ref = 0;
   res->type = INT_VALUE_TYPE;
   res->data = (void*) x;
   return res;
@@ -28,7 +30,6 @@ Value* newIntValue(long x){
 Value* newStringValue(char *s){
   newStringValueC++;
   Value* res=MALLOC(Value);
-  res->ref = 0;
   res->type = STRING_VALUE_TYPE;
   res->data = (void*) s;
   return res;
@@ -37,30 +38,17 @@ Value* newStringValue(char *s){
 Value* newListValue(List* list) {
   newListValueC++;
   Value* res = MALLOC(Value);
-  res->ref = 0;
   res->type = LIST_VALUE_TYPE;
   res->data = list;
   return res;
 }
 
 Value* newClosureValue(Node* t, Env* e) {
-  newClosureC++;
-  Value* res=MALLOC(Value);
-  res->ref = 0;
+  newClosureValueC++;
+  Value* res = MALLOC(Value);
   res->type = CLOSURE_VALUE_TYPE;
   res->data = newClosure(t, e);
   return res;
-}
-
-void valueRefInc(Value* v) {
-  v->ref++;
-}
-
-void valueRefDec(Value* v) {
-  v->ref--;
-  if(!v->ref) {
-    freeValue(v);
-  }
 }
 
 void freeValue(Value* v) {
@@ -94,7 +82,7 @@ static int valueToStringInternal(Value* v, char *s, int n) {
   switch(v->type) {
     case NONE_VALUE_TYPE:
       return mySnprintf(s, n, "none");
-    case INT_TYPE:
+    case INT_VALUE_TYPE:
       return mySnprintf(s, n, "%d", v->data);
     case CLOSURE_VALUE_TYPE: {
       int len = 0;
@@ -156,7 +144,7 @@ int valueEquals(Value* v1, Value* v2){
     }
     case STRING_VALUE_TYPE: 
       return strcmp((char*) v1->data, (char*) v2->data) == 0;
-    case NONE_TYPE: return 1; // singleton, same type means equal
+    case NONE_VALUE_TYPE: return 1; // singleton, same type means equal
     default: error("unknown value type passed to valueEquals: %d\n", v1->type);
   }
 }
