@@ -5,10 +5,10 @@
 
 struct Closure {
   Node* f;
-  Env* e;
+  Value* e;
 };
 
-Closure* newClosure(Node* f, Env* e);
+Closure* newClosure(Node* f, Value* e);
 void freeClosure(Closure* c);
 
 

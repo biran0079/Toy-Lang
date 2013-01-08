@@ -19,10 +19,11 @@
 %left '*' '/' '%'
 
 %{
-#include <stdio.h>
 #include "tl.h"
 #include "ast.h"
 #include "list.h"
+#include "value.h"
+#include "env.h"
 #include "util.h"
 Node* parseTree;
 %}
@@ -227,7 +228,8 @@ int main(int argc, char** argv){
     nodeToDot(f, parseTree);
     fclose(f);
   } else {
-    eval(newEnv(0), parseTree);
+    Env* global = newEnv(0);
+    eval(newEnvValue(global), parseTree);
   }
   if(listCreatedObj) {
     listCreatedObjectsCount();

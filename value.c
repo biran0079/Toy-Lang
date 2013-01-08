@@ -5,7 +5,8 @@
 #include "closure.h"
 #include "ast.h"
 
-extern int newIntValueC, newStringValueC, newClosureValueC, newListValueC;
+extern int newIntValueC, newStringValueC, newClosureValueC, newEnvValueC, newListValueC;
+extern int freeIntValueC, freeStringValueC, freeClosureValueC, freeEnvValueC, freeListValueC;
 
 Value* newNoneValue(){
   Value* res = 0;
@@ -43,7 +44,7 @@ Value* newListValue(List* list) {
   return res;
 }
 
-Value* newClosureValue(Node* t, Env* e) {
+Value* newClosureValue(Node* t, Value* e) {
   newClosureValueC++;
   Value* res = MALLOC(Value);
   res->type = CLOSURE_VALUE_TYPE;
@@ -51,8 +52,37 @@ Value* newClosureValue(Node* t, Env* e) {
   return res;
 }
 
+Value* newEnvValue(Env* e) {
+  newEnvValueC++;
+  Value* res = MALLOC(Value);
+  res->type = ENV_VALUE_TYPE;
+  res->data = e;
+  return res;
+}
+
 void freeValue(Value* v) {
-  // TODO
+  switch(v->type) {
+    case CLOSURE_VALUE_TYPE:
+      freeClosure((Closure*) v->data);
+      freeClosureValueC++;
+      break;
+    case ENV_VALUE_TYPE:
+      freeEnv((Env*) v->data);
+      freeEnvValueC++;
+      break;
+    case LIST_VALUE_TYPE:
+      freeList((List*) v->data);
+      freeListValueC++;
+      break;
+    case STRING_VALUE_TYPE:
+      free((char*) v->data);
+      freeStringValueC++;
+      break;
+    case INT_VALUE_TYPE: freeIntValueC++; break;
+    case NONE_VALUE_TYPE: return; // none is never freed
+    default: error("unkonwn value type passed to freeValue: %d\n", v->type);
+  }
+  free(v);
 }
 
 
@@ -114,6 +144,9 @@ static int valueToStringInternal(Value* v, char *s, int n) {
     case STRING_VALUE_TYPE: {
       return mySnprintf(s, n, "%s", v->data);
     }
+    case ENV_VALUE_TYPE: {
+      return mySnprintf(s, n, "env { ... }");                    
+    }
     default: error("cannot print unknown value type\n");
   }
 }
@@ -130,6 +163,7 @@ int valueEquals(Value* v1, Value* v2){
   if(v1->type != v2->type) return 0;
   switch(v1->type){
     case INT_VALUE_TYPE:
+    case ENV_VALUE_TYPE:
     case CLOSURE_VALUE_TYPE: return v1->data == v2->data;
     case LIST_VALUE_TYPE: {
       List* l1 = v1->data;
@@ -213,7 +247,8 @@ Value* valueAdd(Value* v1, Value* v2) {
         error("can only add string to string\n");
       }
     }
-    case CLOSURE_VALUE_TYPE: error("Function value cannot add to anything\n");
+    case CLOSURE_VALUE_TYPE: error("Closure value cannot add to anything\n");
+    case ENV_VALUE_TYPE: error("Environment value cannot add to anything\n");
     default: error("unknown value type passed to valueAdd: %d\n", v1->type);
   }
 }

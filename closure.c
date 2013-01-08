@@ -3,7 +3,7 @@
 
 extern int newClosureC, freeClosureC;
 
-Closure* newClosure(Node* f, Env* e){
+Closure* newClosure(Node* f, Value* e){
   newClosureC++;
   Closure* res = MALLOC(Closure);
   res->f = f;

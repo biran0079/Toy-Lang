@@ -1,4 +1,4 @@
-#include "hash_table.h"
+#include "hashTable.h"
 #include "util.h"
 
 #define LOG 0

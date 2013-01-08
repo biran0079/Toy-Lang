@@ -2,7 +2,7 @@
 #define _ENV_H_
 
 #include "tl.h"
-#include "hash_table.h"
+#include "hashTable.h"
 #include "list.h"
 #include <setjmp.h>
 
@@ -15,7 +15,7 @@ struct Env {
   jmp_buf retState;
   Value* returnValue;
   // tail call closure with arguments set.  used to pass the tail recursion call node to upper stack frame
-  Closure* tailCall;
+  Value* tailCall; // closure value
 };
 
 Env* newEnv(Env* parent);

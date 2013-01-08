@@ -7,6 +7,7 @@
 enum ValueType {
   INT_VALUE_TYPE,
   CLOSURE_VALUE_TYPE,
+  ENV_VALUE_TYPE,
   LIST_VALUE_TYPE,
   STRING_VALUE_TYPE,
   NONE_VALUE_TYPE,
@@ -19,7 +20,8 @@ struct Value {
 
 Value* newIntValue(long x);
 Value* newListValue(List* lst);   // pass in a list of values
-Value* newClosureValue(Node* t, Env* e);
+Value* newClosureValue(Node* t, Value* e);
+Value* newEnvValue(Env* e);
 Value* newStringValue(char* s);
 Value* newNoneValue();
 void freeValue(Value* v);
