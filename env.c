@@ -10,9 +10,6 @@ Env* newEnv(Value* parentEnv){
   res->parent = parentEnv;
   res->loopStates = newList();
   res->exceptionStates = newList();
-  res->exceptionValue = newNoneValue();
-  res->returnValue = newNoneValue();
-  res->tailCall = newNoneValue();
   return res;
 }
 
@@ -25,9 +22,6 @@ void freeEnv(Env* e) {
   freeList(e->exceptionStates);
   e->loopStates = 0;
   e->exceptionStates = 0;
-  e->exceptionValue = 0;
-  e->returnValue = 0;
-  e->tailCall = 0;
   free(e);
 }
 

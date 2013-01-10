@@ -136,11 +136,8 @@ static int valueToStringInternal(Value* v, char *s, int n) {
       return mySnprintf(s, n, "%d", v->data);
     case CLOSURE_VALUE_TYPE: {
       int len = 0;
-      Value* e = ((Closure*) v->data)->e;
-      len += mySnprintf(s + len, n - len, "{");
-      len += valueToStringInternal(e, s+len, n-len);
       Node* f = ((Closure*) v->data)->f;
-      len += mySnprintf(s + len, n - len, ", fun %s(", chld(f, 0)->data);
+      len += mySnprintf(s + len, n - len, "fun %s(", chld(f, 0)->data);
       t = chld(f, 1);
       for(i=0;i<chldNum(t);i++){
         if(i){
@@ -148,7 +145,7 @@ static int valueToStringInternal(Value* v, char *s, int n) {
         }
         len += mySnprintf(s+len, n-len, "%s", chld(t, i)->data);
       }
-      len += mySnprintf(s+len, n-len, ")}");
+      len += mySnprintf(s+len, n-len, ")");
       return len;
     }
     case LIST_VALUE_TYPE: {

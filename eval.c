@@ -6,9 +6,11 @@
 #include "list.h"
 #include "hashTable.h"
 #include "eval.h"
+#include "tljmp.h"
 #include "util.h"
 
 extern List* rootValues;
+extern JmpMsg __jmpMsg__;
 
 
 static void pushRootValue(Value* v) {
@@ -124,9 +126,8 @@ Value* eval(Value* ev, Node* p) {
         error("%s parameter number incorrect\n", valueToString(closureValue));
       for(i=0; i<chldNum(ids); i++)
         envPutLocal(e2, chld(ids, i)->data, eval(ev, chld(args, i)));
-      e->tailCall = newClosureValue(f, ev2);
-      popRootValueTo(initSize);
-      longjmp(e->retState, 2);
+      Value* res = newClosureValue(f, ev2);
+      tlLongjmp(e->retState, TAIL_CALL_MSG_TYPE, res->data);
       // actuall call is handled by CALL_TYPE
     }
     case CALL_TYPE: {
@@ -149,25 +150,23 @@ Value* eval(Value* ev, Node* p) {
           // if reach here, no return statement is called, so none is returned 
           popRootValueTo(initSize);
           return newNoneValue();
-        } else if(ret == 1) {
+        } else if(__jmpMsg__.type == RETURN_MSG_TYPE) {
           // return is called;
-          Value* returnValue = e2->returnValue;
+          Value* returnValue = __jmpMsg__.data;
           popRootValueTo(initSize);
           return returnValue;
-        } if(ret == 2) {
+        } if(__jmpMsg__.type == TAIL_CALL_MSG_TYPE) {
           // tail recursive call, reuse environment e2
-          Closure* tc = e2->tailCall->data;
-          e2->tailCall = newNoneValue();
+          Closure* tc = __jmpMsg__.data;
           f = tc->f;
           ev2 = tc->e;
           e2 = ev2->data;
           popRootValueTo(initSize);
           pushRootValue(ev2); // ev2 is all we need to keep
           continue;
-        } if(ret == 3) {
+        } if(__jmpMsg__.type == EXCEPTION_MSG_TYPE) {
           // exception passed out
-          Value* v = e2->exceptionValue;
-          e2->exceptionValue = newNoneValue();
+          Value* v = __jmpMsg__.data;
           popRootValueTo(initSize);
           throwValue(e, v);
         } else {
@@ -176,8 +175,7 @@ Value* eval(Value* ev, Node* p) {
       }
     }
     case RETURN_TYPE:{
-      e->returnValue = eval(ev, chld(p, 0));
-      longjmp(e->retState, 1);
+      tlLongjmp(e->retState, RETURN_MSG_TYPE, eval(ev, chld(p, 0)));
     }
     case ID_TYPE: {
       Value* res = envGet(e, (char*) p->data);
@@ -332,18 +330,16 @@ Value* eval(Value* ev, Node* p) {
       jmp_buf buf;
       listPush(e->loopStates, buf);
       for(eval(ev, chld(p,0)); eval(ev, chld(p, 1))->data; eval(ev, chld(p, 2))){
-          int jmp = setjmp(buf);
-          if(jmp==0){
-            // regular case
+          if(setjmp(buf)==0) {
             eval(ev, chld(p, 3));
-          } else if(jmp==1) {
-            // continue
-            continue;
-          } else if(jmp==2) {
-            // break
-            break;
           } else {
-            error("unknown value passed from longjmp\n");
+            JmpMsg* msg = &__jmpMsg__;
+            if(msg->type == CONTINUE_MSG_TYPE)
+              continue;
+            else if(msg->type == BREAK_MSG_TYPE)
+              break;
+            else
+              error("unexpected jmpmsg type: %d\n", msg->type);
           }
       }
       listPop(e->loopStates);
@@ -362,15 +358,16 @@ Value* eval(Value* ev, Node* p) {
       int len = listSize(l);
       for(i=0;i<len;i++) {
         envPut(e, (char*) id->data, listGet(l, i));
-        int jmp = setjmp(buf);
-        if(jmp==0) {
+        if(setjmp(buf)==0) {
           eval(ev, chld(p, 2));
-        } else if(jmp==1) {
-          continue;
-        } else if(jmp==2) {
-          break;
         } else {
-          error("unknown longjmp state\n");
+          JmpMsg* msg = &__jmpMsg__;
+          if(msg->type == CONTINUE_MSG_TYPE)
+            continue;
+          else if(msg->type == BREAK_MSG_TYPE)
+            break;
+          else
+            error("unexpected jmpmsg type: %d\n", msg->type);
         }
       }
       listPop(e->loopStates);
@@ -382,27 +379,26 @@ Value* eval(Value* ev, Node* p) {
         jmp_buf buf;
         listPush(e->loopStates, buf);
         while(eval(ev, chld(p, 0))->data){
-          int jmp = setjmp(buf);
-          if(jmp==0) {
-            // regular case 
+          if(setjmp(buf)==0) {
             eval(ev, chld(p, 1));
-          } else if(jmp==1) {
-            // continue
-            continue;
-          } else if(jmp==2) {
-            // break
-            break;
           } else {
-            error("unknown value passed from longjmp\n");
+            JmpMsg* msg = &__jmpMsg__;
+            if(msg->type == CONTINUE_MSG_TYPE)
+              continue;
+            else if(msg->type == BREAK_MSG_TYPE){
+              break;
+            }
+            else
+              error("unexpected jmpmsg type: %d\n", msg->type);
           }
         }
         listPop(e->loopStates);
         return newNoneValue();
       }
     case CONTINUE_TYPE:
-      longjmp(listLast(e->loopStates), 1);
+      tlLongjmp(listLast(e->loopStates), CONTINUE_MSG_TYPE, 0);
     case BREAK_TYPE:
-      longjmp(listLast(e->loopStates), 2);
+      tlLongjmp(listLast(e->loopStates), BREAK_MSG_TYPE, 0);
     case GT_TYPE:
       return newIntValue(
            (long) eval(ev, chld(p, 0))->data > (long) eval(ev, chld(p, 1))->data);
@@ -459,25 +455,20 @@ Value* eval(Value* ev, Node* p) {
       char* catchId = (char*) chld(p, 1)->data;
       Node* catchBlock = chld(p, 2);
       Node* finallyBlock = chldNum(p) == 4 ? chld(p, 3) : 0;
-      switch(setjmp(buf)){
-        case 0: {
-          // try block
-          eval(ev, tryBlock);
-          listPop(e->exceptionStates); // pop when out of try block
-          break;
-        }
-        case 1: {
-          // catch block
-          listPop(e->exceptionStates); // pop when out of try block
-          // exception caught        
-          Value* v = e->exceptionValue;
-          e->exceptionValue = newNoneValue();
-          envPut(e, catchId, v);
-          eval(ev, catchBlock);
-          break;
-        }
-        default: error("unknown state passed from longjmp in try statement\n");
-                 break;
+      int res = setjmp(buf);
+      if(res==0){
+        // try block
+        eval(ev, tryBlock);
+        listPop(e->exceptionStates); // pop when out of try block
+      } else if (__jmpMsg__.type == EXCEPTION_MSG_TYPE) {
+        // catch block
+        listPop(e->exceptionStates); // pop when out of try block
+        // exception caught        
+        Value* v = __jmpMsg__.data;
+        envPut(e, catchId, v);
+        eval(ev, catchBlock);
+      } else {
+         error("unknown state passed from longjmp in try statement\n");
       }
       if(finallyBlock) eval(ev, finallyBlock);
       return newNoneValue();
@@ -529,14 +520,13 @@ Value* eval(Value* ev, Node* p) {
 }
 
 void throwValue(Env* e, Value* v) {
-  e->exceptionValue = v;  // pass exception value through enviconment
   if(listSize(e->exceptionStates)) {
     // currently in try block
-    longjmp(listLast(e->exceptionStates), 1);
+    tlLongjmp(listLast(e->exceptionStates), EXCEPTION_MSG_TYPE, v);
   } else {
     // If has parent stack frame, pass to it. Report error otherwise
     if (e->parent) {
-      longjmp(e->retState, 3);
+      tlLongjmp(e->retState, EXCEPTION_MSG_TYPE, v);
     } else {
       error("uncaught exception:\n%s\n", valueToString(v));
     }

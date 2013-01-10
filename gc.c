@@ -28,10 +28,7 @@ static void mark() {
       case ENV_VALUE_TYPE: {
         Env* e = v->data;                    
         hashTableAddAllToList(e->t, q);
-        listPush(q, e->exceptionValue);
         listPush(q, e->parent);
-        listPush(q, e->returnValue);
-        listPush(q, e->tailCall);
         break;
       }
       case LIST_VALUE_TYPE: {
@@ -74,8 +71,8 @@ int hardMemLimit = 1500000, softMemLimit = 1000000;
 void listCreatedObjectsCount();
 void gc() {
   if(listSize(values) >= hardMemLimit) {
-    fprintf(stderr, "*");
-    fflush(stderr);
+    //fprintf(stderr, "*");
+    //fflush(stderr);
     forceGC();
     if(listSize(values) >= softMemLimit) {
       listCreatedObjectsCount();

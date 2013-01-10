@@ -11,12 +11,8 @@ struct Env {
   HashTable* t;
   List* loopStates;
   List* exceptionStates;
-  Value* exceptionValue;
   Value* parent;
   jmp_buf retState;
-  Value* returnValue;
-  // tail call closure with arguments set.  used to pass the tail recursion call node to upper stack frame
-  Value* tailCall; // closure value
 };
 
 Env* newEnv(Value* parentEnv);
