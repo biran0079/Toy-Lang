@@ -3,6 +3,7 @@
 
 #include "tl.h"
 #include "hashTable.h"
+#include "value.h"
 #include "list.h"
 #include <setjmp.h>
 
@@ -11,14 +12,14 @@ struct Env {
   List* loopStates;
   List* exceptionStates;
   Value* exceptionValue;
-  Env* parent;
+  Value* parent;
   jmp_buf retState;
   Value* returnValue;
   // tail call closure with arguments set.  used to pass the tail recursion call node to upper stack frame
   Value* tailCall; // closure value
 };
 
-Env* newEnv(Env* parent);
+Env* newEnv(Value* parentEnv);
 void freeEnv(Env* e);
 Value* envGet(Env* e, char* key);
 void envPut(Env* e, char* key, Value* value);

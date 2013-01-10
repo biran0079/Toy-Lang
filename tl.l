@@ -28,7 +28,7 @@ finally       {return FINALLY;}
 throw       {return THROW;}
 local       {return LOCAL;}
 {D}+        {yylval = newNode(INT_TYPE, (void*) strToLong(yytext)); return INT;}
-{L}({D}|{L})*   {yylval = newNode(ID_TYPE, copy(yytext, 1+strlen(yytext))); return ID;}
+{L}({D}|{L})*   {yylval = newNode(ID_TYPE, copyStr(yytext)); return ID;}
 \"(\\.|[^\"])*\"  {yylval = newNode(STRING_TYPE, literalStringToString(yytext)); return STRING;}
 "++"         {return ADDADD;}
 "+="         {return ADDEQ;}

@@ -6,6 +6,7 @@ fun getRandGenerator(seed){
   }  
   return rand;
 }
+
 fun getRandomList(n){
   rand = getRandGenerator(1);
   res=[];
@@ -15,6 +16,7 @@ fun getRandomList(n){
   }
   return res;
 }
+
 fun isSorted(l){
   length = len(l);
   i=1;
@@ -40,19 +42,20 @@ fun internalQsort(a, left, right){
   while(j<=right){
     if(a[j]<a[i]) {
       swap(a,k,j);
-      k=k+1;
+      k++;
     }
-    j=j+1;  
+    j++;
   }
   k=k-1;
   swap(a, left, k);
   internalQsort(a,left,k-1);
   internalQsort(a,k+1,right);
 }
+
 fun qsort(l){
   internalQsort(l,0,len(l)-1);  
 }
 
-l = getRandomList(10000);
+l = getRandomList(50000);
 time(qsort(l));
 

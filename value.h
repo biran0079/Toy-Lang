@@ -16,6 +16,7 @@ enum ValueType {
 struct Value {
   ValueType type;
   void* data;
+  char mark;
 };
 
 Value* newIntValue(long x);

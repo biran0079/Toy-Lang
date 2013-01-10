@@ -6,6 +6,10 @@ void* copy(void* t, int size) {
   return res;
 }
 
+char* copyStr(char* t) {
+  return copy(t, strlen(t) + 1);
+}
+
 long strToLong(char* s){
   long res = 0;
   while(*s) {

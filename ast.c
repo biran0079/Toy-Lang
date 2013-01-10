@@ -3,7 +3,7 @@
 #include "util.h"
 #include "list.h"
 
-extern int newNodeC, newNode2C;
+extern int newNodeC, freeNodeC;
 
 Node* newNode(NodeType t, void* i) {
   newNodeC++;
@@ -14,7 +14,7 @@ Node* newNode(NodeType t, void* i) {
 }
 
 Node* newNode2(NodeType t, int n, ... ) {
-  newNode2C++;
+  newNodeC++;
   Node* res = MALLOC(Node);
   List* l = newList();
   va_list v;
@@ -113,3 +113,19 @@ char* nodeTypeToString(NodeType type) {
   }
 }
 
+void freeNode(Node* t) {
+  freeNodeC++;
+  switch(t->type) {
+    case INT_TYPE: break;
+    case STRING_TYPE: 
+    case ID_TYPE: free(t->data); break;
+    default: {
+      int n = chldNum(t), i;        
+      for(i=0; i<n; i++)
+        freeNode(chld(t, i));
+      freeList(t->data);
+      break;
+    }
+  }
+  free(t);
+}

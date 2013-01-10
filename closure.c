@@ -16,5 +16,6 @@ void freeClosure(Closure* c) {
   freeClosureC++;
   c->f = 0;
   c->e = 0;
+  free(c);
 }
 

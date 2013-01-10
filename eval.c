@@ -8,9 +8,23 @@
 #include "eval.h"
 #include "util.h"
 
+extern List* rootValues;
+
+
+static void pushRootValue(Value* v) {
+  listPush(rootValues, v);
+}
+
+static void popRootValueTo(int size) {
+  if(size > rootValues->size) error("size larger than rootValues->size\n");
+  rootValues->size = size;
+}
+
 Value* eval(Value* ev, Node* p) {
+  int initSize = listSize(rootValues);
+
   Env* e = ev->data;
-  Value* res = 0;
+  Value* res = newNoneValue();
   int i;
   switch(p->type) {
     case STMTS_TYPE: {
@@ -21,7 +35,7 @@ Value* eval(Value* ev, Node* p) {
       return newNoneValue();
     }
     case EXP_LIST_TYPE: {
-      Value* res = 0;
+      Value* res = newNoneValue();
       for(i=0;i<chldNum(p);i++)
         res = eval(ev, chld(p, i));
       return res;
@@ -37,60 +51,81 @@ Value* eval(Value* ev, Node* p) {
     }
     case LEN_TYPE: {
       Value* v = eval(ev, chld(p, 0));
+      pushRootValue(v);
+      Value* res = newNoneValue();
       switch(v->type) {
-        case LIST_VALUE_TYPE: return newIntValue(listSize((List*) v->data));
-        case STRING_VALUE_TYPE: return newIntValue(strlen((char*) v->data));
-        default: error("unsupported type for 'len' operator\n");
+        case LIST_VALUE_TYPE: res = newIntValue(listSize((List*) v->data)); break;
+        case STRING_VALUE_TYPE: res = newIntValue(strlen((char*) v->data)); break;
+        default: error("unsupported type for 'len' operator: %d\n", v->type);
       }
-      error("should never reach here");
+      popRootValueTo(initSize);
+      return res;
     }
     case STR_TYPE: {
       return newStringValue(valueToString(eval(ev, chld(p,0))));
     }
     case ORD_TYPE: {
       Value* v = eval(ev, chld(p, 0));
+      pushRootValue(v);
       if(v->type != STRING_VALUE_TYPE || strlen((char*) v->data) != 1)
         error("ord() can only apply to string with length 1\n");
-      return newIntValue(*((char*) v->data));
+      Value* res =  newIntValue(*((char*) v->data));
+      popRootValueTo(initSize);
+      return res;
     }
     case NONE_TYPE: return newNoneValue();
     case LIST_TYPE: {
       List* vs = newList();
-      for(i=0;i<chldNum(p);i++)
-        listPush(vs, eval(ev, chld(p,i)));
-      return newListValue(vs);
+      for(i=0;i<chldNum(p);i++) {
+        Value* v = eval(ev, chld(p,i));
+        pushRootValue(v);
+        listPush(vs, v);
+      }
+      Value* res = newListValue(vs);
+      popRootValueTo(initSize);
+      return res;
     }
     case LIST_ACCESS_TYPE:{
       Value* v = eval(ev, chld(p, 0));
+      pushRootValue(v);
       Value* idxValue = eval(ev, chld(p, 1));
+      pushRootValue(idxValue);
       if(idxValue->type != INT_VALUE_TYPE) error("list index must be int\n");
       long idx = (long) idxValue->data;
+      Value *res;
       switch(v->type) {
         case LIST_VALUE_TYPE: {
           List* l = (List*) v->data;                      
-          return listGet(l, idx);
+          res = listGet(l, idx);
+          break;
         }
         case STRING_VALUE_TYPE: {
           char *s = (char*) v->data;
           char *ss = (char*) malloc(2 * sizeof(char));
           ss[0] = s[idx];
           ss[1] = 0;
-          return newStringValue(ss);
+          res = newStringValue(ss);
+          break;
         }
       }
+      popRootValueTo(initSize);
+      return res;
     }
     case TAIL_CALL_TYPE: {
       Value* closureValue = envGet(e, chld(p, 0)->data);
       if(closureValue->type != CLOSURE_VALUE_TYPE) error("only closure value can be called\n");
       Closure *c = closureValue->data;
       Node* f = c->f, *args = chld(p, 1);
-      Env* e2 = newEnv(c->e->data);
+      Env* e2 = newEnv(c->e);
       Value* ev2 = newEnvValue(e2);
+      pushRootValue(ev2);
       Node *ids = chld(f,1);
-      if(chldNum(ids) != chldNum(args)) error("function parameter number incorrecr\n");
+      if(chldNum(ids) != chldNum(args))
+        error("%s parameter number incorrect\n", valueToString(closureValue));
       for(i=0; i<chldNum(ids); i++)
         envPutLocal(e2, chld(ids, i)->data, eval(ev, chld(args, i)));
       e->tailCall = newClosureValue(f, ev2);
+      popRootValueTo(initSize);
       longjmp(e->retState, 2);
       // actuall call is handled by CALL_TYPE
     }
@@ -99,10 +134,12 @@ Value* eval(Value* ev, Node* p) {
       if(!closureValue) error("fun value is none in function application\n");
       Closure *c = closureValue->data;
       Node* f = c->f, *args = chld(p, 1);
-      Env* e2 = newEnv(c->e->data);
+      Env* e2 = newEnv(c->e);
       Value* ev2 = newEnvValue(e2);
+      pushRootValue(ev2);
       Node *ids = chld(f,1);
-      if(chldNum(ids)!=chldNum(args)) error("function parameter number incorrecr\n");
+      if(chldNum(ids)!=chldNum(args))
+        error("%s parameter number incorrect\n", valueToString(closureValue));
       for(i=0; i<chldNum(ids); i++)
         envPutLocal(e2, chld(ids, i)->data, eval(ev, chld(args, i)));
       while(1){
@@ -110,22 +147,28 @@ Value* eval(Value* ev, Node* p) {
         if(!ret){
           eval(ev2, chld(f, 2));
           // if reach here, no return statement is called, so none is returned 
+          popRootValueTo(initSize);
           return newNoneValue();
         } else if(ret == 1) {
           // return is called;
           Value* returnValue = e2->returnValue;
+          popRootValueTo(initSize);
           return returnValue;
         } if(ret == 2) {
           // tail recursive call, reuse environment e2
           Closure* tc = e2->tailCall->data;
+          e2->tailCall = newNoneValue();
           f = tc->f;
           ev2 = tc->e;
           e2 = ev2->data;
+          popRootValueTo(initSize);
+          pushRootValue(ev2); // ev2 is all we need to keep
           continue;
         } if(ret == 3) {
           // exception passed out
           Value* v = e2->exceptionValue;
-          e2->exceptionValue = 0;
+          e2->exceptionValue = newNoneValue();
+          popRootValueTo(initSize);
           throwValue(e, v);
         } else {
           error("unknown  return value from longjmp in function call\n");
@@ -143,18 +186,22 @@ Value* eval(Value* ev, Node* p) {
     case INT_TYPE:
       return newIntValue((long) p->data);
     case STRING_TYPE:
-      return newStringValue((char*) p->data);
+      return newStringValue(copyStr(p->data));
     case ASSIGN_TYPE: {
       Node* left = chld(p, 0);
       switch(left->type) {
         case LIST_ACCESS_TYPE: {
           Value* lv = eval(ev, chld(left, 0));
           if (lv->type != LIST_VALUE_TYPE) error("= only applys to list\n");
+          pushRootValue(lv);
           List* l = lv->data;                      
           Value* idx = eval(ev, chld(left, 1));
           if(idx->type != INT_VALUE_TYPE) error("list index must be int\n");
+          pushRootValue(idx);
           listSet(l, (long) idx->data, eval(ev, chld(p, 1)));
-          return listGet(l, (long) idx->data);
+          Value* res = listGet(l, (long) idx->data);
+          popRootValueTo(initSize);
+          return res;
         }
         case ID_TYPE: {
           Value* res = eval(ev, chld(p, 1));
@@ -170,11 +217,14 @@ Value* eval(Value* ev, Node* p) {
         case LIST_ACCESS_TYPE: {
           Value* lv = eval(ev, chld(left, 0));
           if(lv->type != LIST_VALUE_TYPE) error("+= only applys to list\n");
+          pushRootValue(lv);
           List* l = lv->data;                      
           Value* idx = eval(ev, chld(left, 1));
           if(idx->type != INT_VALUE_TYPE) error("list index must be int\n");
+          pushRootValue(idx);
           Value* e1 = listGet(l, (long) idx->data);
           Value* e2 = eval(ev, chld(p, 1));
+          pushRootValue(e2);
           Value* res = newNoneValue();
           switch(e1->type) {
             case INT_VALUE_TYPE:
@@ -194,12 +244,14 @@ Value* eval(Value* ev, Node* p) {
               break;
             default: error("unknown type for operator +=: %d\n", e1->type);
           }
+          popRootValueTo(initSize);
           return res;
         }
         case ID_TYPE: {
           char* key = (char *) chld(p, 0)->data;
           Value* e1 = envGet(e, key);
           Value* e2 = eval(ev, chld(p, 1));
+          pushRootValue(e2);
           Value* res = newNoneValue();
           switch(e1->type) {
             case INT_VALUE_TYPE:
@@ -219,27 +271,63 @@ Value* eval(Value* ev, Node* p) {
               break;
             default: error("unknown type for operator +=\n");
           }
+          popRootValueTo(initSize);
           return res;
         }
         default: error("left hand side of += must be left value\n");
       }
     }
-    case ADD_TYPE:
-      return valueAdd(eval(ev, chld(p, 0)), eval(ev, chld(p, 1)));
-    case SUB_TYPE:
-      return valueSub(eval(ev, chld(p, 0)), eval(ev, chld(p, 1)));
-    case MUL_TYPE:
-      return valueMul(eval(ev, chld(p, 0)), eval(ev, chld(p, 1)));
-    case DIV_TYPE: 
-      return valueDiv(eval(ev, chld(p, 0)), eval(ev, chld(p, 1)));
-    case MOD_TYPE: 
-      return valueMod(eval(ev, chld(p, 0)), eval(ev, chld(p, 1)));
+    case ADD_TYPE: {
+      Value*e1 = eval(ev, chld(p, 0));
+      pushRootValue(e1);
+      Value*e2 = eval(ev, chld(p, 1));
+      pushRootValue(e2);
+      Value*res = valueAdd(e1, e2);
+      popRootValueTo(initSize);
+      return res;
+    }
+    case SUB_TYPE: {
+      Value*e1 = eval(ev, chld(p, 0));
+      pushRootValue(e1);
+      Value*e2 = eval(ev, chld(p, 1));
+      pushRootValue(e2);
+      Value*res = valueSub(e1, e2);
+      popRootValueTo(initSize);
+      return res;
+    }
+    case MUL_TYPE: {
+      Value*e1 = eval(ev, chld(p, 0));
+      pushRootValue(e1);
+      Value*e2 = eval(ev, chld(p, 1));
+      pushRootValue(e2);
+      Value*res = valueMul(e1, e2);
+      popRootValueTo(initSize);
+      return res;
+    }
+    case DIV_TYPE: {
+      Value*e1 = eval(ev, chld(p, 0));
+      pushRootValue(e1);
+      Value*e2 = eval(ev, chld(p, 1));
+      pushRootValue(e2);
+      Value*res = valueDiv(e1, e2);
+      popRootValueTo(initSize);
+      return res;
+    }
+    case MOD_TYPE: {
+      Value*e1 = eval(ev, chld(p, 0));
+      pushRootValue(e1);
+      Value*e2 = eval(ev, chld(p, 1));
+      pushRootValue(e2);
+      Value*res = valueMod(e1, e2);
+      popRootValueTo(initSize);
+      return res;
+    }
     case IF_TYPE:
       if(eval(ev, chld(p, 0))->data)
         eval(ev, chld(p, 1));
       else if(chldNum(p)==3)
         eval(ev, chld(p, 2));
-      return 0;
+      return newNoneValue();
     case FOR_TYPE: {
       jmp_buf buf;
       listPush(e->loopStates, buf);
@@ -266,6 +354,7 @@ Value* eval(Value* ev, Node* p) {
       listPush(e->loopStates, buf);
       Node* id = chld(p, 0);
       Value* lv = eval(ev, chld(p, 1));
+      pushRootValue(lv);
       if(id->type != ID_TYPE || lv->type != LIST_VALUE_TYPE) {
         error("param type incorrect for for( : ) statement\n ");
       }
@@ -285,6 +374,7 @@ Value* eval(Value* ev, Node* p) {
         }
       }
       listPop(e->loopStates);
+      popRootValueTo(initSize);
       return newNoneValue();
     }
     case WHILE_TYPE:
@@ -325,12 +415,24 @@ Value* eval(Value* ev, Node* p) {
     case LE_TYPE:
       return newIntValue(
            (long) eval(ev, chld(p, 0))->data <= (long) eval(ev, chld(p, 1))->data);
-    case EQ_TYPE:
-      return newIntValue(
-           valueEquals(eval(ev, chld(p, 0)), eval(ev, chld(p, 1))));
-    case NE_TYPE:
-      return newIntValue(
-           !valueEquals(eval(ev, chld(p, 0)), eval(ev, chld(p, 1))));
+    case EQ_TYPE: {
+      Value* v1 = eval(ev, chld(p, 0));
+      pushRootValue(v1);
+      Value* v2 = eval(ev, chld(p, 1));
+      pushRootValue(v2);
+      Value* res = newIntValue(valueEquals(v1, v2));
+      popRootValueTo(initSize);
+      return res;
+    }
+    case NE_TYPE: {
+      Value* v1 = eval(ev, chld(p, 0));
+      pushRootValue(v1);
+      Value* v2 = eval(ev, chld(p, 1));
+      pushRootValue(v2);
+      Value* res = newIntValue(!valueEquals(v1, v2));
+      popRootValueTo(initSize);
+      return res;
+    }
     case AND_TYPE:
       return newIntValue(
            eval(ev, chld(p, 0))->data && eval(ev, chld(p, 1))->data);
@@ -339,9 +441,11 @@ Value* eval(Value* ev, Node* p) {
            eval(ev, chld(p, 0))->data || eval(ev, chld(p, 1))->data);
     case NOT_TYPE:
       return newIntValue(! eval(ev, chld(p, 0))->data);
-    case FUN_TYPE:
-      envPut(e, (char*) chld(p, 0)->data, newClosureValue(p, ev));
-      return envGet(e, (char*) chld(p, 0)->data);
+    case FUN_TYPE: {
+      Value* res = newClosureValue(p, ev);
+      envPut(e, (char*) chld(p, 0)->data, res);
+      return res;
+    }
     case TIME_TYPE: {
       clock_t st = clock();                
       Value* res = eval(ev, chld(p, 0));
@@ -367,7 +471,7 @@ Value* eval(Value* ev, Node* p) {
           listPop(e->exceptionStates); // pop when out of try block
           // exception caught        
           Value* v = e->exceptionValue;
-          e->exceptionValue = 0;
+          e->exceptionValue = newNoneValue();
           envPut(e, catchId, v);
           eval(ev, catchBlock);
           break;
@@ -396,13 +500,17 @@ Value* eval(Value* ev, Node* p) {
         case LIST_ACCESS_TYPE: {
           Value* lv =  eval(ev, chld(left, 0));
           if(lv->type != LIST_VALUE_TYPE) error("++ only applys to left value\n");
+          pushRootValue(lv);
           List* l = (List*) lv->data;
           Value* idx = eval(ev, chld(left, 1));
           if(idx->type != INT_VALUE_TYPE) error("index of list must be int\n");
+          pushRootValue(idx);
           long idxv = (long) idx->data;
           Value* i = listGet(l, idxv);
+          pushRootValue(i);
           if (i->type != INT_VALUE_TYPE) error("++ only applys on int\n");
           listSet(l, idxv, newIntValue((long) i->data + 1));
+          popRootValueTo(initSize);
           return i;
         }
       } 
@@ -412,11 +520,12 @@ Value* eval(Value* ev, Node* p) {
       for(i=0;i<chldNum(ids);i++) {
         envPutLocal(e, (char*) chld(ids, i)->data, newNoneValue());
       }
-      return 0;
+      return newNoneValue();
     }
     default:
       error("cannot eval unknown node type\n");
   }
+  error("should not reach here\n");
 }
 
 void throwValue(Env* e, Value* v) {

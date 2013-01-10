@@ -57,6 +57,8 @@ struct Node {
 Node* newNode(NodeType type, void* data);
 Node* newNode2(NodeType type, int n, ...);
 
+void freeNode(Node* t);
+
 Node* chld(Node* e, int i);
 int chldNum(Node* t);
 

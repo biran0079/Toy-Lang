@@ -35,7 +35,8 @@ void listPush(List* lst, void* e) {
 }
 
 void* listGet(List* lst, int idx) {
-  if(idx >= lst->size || idx < 0) error("list index out of boundary");
+  if(idx >= lst->size || idx < 0)
+    error("list index out of boundary");
   return lst->arr[idx];
 }
 
@@ -44,6 +45,7 @@ int listSize(List* lst) {
 }
 
 void* listPop(List* lst){
+  if(lst->size == 0) error("cannot pop empty list\n");
   return lst->arr[--lst->size];
 }
 

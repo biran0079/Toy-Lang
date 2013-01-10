@@ -3,16 +3,16 @@
 
 extern int newEnvC, freeEnvC;
 
-Env* newEnv(Env* parent){
+Env* newEnv(Value* parentEnv){
   newEnvC++;
   Env* res = MALLOC(Env);
   res->t = newHashTable();
-  res->parent = parent;
+  res->parent = parentEnv;
   res->loopStates = newList();
   res->exceptionStates = newList();
-  res->exceptionValue = 0;
-  res->returnValue = 0;
-  res->tailCall = 0;
+  res->exceptionValue = newNoneValue();
+  res->returnValue = newNoneValue();
+  res->tailCall = newNoneValue();
   return res;
 }
 
@@ -32,19 +32,27 @@ void freeEnv(Env* e) {
 }
 
 Value* envGet(Env* e, char* key){
-  if(!e)return 0;
-  Value* res = (Value*) hashTableGet(e->t, key);
-  return res ? res : envGet(e->parent, key);
+  while(1) {
+    Value* res = (Value*) hashTableGet(e->t, key);
+    if(res) {
+      return res;
+    }
+    if(e->parent->type == NONE_VALUE_TYPE)
+      break;
+    e = e->parent->data;
+  }
+  return 0;
 }
 
 void envPut(Env* e, char* key, Value* value){
   Env* e2 = e;
-  while(e2){
+  while(1){
     if(hashTableGet(e2->t, key)){
       hashTablePut(e2->t, key, (void*) value);
       return;
     }else{
-      e2 = e2->parent;
+      if(e2->parent->type == NONE_VALUE_TYPE) break;
+      e2 = e2->parent->data;
     }
   }
   hashTablePut(e->t, key, (void*) value);

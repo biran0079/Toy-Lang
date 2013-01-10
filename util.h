@@ -11,6 +11,7 @@
 #include <stdarg.h>
 
 void* copy(void* t, int size);
+char* copyStr(char* t);
 long strToLong(char* s);
 char* literalStringToString(char *s);
 void error(char* msg, ...);

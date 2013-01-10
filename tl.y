@@ -24,8 +24,12 @@
 #include "list.h"
 #include "value.h"
 #include "env.h"
+#include "gc.h"
 #include "util.h"
 Node* parseTree;
+
+extern List* rootValues;
+extern List* values;
 %}
 
 %%
@@ -145,7 +149,7 @@ string_exp:
   ;
 
 fun_exp:
-  LAMBDA '(' id_list ')' '{' stmts '}' { $$ = newNode2(FUN_TYPE, 3, newNode(ID_TYPE, "lambda"), $3, $6); }
+  LAMBDA '(' id_list ')' '{' stmts '}' { $$ = newNode2(FUN_TYPE, 3, newNode(ID_TYPE, copyStr("lambda")), $3, $6); }
   ;
   
 list_exp:
@@ -228,8 +232,17 @@ int main(int argc, char** argv){
     nodeToDot(f, parseTree);
     fclose(f);
   } else {
-    Env* global = newEnv(0);
-    eval(newEnvValue(global), parseTree);
+    init();
+    Value* globalEnv = newEnvValue(newEnv(newNoneValue()));
+    listPush(rootValues, globalEnv);
+
+    eval(globalEnv, parseTree);
+
+    listClear(rootValues);
+    forceGC();
+    freeList(rootValues);
+    freeList(values);
+    freeNode(parseTree);
   }
   if(listCreatedObj) {
     listCreatedObjectsCount();

@@ -4,59 +4,78 @@
 #include "util.h"
 #include "closure.h"
 #include "ast.h"
+#include "gc.h"
 
 extern int newIntValueC, newStringValueC, newClosureValueC, newEnvValueC, newListValueC;
 extern int freeIntValueC, freeStringValueC, freeClosureValueC, freeEnvValueC, freeListValueC;
+extern List* values;
 
 Value* newNoneValue(){
-  Value* res = 0;
+  static Value* res = 0;
   if(res) {
     return res;
   } else {
     res = MALLOC(Value);
     res->type = NONE_VALUE_TYPE;
     res->data = 0;
+    res->mark = 0;
     return res;
   }
 }
 
 Value* newIntValue(long x){
+  //printf("creating %d\n", x);
+  gc();
   newIntValueC++;
   Value* res=MALLOC(Value);
   res->type = INT_VALUE_TYPE;
   res->data = (void*) x;
+  res->mark = 0;
+  listPush(values, res);
   return res;
 }
 
 Value* newStringValue(char *s){
+  gc();
   newStringValueC++;
   Value* res=MALLOC(Value);
   res->type = STRING_VALUE_TYPE;
   res->data = (void*) s;
+  res->mark = 0;
+  listPush(values, res);
   return res;
 }
 
 Value* newListValue(List* list) {
+  gc();
   newListValueC++;
   Value* res = MALLOC(Value);
   res->type = LIST_VALUE_TYPE;
   res->data = list;
+  res->mark = 0;
+  listPush(values, res);
   return res;
 }
 
 Value* newClosureValue(Node* t, Value* e) {
+  gc();
   newClosureValueC++;
   Value* res = MALLOC(Value);
   res->type = CLOSURE_VALUE_TYPE;
   res->data = newClosure(t, e);
+  res->mark = 0;
+  listPush(values, res);
   return res;
 }
 
 Value* newEnvValue(Env* e) {
+  gc();
   newEnvValueC++;
   Value* res = MALLOC(Value);
   res->type = ENV_VALUE_TYPE;
   res->data = e;
+  res->mark = 0;
+  listPush(values, res);
   return res;
 }
 
@@ -82,6 +101,7 @@ void freeValue(Value* v) {
     case NONE_VALUE_TYPE: return; // none is never freed
     default: error("unkonwn value type passed to freeValue: %d\n", v->type);
   }
+  v->type = NONE_VALUE_TYPE;
   free(v);
 }
 
@@ -116,8 +136,11 @@ static int valueToStringInternal(Value* v, char *s, int n) {
       return mySnprintf(s, n, "%d", v->data);
     case CLOSURE_VALUE_TYPE: {
       int len = 0;
+      Value* e = ((Closure*) v->data)->e;
+      len += mySnprintf(s + len, n - len, "{");
+      len += valueToStringInternal(e, s+len, n-len);
       Node* f = ((Closure*) v->data)->f;
-      len += mySnprintf(s + len, n - len, "fun %s(", chld(f, 0)->data);
+      len += mySnprintf(s + len, n - len, ", fun %s(", chld(f, 0)->data);
       t = chld(f, 1);
       for(i=0;i<chldNum(t);i++){
         if(i){
@@ -125,7 +148,7 @@ static int valueToStringInternal(Value* v, char *s, int n) {
         }
         len += mySnprintf(s+len, n-len, "%s", chld(t, i)->data);
       }
-      len += mySnprintf(s+len, n-len, ")");
+      len += mySnprintf(s+len, n-len, ")}");
       return len;
     }
     case LIST_VALUE_TYPE: {
@@ -145,9 +168,9 @@ static int valueToStringInternal(Value* v, char *s, int n) {
       return mySnprintf(s, n, "%s", v->data);
     }
     case ENV_VALUE_TYPE: {
-      return mySnprintf(s, n, "env { ... }");                    
+      return mySnprintf(s, n, "env %p", v->data);                    
     }
-    default: error("cannot print unknown value type\n");
+    default: error("cannot print unknown value type: %d at %p\n", v->type, v);
   }
 }
 
