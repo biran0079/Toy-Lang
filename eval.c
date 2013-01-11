@@ -164,6 +164,7 @@ Value* eval(Value* ev, Node* p) {
       }
     }
     case RETURN_TYPE:{
+      if(e->parent == newNoneValue()) error("cannot call return outside a function.\n");
       tlLongjmp(e->retState, RETURN_MSG_TYPE, eval(ev, chld(p, 0)));
     }
     case ID_TYPE: {
