@@ -420,15 +420,20 @@ Value* eval(Value* ev, Node* p) {
         // try block
         eval(ev, tryBlock);
         listPop(e->exceptionStates); // pop when out of try block
-      } else if (__jmpMsg__.type == EXCEPTION_MSG_TYPE) {
-        // catch block
-        listPop(e->exceptionStates); // pop when out of try block
-        // exception caught        
-        Value* v = __jmpMsg__.data;
-        envPut(e, catchId, v);
-        eval(ev, catchBlock);
       } else {
-         error("unknown state passed from longjmp in try statement\n");
+        // catch block
+        if(setjmp(listLast(e->exceptionStates)) == 0) {
+          // exception caught        
+          Value* v = __jmpMsg__.data;
+          envPut(e, catchId, v);
+          eval(ev, catchBlock);
+        } else {
+          //exception throw from catch
+          if(finallyBlock) eval(ev, finallyBlock);
+          listPop(e->exceptionStates);
+          Value* v = __jmpMsg__.data;
+          throwValue(e, v);
+        }
       }
       if(finallyBlock) eval(ev, finallyBlock);
       return newNoneValue();

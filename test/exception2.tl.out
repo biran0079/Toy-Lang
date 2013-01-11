@@ -1,0 +1,5 @@
+inner catch: 123
+inner finally
+outer catch: 123
+outer finally
+last finally
