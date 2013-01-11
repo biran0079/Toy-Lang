@@ -4,7 +4,7 @@
 %token WHILE FOR FUN RETURN LAMBDA
 %token NONE
 %token LOCAL
-%token LEN TIME STR ORD
+%token TIME
 %token BREAK CONTINUE
 %token TRY CATCH FINALLY THROW
 %token IF ELSE
@@ -26,10 +26,12 @@
 #include "env.h"
 #include "gc.h"
 #include "util.h"
-Node* parseTree;
 
+extern Node* parseTree;
 extern List* rootValues;
 extern List* values;
+extern Value* globalEnv;
+extern int hardMemLimit;
 %}
 
 %%
@@ -126,7 +128,6 @@ int_exp:
   INT { $$ = $1; }
   | '-' exp    { $2->data = (void*) (- (long) ($2->data)); $$ = $2; }
   | left_value ADDADD  { $$ = newNode2(ADDADD_TYPE, 1, $1); }
-  | LEN '(' exp ')' { $$ = newNode2(LEN_TYPE, 1, $3); }
   | exp GT exp { $$ = newNode2(GT_TYPE, 2, $1, $3); } 
   | exp LT exp { $$ = newNode2(LT_TYPE, 2, $1, $3); } 
   | exp GE exp { $$ = newNode2(GE_TYPE, 2, $1, $3); } 
@@ -144,8 +145,6 @@ int_exp:
 
 string_exp:
   STRING { $$ = $1; }
-  | STR '(' exp ')'     { $$ = newNode2(STR_TYPE, 1, $3); }
-  | ORD '(' exp ')'     { $$ = newNode2(ORD_TYPE, 1, $3); }
   ;
 
 fun_exp:
@@ -192,7 +191,9 @@ void help(){
   fprintf(stderr, "Usage: tl [<options>] <filename>\n");
   fprintf(stderr, "\t-d\tinstead of evaluating the program, it converts tabstract syntax tree to dot language, \n"
                   "\t\twhich can be compiled to image using dot tool\n"
-                  "\t-l\tlist number of created objects\n");
+                  "\t-l\tlist number of created and freed objects\n"
+                  "\t-m <int>\tconfig memory limit for trigering GC\n"
+                  );
   exit(-1);
 }
 int main(int argc, char** argv){
@@ -208,6 +209,7 @@ int main(int argc, char** argv){
       switch(argv[i][1]) {
         case 'd' : toDot = 1;break;
         case 'l' : listCreatedObj = 1; break;
+        case 'm' : i++; hardMemLimit = atoi(argv[i]); break;
         default: help();
       }
     } else {
@@ -233,16 +235,8 @@ int main(int argc, char** argv){
     fclose(f);
   } else {
     init();
-    Value* globalEnv = newEnvValue(newEnv(newNoneValue()));
-    listPush(rootValues, globalEnv);
-
     eval(globalEnv, parseTree);
-
-    listClear(rootValues);
-    forceGC();
-    freeList(rootValues);
-    freeList(values);
-    freeNode(parseTree);
+    cleanup();
   }
   if(listCreatedObj) {
     listCreatedObjectsCount();

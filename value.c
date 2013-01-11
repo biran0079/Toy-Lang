@@ -6,8 +6,8 @@
 #include "ast.h"
 #include "gc.h"
 
-extern int newIntValueC, newStringValueC, newClosureValueC, newEnvValueC, newListValueC;
-extern int freeIntValueC, freeStringValueC, freeClosureValueC, freeEnvValueC, freeListValueC;
+extern int newIntValueC, newStringValueC, newClosureValueC, newEnvValueC, newListValueC, newBuiltinFunC;
+extern int freeIntValueC, freeStringValueC, freeClosureValueC, freeEnvValueC, freeListValueC, freeBuiltinFunC;
 extern List* values;
 
 Value* newNoneValue(){
@@ -68,6 +68,18 @@ Value* newClosureValue(Node* t, Value* e) {
   return res;
 }
 
+Value* newBuiltinFun(BuitinFun f) {
+  gc();
+  newBuiltinFunC++;
+  Value* res = MALLOC(Value);
+  res->type = BUILTIN_FUN_VALUE_TYPE;
+  res->data = f;
+  res->mark = 0;
+  listPush(values, res);
+  return res;
+}
+
+
 Value* newEnvValue(Env* e) {
   gc();
   newEnvValueC++;
@@ -98,6 +110,7 @@ void freeValue(Value* v) {
       freeStringValueC++;
       break;
     case INT_VALUE_TYPE: freeIntValueC++; break;
+    case BUILTIN_FUN_VALUE_TYPE: freeBuiltinFunC++; break;
     case NONE_VALUE_TYPE: return; // none is never freed
     default: error("unkonwn value type passed to freeValue: %d\n", v->type);
   }
@@ -130,6 +143,8 @@ static int valueToStringInternal(Value* v, char *s, int n) {
   Node* t;
   int i;
   switch(v->type) {
+    case BUILTIN_FUN_VALUE_TYPE:
+      return mySnprintf(s, n, "<builtin-function@%p>", v->data);
     case NONE_VALUE_TYPE:
       return mySnprintf(s, n, "none");
     case INT_VALUE_TYPE:
@@ -184,6 +199,7 @@ int valueEquals(Value* v1, Value* v2){
   switch(v1->type){
     case INT_VALUE_TYPE:
     case ENV_VALUE_TYPE:
+    case BUILTIN_FUN_VALUE_TYPE:
     case CLOSURE_VALUE_TYPE: return v1->data == v2->data;
     case LIST_VALUE_TYPE: {
       List* l1 = v1->data;
@@ -273,3 +289,28 @@ Value* valueAdd(Value* v1, Value* v2) {
   }
 }
 
+int valueCmp(Value* v1, Value* v2) {
+  if(v1->type != v2->type) {
+    return -1; // comparing different type
+  }
+  switch(v1->type) {
+    case LIST_VALUE_TYPE: {
+      List* l1 = v1->data, *l2 = v2->data;
+      int i, n1 = listSize(l1), n2 = listSize(l2);
+      for(i=0;i<n1 && i<n2;i++){
+        int res = valueCmp(listGet(l1, i), listGet(l2, i));
+        if(res)return res;
+      }
+      if(n1==n2) return 0;
+      else if(n1 < n2) return -1;
+      else return 1;
+    }
+    case STRING_VALUE_TYPE: return strcmp(v1->data, v2->data);
+    case CLOSURE_VALUE_TYPE: 
+    case ENV_VALUE_TYPE:
+    case BUILTIN_FUN_VALUE_TYPE: 
+    case INT_VALUE_TYPE: return (long)(v1->data) - (long)(v2->data);
+    case NONE_VALUE_TYPE: return 0;
+    default: error("cannot compare unknown type: %d\n", v1->type);
+  }
+}

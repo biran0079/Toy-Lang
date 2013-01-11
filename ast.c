@@ -80,9 +80,6 @@ char* nodeTypeToString(NodeType type) {
     case ASSIGN_TYPE: return "=";
     case ADDEQ_TYPE:  return "+=";
     case TIME_TYPE: return "time";
-    case STR_TYPE: return "str";
-    case ORD_TYPE: return "ord";
-    case LEN_TYPE: return "len";
     case RETURN_TYPE: return "return";
     case EXP_LIST_TYPE: return "exps";
     case ID_LIST_TYPE: return "ids";

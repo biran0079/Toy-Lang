@@ -103,9 +103,6 @@ static int nodeToDotInternal(FILE* o, Node* t, int* nextId){
     case OR_TYPE:
     case ADDEQ_TYPE: nodeToDotHelper(o, t, nextId, 2L, "op1", "op2");break;
     case TIME_TYPE:
-    case STR_TYPE:
-    case ORD_TYPE:
-    case LEN_TYPE:
     case THROW_TYPE: 
     case RETURN_TYPE: nodeToDotHelper(o, t, nextId, 1L, "exp"); break;
     case NOT_TYPE: nodeToDotHelper(o, t, nextId, 1L, "exp"); break;

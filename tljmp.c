@@ -1,7 +1,7 @@
 #include "tljmp.h"
 #include <stdio.h>
 
-JmpMsg __jmpMsg__;
+extern JmpMsg __jmpMsg__;
 
 void tlLongjmp(jmp_buf buf, JmpMsgType type, void* data) {
   __jmpMsg__.type = type;

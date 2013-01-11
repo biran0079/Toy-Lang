@@ -1,5 +1,5 @@
 for f in ./benchmark/*.tl
 do
-  echo -n $f 
+  echo -n "$f   "
   ./tl $f $@
 done

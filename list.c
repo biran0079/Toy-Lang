@@ -70,3 +70,28 @@ List* listCopy(List* lst){
 void listClear(List* lst){
   lst->size=0;
 }
+  
+static void swap(void* a[], int i, int j) {
+  if(i==j) return;
+  void* t = a[i];
+  a[i] = a[j];
+  a[j] = t;
+}
+
+static void qsortInternal(void* a[], int l, int r, Comparator cmp) {
+  if (l>=r) return;
+  int i = l+1, j = l+1;
+  while(i <= r) {
+    if(cmp(a[i], a[l]) < 0)
+      swap(a, i, j++);
+    i++;
+  }
+  j--;
+  swap(a, l, j);
+  qsortInternal(a, l, j-1, cmp);
+  qsortInternal(a, j+1, r, cmp);
+}
+
+void listSort(List* lst, Comparator cmp) {
+  qsortInternal(lst->arr, 0, lst->size - 1, cmp);
+}

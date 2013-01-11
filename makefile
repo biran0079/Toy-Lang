@@ -7,6 +7,9 @@ all: exe
 test: exe
 	./test.sh
 
+gctest: exe
+	./gctest.sh
+
 exe: flex bison 
 	gcc $(gccflag) *.c -o tl
 

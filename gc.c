@@ -66,9 +66,8 @@ void forceGC() {
   values = values2;
 }
 
-int hardMemLimit = 1500000, softMemLimit = 1000000;
+extern int hardMemLimit, softMemLimit;
 
-void listCreatedObjectsCount();
 void gc() {
   if(listSize(values) >= hardMemLimit) {
     //fprintf(stderr, "*");

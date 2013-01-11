@@ -34,13 +34,10 @@ enum NodeType {
   MOD_TYPE,
   LIST_TYPE,
   LIST_ACCESS_TYPE,
-  LEN_TYPE,
   FOR_TYPE,
   ADDEQ_TYPE,
   TIME_TYPE,
   STRING_TYPE, // liter string
-  STR_TYPE,    // str() operator
-  ORD_TYPE,
   NONE_TYPE,
   FOREACH_TYPE,
   TRY_TYPE,

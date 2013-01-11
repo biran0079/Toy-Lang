@@ -17,9 +17,6 @@ fun       {return FUN;}
 for       {return FOR;}
 lambda    {return LAMBDA;}
 return    {return RETURN;}
-len       {return LEN;}
-str       {return STR;}
-ord       {return ORD;}
 time       {return TIME;}
 none       {return NONE;}
 try       {return TRY;}

@@ -10,6 +10,7 @@ typedef enum NodeType NodeType;
 typedef void (*ValueFunc)(Value*);
 
 void init();
+void cleanup();
 
 #define YYSTYPE Node*
 

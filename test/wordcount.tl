@@ -8,7 +8,7 @@ fun hash(s){
   res = 0;  
   l=len(s);
   for(i=0;i<l;i+=1){
-    res=res*89;
+    res=res*31;
     res+=ord(s[i]);
   }
   return res;
@@ -80,6 +80,9 @@ for(w : split(s)){
   else
     hashTablePut(t,w,n+1);
 }
+lst = [];
 for(w : hashTableKeys(t)){
-  print(w, hashTableGet(t, w));
+  lst += [[w, hashTableGet(t, w)]];
 }
+sort(lst);
+print(lst);

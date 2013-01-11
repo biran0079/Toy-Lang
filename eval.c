@@ -22,6 +22,12 @@ static void popRootValueTo(int size) {
   rootValues->size = size;
 }
 
+static Value* evalAndPushRoot(Value* ev, Node* p) {
+  Value* res = eval(ev, p);
+  pushRootValue(res);
+  return res;
+}
+
 Value* eval(Value* ev, Node* p) {
   int initSize = listSize(rootValues);
 
@@ -51,36 +57,11 @@ Value* eval(Value* ev, Node* p) {
       printf("\n");
       return newNoneValue();
     }
-    case LEN_TYPE: {
-      Value* v = eval(ev, chld(p, 0));
-      pushRootValue(v);
-      Value* res = newNoneValue();
-      switch(v->type) {
-        case LIST_VALUE_TYPE: res = newIntValue(listSize((List*) v->data)); break;
-        case STRING_VALUE_TYPE: res = newIntValue(strlen((char*) v->data)); break;
-        default: error("unsupported type for 'len' operator: %d\n", v->type);
-      }
-      popRootValueTo(initSize);
-      return res;
-    }
-    case STR_TYPE: {
-      return newStringValue(valueToString(eval(ev, chld(p,0))));
-    }
-    case ORD_TYPE: {
-      Value* v = eval(ev, chld(p, 0));
-      pushRootValue(v);
-      if(v->type != STRING_VALUE_TYPE || strlen((char*) v->data) != 1)
-        error("ord() can only apply to string with length 1\n");
-      Value* res =  newIntValue(*((char*) v->data));
-      popRootValueTo(initSize);
-      return res;
-    }
     case NONE_TYPE: return newNoneValue();
     case LIST_TYPE: {
       List* vs = newList();
       for(i=0;i<chldNum(p);i++) {
-        Value* v = eval(ev, chld(p,i));
-        pushRootValue(v);
+        Value* v = evalAndPushRoot(ev, chld(p,i));
         listPush(vs, v);
       }
       Value* res = newListValue(vs);
@@ -88,10 +69,8 @@ Value* eval(Value* ev, Node* p) {
       return res;
     }
     case LIST_ACCESS_TYPE:{
-      Value* v = eval(ev, chld(p, 0));
-      pushRootValue(v);
-      Value* idxValue = eval(ev, chld(p, 1));
-      pushRootValue(idxValue);
+      Value* v = evalAndPushRoot(ev, chld(p, 0));
+      Value* idxValue = evalAndPushRoot(ev, chld(p, 1));
       if(idxValue->type != INT_VALUE_TYPE) error("list index must be int\n");
       long idx = (long) idxValue->data;
       Value *res;
@@ -115,6 +94,11 @@ Value* eval(Value* ev, Node* p) {
     }
     case TAIL_CALL_TYPE: {
       Value* closureValue = envGet(e, chld(p, 0)->data);
+      if(closureValue->type == BUILTIN_FUN_VALUE_TYPE) {
+        Value* res = evalBuiltInFun(ev, chld(p, 1), closureValue->data);
+        popRootValueTo(initSize);
+        return res;
+      }
       if(closureValue->type != CLOSURE_VALUE_TYPE) error("only closure value can be called\n");
       Closure *c = closureValue->data;
       Node* f = c->f, *args = chld(p, 1);
@@ -132,6 +116,11 @@ Value* eval(Value* ev, Node* p) {
     }
     case CALL_TYPE: {
       Value* closureValue = envGet(e, chld(p, 0)->data);
+      if(closureValue->type == BUILTIN_FUN_VALUE_TYPE) {
+        Value* res = evalBuiltInFun(ev, chld(p, 1), closureValue->data);
+        popRootValueTo(initSize);
+        return res;
+      }
       if(!closureValue) error("fun value is none in function application\n");
       Closure *c = closureValue->data;
       Node* f = c->f, *args = chld(p, 1);
@@ -189,13 +178,11 @@ Value* eval(Value* ev, Node* p) {
       Node* left = chld(p, 0);
       switch(left->type) {
         case LIST_ACCESS_TYPE: {
-          Value* lv = eval(ev, chld(left, 0));
+          Value* lv = evalAndPushRoot(ev, chld(left, 0));
           if (lv->type != LIST_VALUE_TYPE) error("= only applys to list\n");
-          pushRootValue(lv);
           List* l = lv->data;                      
-          Value* idx = eval(ev, chld(left, 1));
+          Value* idx = evalAndPushRoot(ev, chld(left, 1));
           if(idx->type != INT_VALUE_TYPE) error("list index must be int\n");
-          pushRootValue(idx);
           listSet(l, (long) idx->data, eval(ev, chld(p, 1)));
           Value* res = listGet(l, (long) idx->data);
           popRootValueTo(initSize);
@@ -213,16 +200,13 @@ Value* eval(Value* ev, Node* p) {
       Node* left = chld(p,0);
       switch(left->type) {
         case LIST_ACCESS_TYPE: {
-          Value* lv = eval(ev, chld(left, 0));
+          Value* lv = evalAndPushRoot(ev, chld(left, 0));
           if(lv->type != LIST_VALUE_TYPE) error("+= only applys to list\n");
-          pushRootValue(lv);
           List* l = lv->data;                      
-          Value* idx = eval(ev, chld(left, 1));
+          Value* idx = evalAndPushRoot(ev, chld(left, 1));
           if(idx->type != INT_VALUE_TYPE) error("list index must be int\n");
-          pushRootValue(idx);
           Value* e1 = listGet(l, (long) idx->data);
-          Value* e2 = eval(ev, chld(p, 1));
-          pushRootValue(e2);
+          Value* e2 = evalAndPushRoot(ev, chld(p, 1));
           Value* res = newNoneValue();
           switch(e1->type) {
             case INT_VALUE_TYPE:
@@ -248,8 +232,7 @@ Value* eval(Value* ev, Node* p) {
         case ID_TYPE: {
           char* key = (char *) chld(p, 0)->data;
           Value* e1 = envGet(e, key);
-          Value* e2 = eval(ev, chld(p, 1));
-          pushRootValue(e2);
+          Value* e2 = evalAndPushRoot(ev, chld(p, 1));
           Value* res = newNoneValue();
           switch(e1->type) {
             case INT_VALUE_TYPE:
@@ -276,46 +259,36 @@ Value* eval(Value* ev, Node* p) {
       }
     }
     case ADD_TYPE: {
-      Value*e1 = eval(ev, chld(p, 0));
-      pushRootValue(e1);
-      Value*e2 = eval(ev, chld(p, 1));
-      pushRootValue(e2);
-      Value*res = valueAdd(e1, e2);
+      Value* e1 = evalAndPushRoot(ev, chld(p, 0));
+      Value* e2 = evalAndPushRoot(ev, chld(p, 1));
+      Value* res = valueAdd(e1, e2);
       popRootValueTo(initSize);
       return res;
     }
     case SUB_TYPE: {
-      Value*e1 = eval(ev, chld(p, 0));
-      pushRootValue(e1);
-      Value*e2 = eval(ev, chld(p, 1));
-      pushRootValue(e2);
+      Value*e1 = evalAndPushRoot(ev, chld(p, 0));
+      Value*e2 = evalAndPushRoot(ev, chld(p, 1));
       Value*res = valueSub(e1, e2);
       popRootValueTo(initSize);
       return res;
     }
     case MUL_TYPE: {
-      Value*e1 = eval(ev, chld(p, 0));
-      pushRootValue(e1);
-      Value*e2 = eval(ev, chld(p, 1));
-      pushRootValue(e2);
+      Value*e1 = evalAndPushRoot(ev, chld(p, 0));
+      Value*e2 = evalAndPushRoot(ev, chld(p, 1));
       Value*res = valueMul(e1, e2);
       popRootValueTo(initSize);
       return res;
     }
     case DIV_TYPE: {
-      Value*e1 = eval(ev, chld(p, 0));
-      pushRootValue(e1);
-      Value*e2 = eval(ev, chld(p, 1));
-      pushRootValue(e2);
+      Value*e1 = evalAndPushRoot(ev, chld(p, 0));
+      Value*e2 = evalAndPushRoot(ev, chld(p, 1));
       Value*res = valueDiv(e1, e2);
       popRootValueTo(initSize);
       return res;
     }
     case MOD_TYPE: {
-      Value*e1 = eval(ev, chld(p, 0));
-      pushRootValue(e1);
-      Value*e2 = eval(ev, chld(p, 1));
-      pushRootValue(e2);
+      Value*e1 = evalAndPushRoot(ev, chld(p, 0));
+      Value*e2 = evalAndPushRoot(ev, chld(p, 1));
       Value*res = valueMod(e1, e2);
       popRootValueTo(initSize);
       return res;
@@ -349,8 +322,7 @@ Value* eval(Value* ev, Node* p) {
       jmp_buf buf;
       listPush(e->loopStates, buf);
       Node* id = chld(p, 0);
-      Value* lv = eval(ev, chld(p, 1));
-      pushRootValue(lv);
+      Value* lv = evalAndPushRoot(ev, chld(p, 1));
       if(id->type != ID_TYPE || lv->type != LIST_VALUE_TYPE) {
         error("param type incorrect for for( : ) statement\n ");
       }
@@ -401,34 +373,22 @@ Value* eval(Value* ev, Node* p) {
       tlLongjmp(listLast(e->loopStates), BREAK_MSG_TYPE, 0);
     case GT_TYPE:
       return newIntValue(
-           (long) eval(ev, chld(p, 0))->data > (long) eval(ev, chld(p, 1))->data);
+           valueCmp(evalAndPushRoot(ev, chld(p, 0)), evalAndPushRoot(ev, chld(p, 1))) > 0);
     case LT_TYPE:
       return newIntValue(
-           (long) eval(ev, chld(p, 0))->data < (long) eval(ev, chld(p, 1))->data);
+           valueCmp(evalAndPushRoot(ev, chld(p, 0)), evalAndPushRoot(ev, chld(p, 1))) < 0);
     case GE_TYPE:
       return newIntValue(
-           (long) eval(ev, chld(p, 0))->data >= (long) eval(ev, chld(p, 1))->data);
+           valueCmp(evalAndPushRoot(ev, chld(p, 0)), evalAndPushRoot(ev, chld(p, 1))) >= 0);
     case LE_TYPE:
       return newIntValue(
-           (long) eval(ev, chld(p, 0))->data <= (long) eval(ev, chld(p, 1))->data);
-    case EQ_TYPE: {
-      Value* v1 = eval(ev, chld(p, 0));
-      pushRootValue(v1);
-      Value* v2 = eval(ev, chld(p, 1));
-      pushRootValue(v2);
-      Value* res = newIntValue(valueEquals(v1, v2));
-      popRootValueTo(initSize);
-      return res;
-    }
-    case NE_TYPE: {
-      Value* v1 = eval(ev, chld(p, 0));
-      pushRootValue(v1);
-      Value* v2 = eval(ev, chld(p, 1));
-      pushRootValue(v2);
-      Value* res = newIntValue(!valueEquals(v1, v2));
-      popRootValueTo(initSize);
-      return res;
-    }
+           valueCmp(evalAndPushRoot(ev, chld(p, 0)), evalAndPushRoot(ev, chld(p, 1))) <= 0);
+    case EQ_TYPE: 
+      return newIntValue(
+           valueCmp(evalAndPushRoot(ev, chld(p, 0)), evalAndPushRoot(ev, chld(p, 1))) == 0);
+    case NE_TYPE: 
+      return newIntValue(
+           valueCmp(evalAndPushRoot(ev, chld(p, 0)), evalAndPushRoot(ev, chld(p, 1))) != 0);
     case AND_TYPE:
       return newIntValue(
            eval(ev, chld(p, 0))->data && eval(ev, chld(p, 1))->data);
@@ -489,16 +449,13 @@ Value* eval(Value* ev, Node* p) {
           return i;
         }
         case LIST_ACCESS_TYPE: {
-          Value* lv =  eval(ev, chld(left, 0));
+          Value* lv =  evalAndPushRoot(ev, chld(left, 0));
           if(lv->type != LIST_VALUE_TYPE) error("++ only applys to left value\n");
-          pushRootValue(lv);
           List* l = (List*) lv->data;
-          Value* idx = eval(ev, chld(left, 1));
+          Value* idx = evalAndPushRoot(ev, chld(left, 1));
           if(idx->type != INT_VALUE_TYPE) error("index of list must be int\n");
-          pushRootValue(idx);
           long idxv = (long) idx->data;
           Value* i = listGet(l, idxv);
-          pushRootValue(i);
           if (i->type != INT_VALUE_TYPE) error("++ only applys on int\n");
           listSet(l, idxv, newIntValue((long) i->data + 1));
           popRootValueTo(initSize);
@@ -534,3 +491,14 @@ void throwValue(Env* e, Value* v) {
   error("should never reach here\n");
 }
 
+Value* evalBuiltInFun(Value* e, Node* exp_lst, BuitinFun f) {
+  List* args = newList();
+  int i, n = chldNum(exp_lst);
+  for(i=0; i<n; i++) {
+    Value* v = evalAndPushRoot(e, chld(exp_lst, i));
+    listPush(args, v);
+  }
+  Value* res = f(args);
+  freeList(args);
+  return res;
+}

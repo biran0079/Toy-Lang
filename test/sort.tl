@@ -115,12 +115,12 @@ fun qsort(l){
   internalQsort(l,0,len(l)-1);  
 }
 
-l = getRandomList(1000);
+l = getRandomList(100);
 print(isSorted(l));
 msort(l);
 print(isSorted(l));
 
-l = getRandomList(1000);
+l = getRandomList(100);
 print(isSorted(l));
 qsort(l);
 print(isSorted(l));
