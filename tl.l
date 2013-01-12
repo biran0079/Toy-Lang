@@ -6,6 +6,9 @@ L       [a-zA-Z]
 #include "util.h"
 #include "tl.tab.h"
 %}
+
+%option noyywrap
+
 %%
 if         {return IF;}
 else       {return ELSE;}
@@ -23,6 +26,7 @@ catch       {return CATCH;}
 finally       {return FINALLY;}
 throw       {return THROW;}
 local       {return LOCAL;}
+import       {return IMPORT;}
 {D}+        {yylval = newNode(INT_TYPE, (void*) strToLong(yytext)); return INT;}
 {L}({D}|{L})*   {yylval = newNode(ID_TYPE, copyStr(yytext)); return ID;}
 \"(\\.|[^\"])*\"  {yylval = newNode(STRING_TYPE, literalStringToString(yytext)); return STRING;}
@@ -39,10 +43,7 @@ local       {return LOCAL;}
 ">"          {return GT;}
 "<"          {return LT;}
 ","          {return COMMA;}
-[-+*/%();{}\[\]:]  {return *yytext;}
+[-+*/%();{}\[\]:.]  {return *yytext;}
 [ \t\n\r]     ;
 .            {printf("unknown character for lex: %s\n", yytext);exit(-1);}
 %%
-int yywrap(){
-  return 1;  
-}

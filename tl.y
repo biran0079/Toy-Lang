@@ -8,6 +8,7 @@
 %token TRY CATCH FINALLY THROW
 %token IF ELSE
 %token ADDADD
+%token IMPORT
 
 %right COMMA
 %left OR
@@ -16,6 +17,7 @@
 %right ASSIGN ADDEQ
 %left '+' '-'
 %left '*' '/' '%'
+%left '.'
 
 %{
 #include "tl.h"
@@ -27,18 +29,20 @@
 #include "dumpGCHistory.h"
 #include "util.h"
 
-extern Node* parseTree;
+extern List* parseTrees;
 extern List* rootValues;
 extern List* values;
 extern Value* globalEnv;
 extern int hardMemLimit;
 extern int shouldDumpGCHistory;
+extern FILE* yyin;
+
 %}
 
 %%
 prog: 
   stmts {
-    parseTree = $1;
+    listPush(parseTrees, $1);
   }
   ;
 stmts:
@@ -79,6 +83,7 @@ stmt:
   | RETURN ';' {$$ = newNode2(RETURN_TYPE, 1, newNode2(NONE_TYPE, 0));}
   | BREAK ';' {$$ = newNode2(BREAK_TYPE, 0);}
   | CONTINUE ';' {$$ = newNode2(CONTINUE_TYPE, 0);}
+  | IMPORT ID ';' {$$ = newNode2(IMPORT_TYPE, 1, $2);}
   ;
 
 id_list:
@@ -148,7 +153,7 @@ string_exp:
   STRING { $$ = $1; }
   ;
 
-fun_exp:
+lambda_exp:
   LAMBDA '(' id_list ')' '{' stmts '}' { $$ = newNode2(FUN_TYPE, 3, newNode(ID_TYPE, copyStr("lambda")), $3, $6); }
   ;
   
@@ -158,23 +163,32 @@ list_exp:
 
 none_exp:
   NONE                { $$ = newNode2(NONE_TYPE, 0); }
+  | TIME '(' exp ')'    { $$ = newNode2(TIME_TYPE, 1, $3); }
+  ;
+
+module_access:
+  module_access '.' ID  {
+    listPush($1->data, $3);
+    $$ = $1;
+  }
+  | ID '.' ID           { $$ = newNode2(MODULE_ACCESS_TYPE, 2, $1, $3); }
   ;
 
 general_exp:
-  TIME '(' exp ')'    { $$ = newNode2(TIME_TYPE, 1, $3); }
-  | list_access         { $$ = $1; }
-  | ID '(' exp_list ')' { $$ = newNode2(CALL_TYPE, 2, $1, $3); }
+  list_access         { $$ = $1; }
+  | general_exp '(' exp_list ')' { $$ = newNode2(CALL_TYPE, 2, $1, $3); }
   | '(' exp ')' { $$ = $2; }
   | exp '+' exp { $$ = newNode2(ADD_TYPE, 2, $1, $3); } 
   | left_value ASSIGN exp  { $$ = newNode2(ASSIGN_TYPE, 2, $1, $3); }
   | left_value ADDEQ exp { $$ = newNode2(ADDEQ_TYPE, 2, $1, $3); }
   | ID          { $$ = $1; }
+  | module_access          { $$ = $1; }
   ;
 
 exp:
   int_exp  { $$ = $1; }
   | string_exp { $$ = $1; }
-  | fun_exp { $$ = $1; }
+  | lambda_exp { $$ = $1; }
   | list_exp { $$ = $1; }
   | none_exp { $$ = $1; }
   | general_exp { $$ = $1; }
@@ -189,25 +203,23 @@ void help(){
   fprintf(stderr, "Usage: tl [<options>] <filename>\n");
   fprintf(stderr, "\t-d\tinstead of evaluating the program, it converts tabstract syntax tree to dot language, \n"
                   "\t\twhich can be compiled to image using dot tool\n"
-                  "\t-l\tlist number of created and freed objects\n"
                   "\t-m <int>\tconfig memory limit for trigering GC\n"
                   "\t-h\tdump GC history to chart in html when GC\n"
                   );
   exit(-1);
 }
+
 int main(int argc, char** argv){
 #if YYDEBUG
   yydebug = 1;
 #endif
   int toDot = 0;
-  int listCreatedObj = 0;
   int i;
   char* src = 0;
   for(i=1; i<argc;i++) {
     if(argv[i][0]=='-') {
       switch(argv[i][1]) {
         case 'd' : toDot = 1;break;
-        case 'l' : listCreatedObj = 1; break;
         case 'm' : i++; hardMemLimit = atoi(argv[i]); break;
         case 'h' : shouldDumpGCHistory = 1; break;
         default: help();
@@ -217,28 +229,26 @@ int main(int argc, char** argv){
     }
   }
   if(src){
-    if(0 == freopen(src, "r", stdin)) {
+    yyin = fopen(src, "r");
+    if(!yyin) {
       error("cannot open input file\n");
     }
   } else {
     src = "stdin";
   }
+  init();
   yyparse();
   if(toDot) {
     char* s = catStr(src, ".dot");
     FILE* f=fopen(s, "w");
     if (!f) error("failed to open %s\n", s);
-    nodeToDot(f, parseTree);
+    nodeToDot(f, listGet(parseTrees, 0));
     fclose(f);
     free(s);
   } else {
-    init();
-    eval(globalEnv, parseTree);
-    cleanup();
+    eval(globalEnv, listGet(parseTrees, 0));
   }
-  if(listCreatedObj) {
-    listCreatedObjectsCount();
-  }
+  cleanup();
   if(shouldDumpGCHistory) {
     char* s = catStr(src, ".html");
     FILE* f=fopen(s, "w");

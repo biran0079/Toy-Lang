@@ -57,6 +57,10 @@ Value* builtInPrint(List* lst) {
   return newNoneValue();
 }
 
+Value* builtInListCat(List* lst) {
+  
+}
+
 void registerBuiltinFunctions() {
   Env* e = globalEnv->data;
   envPut(e, "len", newBuiltinFun(builtInLen));

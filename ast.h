@@ -43,6 +43,8 @@ enum NodeType {
   THROW_TYPE,
   ADDADD_TYPE,
   LOCAL_TYPE,
+  IMPORT_TYPE,
+  MODULE_ACCESS_TYPE,
 };
 
 struct Node {

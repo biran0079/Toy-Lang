@@ -69,6 +69,7 @@ static int nodeToDotInternal(FILE* o, Node* t, int* nextId){
     case BREAK_TYPE: fprintf(o, "%d [label=\"break\"]", id);break;
     case CONTINUE_TYPE: fprintf(o, "%d [label=\"continue\"]", id);break;
 
+    case MODULE_ACCESS_TYPE: 
     case EXP_LIST_TYPE: 
     case ID_LIST_TYPE:
     case LIST_TYPE:
@@ -107,7 +108,8 @@ static int nodeToDotInternal(FILE* o, Node* t, int* nextId){
     case RETURN_TYPE: nodeToDotHelper(o, t, nextId, 1L, "exp"); break;
     case NOT_TYPE: nodeToDotHelper(o, t, nextId, 1L, "exp"); break;
     case ADDADD_TYPE: nodeToDotHelper(o, t, nextId, 1L, "id"); break;
-    case LOCAL_TYPE: nodeToDotHelper(o, t, nextId, 1L, "exps"); break;
+    case LOCAL_TYPE: nodeToDotHelper(o, t, nextId, 1L, "ids"); break;
+    case IMPORT_TYPE: nodeToDotHelper(o, t, nextId, 1L, "ids"); break;
     case IF_TYPE: {
       int n = chldNum(t), to;
       if(n==2) {

@@ -13,7 +13,7 @@ int newListC = 0, newHashTableC = 0, freeListC = 0, freeHashTableC = 0;
 
 /*** ALL GLOBAL VARIABLES DECLARES BELOW!  ***/
 
-Node* parseTree;
+List* parseTrees;
 List* values;  // all values created
 List* rootValues;  // all values should be treated as root when gc
 Value* globalEnv;
@@ -39,6 +39,7 @@ void listCreatedObjectsCount() {
 }
 
 void init() {
+  parseTrees = newList();
   values = newList();
   rootValues = newList();
   gcHistory = newList();
@@ -52,7 +53,10 @@ void cleanup() {
   forceGC();
   freeList(rootValues);
   freeList(values);
-  freeNode(parseTree);
+  int i, n = listSize(parseTrees);
+  for(i=0;i<n;i++)
+    freeNode(listGet(parseTrees, i));
+  freeList(parseTrees);
   if(!shouldDumpGCHistory) clearGCHistory();
 }
 

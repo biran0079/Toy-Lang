@@ -9,7 +9,7 @@
 #include "tljmp.h"
 #include "util.h"
 
-extern List* rootValues;
+extern List* rootValues, *parseTrees;
 extern JmpMsg __jmpMsg__;
 
 
@@ -398,7 +398,7 @@ Value* eval(Value* ev, Node* p) {
       clock_t st = clock();                
       Value* res = eval(ev, chld(p, 0));
       fprintf(stderr, "time: %lf secs\n", (clock() - st) * 1.0 / CLOCKS_PER_SEC);
-      return res;
+      return newNoneValue();
     }
     case TRY_TYPE: {
       jmp_buf buf;
@@ -466,6 +466,23 @@ Value* eval(Value* ev, Node* p) {
         envPutLocal(e, (char*) chld(ids, i)->data, newNoneValue());
       }
       return newNoneValue();
+    }
+    case IMPORT_TYPE: {
+                        error("not supported yet\n");
+                        /*
+      Node* id = chld(p, 0);
+      char *s = strcat(id->data, ".tl");
+      FILE* f = fopen(s, "r", stdin);
+      if(!f) ("cannot open file %s\n", s);
+      yyin = f;
+      free(s);
+      yyparse();
+      Value* res = newEnvValue(newEnv(newNoneValue()));
+      pushRootValue(res);
+      eval(res, listLast(parseTrees));
+      envPut(e, id->data, res);
+      return newNoneValue();
+      */
     }
     default:
       error("cannot eval unknown node type\n");
