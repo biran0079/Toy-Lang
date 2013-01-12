@@ -2,6 +2,7 @@
 #include "env.h"
 #include "tljmp.h"
 #include "builtinFun.h"
+#include "gc.h"
 #include "util.h"
 
 int newNodeC = 0, newIntValueC = 0, newStringValueC = 0, newClosureValueC = 0, newEnvValueC = 0,
@@ -18,6 +19,9 @@ List* rootValues;  // all values should be treated as root when gc
 Value* globalEnv;
 JmpMsg __jmpMsg__;
 int hardMemLimit = 1500000, softMemLimit = 1000000;
+
+int shouldDumpGCHistory = 0;  
+List* gcHistory;
 
 /*** ALL GLOBAL VARIABLES DECLARES ABOVE!  ***/
 
@@ -37,6 +41,7 @@ void listCreatedObjectsCount() {
 void init() {
   values = newList();
   rootValues = newList();
+  gcHistory = newList();
   globalEnv = newEnvValue(newEnv(newNoneValue()));
   listPush(rootValues, globalEnv);
   registerBuiltinFunctions();
@@ -48,5 +53,6 @@ void cleanup() {
   freeList(rootValues);
   freeList(values);
   freeNode(parseTree);
+  if(!shouldDumpGCHistory) clearGCHistory();
 }
 

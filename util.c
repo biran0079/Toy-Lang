@@ -10,6 +10,14 @@ char* copyStr(char* t) {
   return copy(t, strlen(t) + 1);
 }
 
+char* catStr(char* s1, char* s2) {
+  char* s = (char*) malloc(strlen(s1) + strlen(s2) + 1);
+  s[0]=0;
+  strcat(s, s1);
+  strcat(s, s2);
+  return s;
+}
+
 long strToLong(char* s){
   long res = 0;
   while(*s) {

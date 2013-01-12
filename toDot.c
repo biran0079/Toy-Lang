@@ -107,7 +107,6 @@ static int nodeToDotInternal(FILE* o, Node* t, int* nextId){
     case RETURN_TYPE: nodeToDotHelper(o, t, nextId, 1L, "exp"); break;
     case NOT_TYPE: nodeToDotHelper(o, t, nextId, 1L, "exp"); break;
     case ADDADD_TYPE: nodeToDotHelper(o, t, nextId, 1L, "id"); break;
-    case PRINT_TYPE: 
     case LOCAL_TYPE: nodeToDotHelper(o, t, nextId, 1L, "exps"); break;
     case IF_TYPE: {
       int n = chldNum(t), to;

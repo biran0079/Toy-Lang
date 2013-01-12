@@ -6,3 +6,4 @@ lex.yy.c
 *.tab.h
 *.dot
 *.jpg
+*.html

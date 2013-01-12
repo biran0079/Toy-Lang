@@ -4,7 +4,6 @@
 enum NodeType {
   INT_TYPE,
   ID_TYPE,
-  PRINT_TYPE,
   STMTS_TYPE,
   ASSIGN_TYPE,
   ADD_TYPE,

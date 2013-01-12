@@ -7,7 +7,6 @@ L       [a-zA-Z]
 #include "tl.tab.h"
 %}
 %%
-print       {return PRINT;}
 if         {return IF;}
 else       {return ELSE;}
 while     {return WHILE;}

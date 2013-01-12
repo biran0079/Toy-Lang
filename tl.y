@@ -1,5 +1,4 @@
 %token INT STRING
-%token PRINT
 %token ID
 %token WHILE FOR FUN RETURN LAMBDA
 %token NONE
@@ -25,6 +24,7 @@
 #include "value.h"
 #include "env.h"
 #include "gc.h"
+#include "dumpGCHistory.h"
 #include "util.h"
 
 extern Node* parseTree;
@@ -32,6 +32,7 @@ extern List* rootValues;
 extern List* values;
 extern Value* globalEnv;
 extern int hardMemLimit;
+extern int shouldDumpGCHistory;
 %}
 
 %%
@@ -157,9 +158,6 @@ list_exp:
 
 none_exp:
   NONE                { $$ = newNode2(NONE_TYPE, 0); }
-  | PRINT '(' exp_list ')' {
-    $$ = newNode2(PRINT_TYPE, 1, $3);
-  }
   ;
 
 general_exp:
@@ -193,6 +191,7 @@ void help(){
                   "\t\twhich can be compiled to image using dot tool\n"
                   "\t-l\tlist number of created and freed objects\n"
                   "\t-m <int>\tconfig memory limit for trigering GC\n"
+                  "\t-h\tdump GC history to chart in html when GC\n"
                   );
   exit(-1);
 }
@@ -210,6 +209,7 @@ int main(int argc, char** argv){
         case 'd' : toDot = 1;break;
         case 'l' : listCreatedObj = 1; break;
         case 'm' : i++; hardMemLimit = atoi(argv[i]); break;
+        case 'h' : shouldDumpGCHistory = 1; break;
         default: help();
       }
     } else {
@@ -225,14 +225,12 @@ int main(int argc, char** argv){
   }
   yyparse();
   if(toDot) {
-    int l = strlen(src);
-    char* s = (char*) malloc(l + 4);
-    s[0]=0;
-    strcpy(s, src);
-    strcat(s, ".dot");
+    char* s = catStr(src, ".dot");
     FILE* f=fopen(s, "w");
+    if (!f) error("failed to open %s\n", s);
     nodeToDot(f, parseTree);
     fclose(f);
+    free(s);
   } else {
     init();
     eval(globalEnv, parseTree);
@@ -240,6 +238,15 @@ int main(int argc, char** argv){
   }
   if(listCreatedObj) {
     listCreatedObjectsCount();
+  }
+  if(shouldDumpGCHistory) {
+    char* s = catStr(src, ".html");
+    FILE* f=fopen(s, "w");
+    if (!f) error("failed to open %s\n", s);
+    dumpGCHistory(f);
+    fclose(f);
+    free(s);
+    clearGCHistory();
   }
   return 0;
 }

@@ -48,15 +48,6 @@ Value* eval(Value* ev, Node* p) {
         res = eval(ev, chld(p, i));
       return res;
     }
-    case PRINT_TYPE: {
-      Node* exps = chld(p,0);
-      for(i=0;i<chldNum(exps);i++) {
-        if(i)putchar(' ');
-        printf("%s", valueToString(eval(ev, chld(exps, i))));
-      }
-      printf("\n");
-      return newNoneValue();
-    }
     case NONE_TYPE: return newNoneValue();
     case LIST_TYPE: {
       List* vs = newList();

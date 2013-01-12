@@ -109,7 +109,9 @@ void freeValue(Value* v) {
       free((char*) v->data);
       freeStringValueC++;
       break;
-    case INT_VALUE_TYPE: freeIntValueC++; break;
+    case INT_VALUE_TYPE: {
+      freeIntValueC++; break;
+    }
     case BUILTIN_FUN_VALUE_TYPE: freeBuiltinFunC++; break;
     case NONE_VALUE_TYPE: return; // none is never freed
     default: error("unkonwn value type passed to freeValue: %d\n", v->type);

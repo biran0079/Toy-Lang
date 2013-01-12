@@ -5,7 +5,7 @@ src = $(wildcard *.c)
 all: exe
 
 test: exe
-	./test.sh
+	./test.sh 
 
 gctest: exe
 	./gctest.sh

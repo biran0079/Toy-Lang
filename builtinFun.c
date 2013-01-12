@@ -37,12 +37,34 @@ Value* builtInStr(List* lst) {
   return newStringValue(valueToString(v));
 }
 
+Value* builtInChr(List* lst) {
+  if(listSize(lst)!=1) error("str only takes exactly one argument\n");
+  Value* v = listGet(lst, 0);
+  if(v->type != INT_VALUE_TYPE) error("chr only applys to int\n");
+  char* s = (char*) malloc(2);
+  s[0] = (long) v->data;
+  s[1] = 0;
+  return newStringValue(s);
+}
+
+Value* builtInPrint(List* lst) {
+  int i, n = listSize(lst);
+  for(i=0;i<n;i++) {
+    if(i) printf(" ");
+    printf("%s", valueToString(listGet(lst, i)));
+  }
+  printf("\n");
+  return newNoneValue();
+}
+
 void registerBuiltinFunctions() {
   Env* e = globalEnv->data;
   envPut(e, "len", newBuiltinFun(builtInLen));
   envPut(e, "ord", newBuiltinFun(builtInOrd));
+  envPut(e, "chr", newBuiltinFun(builtInChr));
   envPut(e, "sort", newBuiltinFun(builtInSort));
   envPut(e, "str", newBuiltinFun(builtInStr));
+  envPut(e, "print", newBuiltinFun(builtInPrint));
 }
 
 

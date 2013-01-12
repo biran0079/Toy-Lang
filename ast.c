@@ -87,7 +87,6 @@ char* nodeTypeToString(NodeType type) {
     case LIST_TYPE: return "list";
     case INT_TYPE: return "int";
     case ID_TYPE: return "id";
-    case PRINT_TYPE: return "print";
     case IF_TYPE: return "if";
     case NOT_TYPE: return "not";
     case WHILE_TYPE: return "while";

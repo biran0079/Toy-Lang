@@ -12,6 +12,7 @@
 
 void* copy(void* t, int size);
 char* copyStr(char* t);
+char* catStr(char* s1, char* s2);
 long strToLong(char* s);
 char* literalStringToString(char *s);
 void error(char* msg, ...);

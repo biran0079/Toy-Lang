@@ -5,8 +5,7 @@
 #include "closure.h"
 #include "util.h"
 
-List* values;
-List* rootValues;
+extern List* values, *rootValues, *gcHistory;
 
 static void mark() {
   Value* v;
@@ -48,8 +47,24 @@ static void mark() {
   freeList(q);
 }
 
+static void pushGCHistory(int before, int after) {
+  GCRecord *r = (GCRecord*) MALLOC(GCRecord);
+  r->before = before;
+  r->after = after;
+  listPush(gcHistory, r);
+}
+
+void clearGCHistory() {
+  int i, n = listSize(gcHistory);
+  for(i=0; i<n;i++) {
+    free(listGet(gcHistory, i));
+  }
+  freeList(gcHistory);
+}
+
 void forceGC() {
   int i, n;
+  int before = listSize(values);
   List* values2 = newList();
   mark();
   n = listSize(values);
@@ -64,14 +79,14 @@ void forceGC() {
   }
   freeList(values);
   values = values2;
+  int after = listSize(values);
+  pushGCHistory(before, after);
 }
 
 extern int hardMemLimit, softMemLimit;
 
 void gc() {
   if(listSize(values) >= hardMemLimit) {
-    //fprintf(stderr, "*");
-    //fflush(stderr);
     forceGC();
     if(listSize(values) >= softMemLimit) {
       listCreatedObjectsCount();
