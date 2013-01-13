@@ -7,8 +7,6 @@ L       [a-zA-Z]
 #include "tl.tab.h"
 %}
 
-%option noyywrap
-
 %%
 if         {return IF;}
 else       {return ELSE;}
@@ -47,3 +45,6 @@ import       {return IMPORT;}
 [ \t\n\r]     ;
 .            {printf("unknown character for lex: %s\n", yytext);exit(-1);}
 %%
+int yywrap() {
+    return 1;
+}
