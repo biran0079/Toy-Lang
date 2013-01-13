@@ -61,8 +61,7 @@ Value* builtInListCat(List* lst) {
   
 }
 
-void registerBuiltinFunctions() {
-  Env* e = globalEnv->data;
+void registerBuiltinFunctions(Env* e) {
   envPut(e, "len", newBuiltinFun(builtInLen));
   envPut(e, "ord", newBuiltinFun(builtInOrd));
   envPut(e, "chr", newBuiltinFun(builtInChr));

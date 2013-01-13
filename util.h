@@ -16,5 +16,7 @@ char* catStr(char* s1, char* s2);
 long strToLong(char* s);
 char* literalStringToString(char *s);
 void error(char* msg, ...);
+char* getFolder(char* s);
+FILE* openFromPath(char* s, char* mode);
 
 #endif

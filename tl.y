@@ -32,6 +32,7 @@
 extern List* parseTrees;
 extern List* rootValues;
 extern List* values;
+extern List* path;
 extern Value* globalEnv;
 extern int hardMemLimit;
 extern int shouldDumpGCHistory;
@@ -209,6 +210,7 @@ void help(){
   exit(-1);
 }
 
+extern char* tlDir;
 int main(int argc, char** argv){
 #if YYDEBUG
   yydebug = 1;
@@ -236,7 +238,12 @@ int main(int argc, char** argv){
   } else {
     src = "stdin";
   }
+  tlDir = getFolder(argv[0]);
   init();
+  if(src){
+    char *s = getFolder(src);
+    if(strcmp(s, "./")) listPush(path, s);
+  }
   yyparse();
   if(toDot) {
     char* s = catStr(src, ".dot");

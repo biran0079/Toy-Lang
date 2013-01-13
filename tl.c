@@ -13,12 +13,14 @@ int newListC = 0, newHashTableC = 0, freeListC = 0, freeHashTableC = 0;
 
 /*** ALL GLOBAL VARIABLES DECLARES BELOW!  ***/
 
+char* tlDir;
 List* parseTrees;
 List* values;  // all values created
 List* rootValues;  // all values should be treated as root when gc
 Value* globalEnv;
 JmpMsg __jmpMsg__;
 int hardMemLimit = 1500000, softMemLimit = 1000000;
+List* path;  // where import loads from
 
 int shouldDumpGCHistory = 0;  
 List* gcHistory;
@@ -43,9 +45,12 @@ void init() {
   values = newList();
   rootValues = newList();
   gcHistory = newList();
+  path = newList();
+  listPush(path, copyStr("./"));
+  listPush(path, catStr(tlDir, "lib/"));
   globalEnv = newEnvValue(newEnv(newNoneValue()));
   listPush(rootValues, globalEnv);
-  registerBuiltinFunctions();
+  registerBuiltinFunctions(globalEnv->data);
 }
 
 void cleanup() {
@@ -56,7 +61,12 @@ void cleanup() {
   int i, n = listSize(parseTrees);
   for(i=0;i<n;i++)
     freeNode(listGet(parseTrees, i));
+  n = listSize(path);
+  for(i=0;i<n;i++)
+    free(listGet(path, i));
+  freeList(path);
   freeList(parseTrees);
   if(!shouldDumpGCHistory) clearGCHistory();
+  free(tlDir);
 }
 

@@ -1,4 +1,5 @@
 #include "util.h"
+#include "list.h"
 
 void* copy(void* t, int size) {
   void* res = malloc(size);
@@ -57,4 +58,28 @@ void error(char* format,...) {
   vfprintf(stderr, format, ap);
   va_end(ap);
   exit(-1);
+}
+
+char* getFolder(char* s) {
+  int i = strlen(s)-1;
+  while(i && s[i]!='/')i--;
+  if(i==0) return copyStr("./");
+  else {
+    char* res = copyStr(s);
+    res[i+1]=0;
+    return res;
+  }
+}
+
+extern List* path;
+FILE* openFromPath(char* s, char* mode) {
+  int i, n = listSize(path);
+  FILE* f = 0;
+  for(i=0;i<n;i++) {
+    char * p = listGet(path, i);
+    char *fname = catStr(p, s);
+    f = fopen(fname, mode);
+    if(f)break;
+  }
+  return f;
 }

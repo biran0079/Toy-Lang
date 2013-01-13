@@ -105,6 +105,8 @@ char* nodeTypeToString(NodeType type) {
     case THROW_TYPE: return "throw";
     case ADDADD_TYPE: return "(id)++";
     case LOCAL_TYPE: return "local";
+    case IMPORT_TYPE: return "import";
+    case MODULE_ACCESS_TYPE: return "module_access";
     default: error("unknown node type %d\n", type);
   }
 }

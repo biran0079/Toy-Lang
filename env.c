@@ -35,7 +35,7 @@ Value* envGet(Env* e, char* key){
       break;
     e = e->parent->data;
   }
-  return 0;
+  return newNoneValue();
 }
 
 void envPut(Env* e, char* key, Value* value){

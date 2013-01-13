@@ -11,6 +11,7 @@
 
 extern List* rootValues, *parseTrees;
 extern JmpMsg __jmpMsg__;
+extern Value* globalEnv;
 
 
 static void pushRootValue(Value* v) {
@@ -84,7 +85,7 @@ Value* eval(Value* ev, Node* p) {
       return res;
     }
     case TAIL_CALL_TYPE: {
-      Value* closureValue = envGet(e, chld(p, 0)->data);
+      Value* closureValue = evalAndPushRoot(ev, chld(p, 0));
       if(closureValue->type == BUILTIN_FUN_VALUE_TYPE) {
         Value* res = evalBuiltInFun(ev, chld(p, 1), closureValue->data);
         popRootValueTo(initSize);
@@ -106,7 +107,7 @@ Value* eval(Value* ev, Node* p) {
       // actuall call is handled by CALL_TYPE
     }
     case CALL_TYPE: {
-      Value* closureValue = envGet(e, chld(p, 0)->data);
+      Value* closureValue = evalAndPushRoot(ev, chld(p, 0));
       if(closureValue->type == BUILTIN_FUN_VALUE_TYPE) {
         Value* res = evalBuiltInFun(ev, chld(p, 1), closureValue->data);
         popRootValueTo(initSize);
@@ -468,21 +469,29 @@ Value* eval(Value* ev, Node* p) {
       return newNoneValue();
     }
     case IMPORT_TYPE: {
-                        error("not supported yet\n");
-                        /*
       Node* id = chld(p, 0);
-      char *s = strcat(id->data, ".tl");
-      FILE* f = fopen(s, "r", stdin);
+      char *s = catStr(id->data, ".tl");
+      FILE* f = openFromPath(s, "r");
       if(!f) ("cannot open file %s\n", s);
-      yyin = f;
+      yyrestart(f);
       free(s);
       yyparse();
-      Value* res = newEnvValue(newEnv(newNoneValue()));
+      Value* res = newEnvValue(newEnv(globalEnv));
       pushRootValue(res);
       eval(res, listLast(parseTrees));
       envPut(e, id->data, res);
       return newNoneValue();
-      */
+    }
+    case MODULE_ACCESS_TYPE: {
+      int n = chldNum(p);
+      int i;
+      Value* res = ev;
+      for(i=0; i<n; i++) {
+        char* id = chld(p, i)->data;
+        if(res->type != ENV_VALUE_TYPE) error("module access must use env type\n");
+        res = envGet(res->data, id);
+      }
+      return res;
     }
     default:
       error("cannot eval unknown node type\n");
