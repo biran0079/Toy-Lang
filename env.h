@@ -7,11 +7,15 @@
 #include "list.h"
 #include <setjmp.h>
 
-struct Env {
-  HashTable* t;
+typedef struct RuntimeState {
   List* loopStates;
   List* exceptionStates;
+} RuntimeState;
+
+struct Env {
+  HashTable* t;
   Value* parent;
+  RuntimeState* state;
   jmp_buf retState;
 };
 
@@ -20,5 +24,7 @@ void freeEnv(Env* e);
 Value* envGet(Env* e, long key);
 void envPut(Env* e, long key, Value* value);
 void envPutLocal(Env* e, long key, Value* value);
+List* envGetLoopStates(Env* e);
+List* envGetExceptionStates(Env* e);
 
 #endif

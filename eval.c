@@ -294,7 +294,7 @@ Value* eval(Value* ev, Node* p) {
       return newNoneValue();
     case FOR_TYPE: {
       jmp_buf buf;
-      listPush(e->loopStates, buf);
+      listPush(envGetLoopStates(e), buf);
       for(eval(ev, chld(p,0)); eval(ev, chld(p, 1))->data; eval(ev, chld(p, 2))){
           if(setjmp(buf)==0) {
             eval(ev, chld(p, 3));
@@ -308,12 +308,12 @@ Value* eval(Value* ev, Node* p) {
               error("unexpected jmpmsg type: %d\n", msg->type);
           }
       }
-      listPop(e->loopStates);
+      listPop(envGetLoopStates(e));
       return newNoneValue();
     }
     case FOREACH_TYPE:{
       jmp_buf buf;
-      listPush(e->loopStates, buf);
+      listPush(envGetLoopStates(e), buf);
       Node* id = chld(p, 0);
       Value* lv = evalAndPushRoot(ev, chld(p, 1));
       if(id->type != ID_TYPE || lv->type != LIST_VALUE_TYPE) {
@@ -335,14 +335,14 @@ Value* eval(Value* ev, Node* p) {
             error("unexpected jmpmsg type: %d\n", msg->type);
         }
       }
-      listPop(e->loopStates);
+      listPop(envGetLoopStates(e));
       popRootValueTo(initSize);
       return newNoneValue();
     }
     case WHILE_TYPE:
       {
         jmp_buf buf;
-        listPush(e->loopStates, buf);
+        listPush(envGetLoopStates(e), buf);
         while(eval(ev, chld(p, 0))->data){
           if(setjmp(buf)==0) {
             eval(ev, chld(p, 1));
@@ -357,13 +357,13 @@ Value* eval(Value* ev, Node* p) {
               error("unexpected jmpmsg type: %d\n", msg->type);
           }
         }
-        listPop(e->loopStates);
+        listPop(envGetLoopStates(e));
         return newNoneValue();
       }
     case CONTINUE_TYPE:
-      tlLongjmp(listLast(e->loopStates), CONTINUE_MSG_TYPE, 0);
+      tlLongjmp(listLast(envGetLoopStates(e)), CONTINUE_MSG_TYPE, 0);
     case BREAK_TYPE:
-      tlLongjmp(listLast(e->loopStates), BREAK_MSG_TYPE, 0);
+      tlLongjmp(listLast(envGetLoopStates(e)), BREAK_MSG_TYPE, 0);
     case GT_TYPE:
       return newIntValue(
            valueCmp(evalAndPushRoot(ev, chld(p, 0)), evalAndPushRoot(ev, chld(p, 1))) > 0);
@@ -403,7 +403,7 @@ Value* eval(Value* ev, Node* p) {
     }
     case TRY_TYPE: {
       jmp_buf buf;
-      listPush(e->exceptionStates, buf);
+      listPush(envGetExceptionStates(e), buf);
       Node* tryBlock = chld(p, 0);
       long catchId = (long) chld(p, 1)->data;
       Node* catchBlock = chld(p, 2);
@@ -412,10 +412,10 @@ Value* eval(Value* ev, Node* p) {
       if(res==0){
         // try block
         eval(ev, tryBlock);
-        listPop(e->exceptionStates); // pop when out of try block
+        listPop(envGetExceptionStates(e)); // pop when out of try block
       } else {
         // catch block
-        if(setjmp(listLast(e->exceptionStates)) == 0) {
+        if(setjmp(listLast(envGetExceptionStates(e))) == 0) {
           // exception caught        
           Value* v = __jmpMsg__.data;
           envPut(e, catchId, v);
@@ -423,7 +423,7 @@ Value* eval(Value* ev, Node* p) {
         } else {
           //exception throw from catch
           if(finallyBlock) eval(ev, finallyBlock);
-          listPop(e->exceptionStates);
+          listPop(envGetExceptionStates(e));
           Value* v = __jmpMsg__.data;
           throwValue(e, v);
         }
@@ -500,9 +500,9 @@ Value* eval(Value* ev, Node* p) {
 }
 
 void throwValue(Env* e, Value* v) {
-  if(listSize(e->exceptionStates)) {
+  if(listSize(envGetExceptionStates(e))) {
     // currently in try block
-    tlLongjmp(listLast(e->exceptionStates), EXCEPTION_MSG_TYPE, v);
+    tlLongjmp(listLast(envGetExceptionStates(e)), EXCEPTION_MSG_TYPE, v);
   } else {
     // If has parent stack frame, pass to it. Report error otherwise
     if (e->parent) {
