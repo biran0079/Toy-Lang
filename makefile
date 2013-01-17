@@ -11,7 +11,7 @@ gctest: exe
 	./gctest.sh
 
 exe: flex bison 
-	gcc $(gccflag) *.c -o tl
+	gcc $(gccflag) *.c -o tl -pg
 
 bison: tl.y
 	bison -d tl.y

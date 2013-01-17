@@ -4,7 +4,11 @@ L       [a-zA-Z]
 #include "tl.h"
 #include "ast.h"
 #include "util.h"
+#include "hashTable.h"
 #include "tl.tab.h"
+
+extern HashTable* idToIntMap;
+
 %}
 
 %%
@@ -26,7 +30,10 @@ throw       {return THROW;}
 local       {return LOCAL;}
 import       {return IMPORT;}
 {D}+        {yylval = newNode(INT_TYPE, (void*) strToLong(yytext)); return INT;}
-{L}({D}|{L})*   {yylval = newNode(ID_TYPE, copyStr(yytext)); return ID;}
+{L}({D}|{L})*   {
+  yylval = newNode(ID_TYPE, (void*) getIntId(yytext));
+  return ID;
+}
 \"(\\.|[^\"])*\"  {yylval = newNode(STRING_TYPE, literalStringToString(yytext)); return STRING;}
 "++"         {return ADDADD;}
 "+="         {return ADDEQ;}

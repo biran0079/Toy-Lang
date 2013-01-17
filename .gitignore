@@ -7,3 +7,5 @@ lex.yy.c
 *.dot
 *.jpg
 *.html
+gmon.out
+gprof.out

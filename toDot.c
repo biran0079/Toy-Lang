@@ -61,7 +61,7 @@ static int nodeToDotInternal(FILE* o, Node* t, int* nextId){
   int id = (*nextId)++;
   switch(t->type) {
     case INT_TYPE: fprintf(o, "%d [label=\"INT(%ld)\"];\n", id, (long) t->data);break;
-    case ID_TYPE:  fprintf(o, "%d [label=\"ID(%s)\"];\n", id, (char*) t->data);break;
+    case ID_TYPE:  fprintf(o, "%d [label=\"ID(%s)\"];\n", id, getStrId((long) t->data));break;
     case STRING_TYPE: fprintf(o, "%d [label=\"STRING(%s)\"];\n", id, 
                           escapeForDot(maybeTruncateString((char*) t->data)));
                       break;

@@ -6,20 +6,27 @@
 
 typedef struct LinkedList LinkedList;
 struct LinkedList {
-  char *key;
+  void *key;
   void* value;
   LinkedList* next;
 };
 
+typedef unsigned int(*HashFunc)();
+typedef int(*EqualsFunc)();
+
 typedef struct HashTable {
   unsigned int cap, size;
   LinkedList** a;
+  HashFunc h;
+  EqualsFunc eq;
 } HashTable;
 
-HashTable* newHashTable();
+HashTable* newStringHashTable();
+HashTable* newIntHashTable();
+HashTable* newHashTable(HashFunc h, EqualsFunc eq);
 void freeHashTable(HashTable* t);
-void hashTablePut(HashTable* t, char* key, void* value);
-void* hashTableGet(HashTable* t, char* key);
+void hashTablePut(HashTable* t, void* key, void* value);
+void* hashTableGet(HashTable* t, void* key);
 HashTable* hashTableCopy(HashTable* t);
 void hashTableClear(HashTable* t);
 void hashTableApplyAllValue(HashTable* t, ValueFunc f);

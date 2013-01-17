@@ -1,5 +1,7 @@
 #ifndef _LIST_H_
 #define _LIST_H_
+#define listSize(l) (((List*)(l))->size)
+#define listGet(l,i) (((List*)(l))->arr[i])
 
 typedef struct List {
   void** arr;
@@ -9,9 +11,7 @@ typedef struct List {
 List* newList();
 void freeList(List* lst);
 void listPush(List* lst, void* e);
-void* listGet(List* lst, int idx);
 void* listPop(List* lst); 
-int listSize(List* lst);
 void* listLast(List* lst);
 void listSet(List* lst, int i, void* v);
 List* listCopy(List* lst);

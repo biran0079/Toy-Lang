@@ -101,7 +101,7 @@ Value* eval(Value* ev, Node* p) {
       if(chldNum(ids) != chldNum(args))
         error("%s parameter number incorrect\n", valueToString(closureValue));
       for(i=0; i<chldNum(ids); i++)
-        envPutLocal(e2, chld(ids, i)->data, eval(ev, chld(args, i)));
+        envPutLocal(e2, (long) chld(ids, i)->data, eval(ev, chld(args, i)));
       Value* res = newClosureValue(f, ev2);
       tlLongjmp(e->retState, TAIL_CALL_MSG_TYPE, res->data);
       // actuall call is handled by CALL_TYPE
@@ -123,7 +123,7 @@ Value* eval(Value* ev, Node* p) {
       if(chldNum(ids)!=chldNum(args))
         error("%s parameter number incorrect\n", valueToString(closureValue));
       for(i=0; i<chldNum(ids); i++)
-        envPutLocal(e2, chld(ids, i)->data, eval(ev, chld(args, i)));
+        envPutLocal(e2, (long) chld(ids, i)->data, eval(ev, chld(args, i)));
       while(1){
         int ret = setjmp(e2->retState);
         if(!ret){
@@ -160,7 +160,7 @@ Value* eval(Value* ev, Node* p) {
       tlLongjmp(e->retState, RETURN_MSG_TYPE, eval(ev, chld(p, 0)));
     }
     case ID_TYPE: {
-      Value* res = envGet(e, (char*) p->data);
+      Value* res = envGet(e, (long) p->data);
       return res ? res : newNoneValue();
     }
     case INT_TYPE:
@@ -183,7 +183,7 @@ Value* eval(Value* ev, Node* p) {
         }
         case ID_TYPE: {
           Value* res = eval(ev, chld(p, 1));
-          envPut(e, (char*) left->data, res);
+          envPut(e, (long) left->data, res);
           return res;
         }
         default: error("left hand side of = must be a left value\n");
@@ -223,7 +223,7 @@ Value* eval(Value* ev, Node* p) {
           return res;
         }
         case ID_TYPE: {
-          char* key = (char *) chld(p, 0)->data;
+          long key = (long) chld(p, 0)->data;
           Value* e1 = envGet(e, key);
           Value* e2 = evalAndPushRoot(ev, chld(p, 1));
           Value* res = newNoneValue();
@@ -322,7 +322,7 @@ Value* eval(Value* ev, Node* p) {
       List* l = (List*) lv->data;
       int len = listSize(l);
       for(i=0;i<len;i++) {
-        envPut(e, (char*) id->data, listGet(l, i));
+        envPut(e, (long) id->data, listGet(l, i));
         if(setjmp(buf)==0) {
           eval(ev, chld(p, 2));
         } else {
@@ -392,7 +392,7 @@ Value* eval(Value* ev, Node* p) {
       return newIntValue(! eval(ev, chld(p, 0))->data);
     case FUN_TYPE: {
       Value* res = newClosureValue(p, ev);
-      envPut(e, (char*) chld(p, 0)->data, res);
+      envPut(e, (long) chld(p, 0)->data, res);
       return res;
     }
     case TIME_TYPE: {
@@ -405,7 +405,7 @@ Value* eval(Value* ev, Node* p) {
       jmp_buf buf;
       listPush(e->exceptionStates, buf);
       Node* tryBlock = chld(p, 0);
-      char* catchId = (char*) chld(p, 1)->data;
+      long catchId = (long) chld(p, 1)->data;
       Node* catchBlock = chld(p, 2);
       Node* finallyBlock = chldNum(p) == 4 ? chld(p, 3) : 0;
       int res = setjmp(buf);
@@ -440,7 +440,7 @@ Value* eval(Value* ev, Node* p) {
       Node* left = chld(p, 0);
       switch(left->type) {
         case ID_TYPE: {
-          char* id = (char*) left->data;
+          long id = (long) left->data;
           Value* i = envGet(e, id);
           if(i->type != INT_VALUE_TYPE) error("++ can only apply to int\n");
           envPut(e, id, newIntValue((long) i->data + 1));
@@ -464,13 +464,13 @@ Value* eval(Value* ev, Node* p) {
     case LOCAL_TYPE: {
       Node *ids = chld(p, 0);
       for(i=0;i<chldNum(ids);i++) {
-        envPutLocal(e, (char*) chld(ids, i)->data, newNoneValue());
+        envPutLocal(e, (long) chld(ids, i)->data, newNoneValue());
       }
       return newNoneValue();
     }
     case IMPORT_TYPE: {
       Node* id = chld(p, 0);
-      char *s = catStr(id->data, ".tl");
+      char *s = catStr(getStrId((long) id->data), ".tl");
       FILE* f = openFromPath(s, "r");
       if(!f) ("cannot open file %s\n", s);
       yyrestart(f);
@@ -479,7 +479,7 @@ Value* eval(Value* ev, Node* p) {
       Value* res = newEnvValue(newEnv(globalEnv));
       pushRootValue(res);
       eval(res, listLast(parseTrees));
-      envPut(e, id->data, res);
+      envPut(e, (long) id->data, res);
       return newNoneValue();
     }
     case MODULE_ACCESS_TYPE: {
@@ -487,7 +487,7 @@ Value* eval(Value* ev, Node* p) {
       int i;
       Value* res = ev;
       for(i=0; i<n; i++) {
-        char* id = chld(p, i)->data;
+        long id = (long) chld(p, i)->data;
         if(res->type != ENV_VALUE_TYPE) error("module access must use env type\n");
         res = envGet(res->data, id);
       }

@@ -3,6 +3,7 @@
 #include "tljmp.h"
 #include "builtinFun.h"
 #include "gc.h"
+#include "hashTable.h"
 #include "util.h"
 
 int newNodeC = 0, newIntValueC = 0, newStringValueC = 0, newClosureValueC = 0, newEnvValueC = 0,
@@ -21,11 +22,29 @@ Value* globalEnv;
 JmpMsg __jmpMsg__;
 int hardMemLimit = 1500000, softMemLimit = 1000000;
 List* path;  // where import loads from
+HashTable* idToIntMap;
+HashTable* intToIdMap;
 
 int shouldDumpGCHistory = 0;  
 List* gcHistory;
 
 /*** ALL GLOBAL VARIABLES DECLARES ABOVE!  ***/
+
+long getIntId(char *s) {
+  long res = (long) hashTableGet(idToIntMap, s);
+  if(!res){
+    void* key = copyStr(s);
+    void* value = (void*)(idToIntMap->size + 1L);
+    hashTablePut(idToIntMap, key, value);
+    hashTablePut(intToIdMap, value, key);
+    res = idToIntMap->size;
+  }
+  return res;
+}
+
+char* getStrId(long id) {
+  return hashTableGet(intToIdMap, (void*) id);
+}
 
 void listCreatedObjectsCount() {
   fprintf(stderr, "\tNode: %d %d\n", newNodeC, freeNodeC);
@@ -50,6 +69,8 @@ void init() {
   listPush(path, catStr(tlDir, "lib/"));
   globalEnv = newEnvValue(newEnv(newNoneValue()));
   listPush(rootValues, globalEnv);
+  idToIntMap = newStringHashTable();
+  intToIdMap = newIntHashTable();
   registerBuiltinFunctions(globalEnv->data);
 }
 
@@ -68,5 +89,7 @@ void cleanup() {
   freeList(parseTrees);
   if(!shouldDumpGCHistory) clearGCHistory();
   free(tlDir);
+  freeHashTable(idToIntMap);
+  freeHashTable(intToIdMap);
 }
 

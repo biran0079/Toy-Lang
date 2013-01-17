@@ -17,8 +17,8 @@ struct Env {
 
 Env* newEnv(Value* parentEnv);
 void freeEnv(Env* e);
-Value* envGet(Env* e, char* key);
-void envPut(Env* e, char* key, Value* value);
-void envPutLocal(Env* e, char* key, Value* value);
+Value* envGet(Env* e, long key);
+void envPut(Env* e, long key, Value* value);
+void envPutLocal(Env* e, long key, Value* value);
 
 #endif

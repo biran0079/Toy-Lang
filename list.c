@@ -34,16 +34,6 @@ void listPush(List* lst, void* e) {
   lst->arr[lst->size++] = e;
 }
 
-void* listGet(List* lst, int idx) {
-  if(idx >= lst->size || idx < 0)
-    error("list index out of boundary");
-  return lst->arr[idx];
-}
-
-int listSize(List* lst) {
-  return lst->size;
-}
-
 void* listPop(List* lst){
   if(lst->size == 0) error("cannot pop empty list\n");
   return lst->arr[--lst->size];
@@ -61,7 +51,7 @@ void listSet(List* lst, int idx, void* v) {
 
 List* listCopy(List* lst){
   List* res = newList();
-  int i, len = listSize(lst);
+  int i, len = lst->size;
   for(i=0;i<len;i++)
     listPush(res, listGet(lst, i));
   return res;

@@ -4,28 +4,70 @@
 
 #define LOG 0
 
-static unsigned int hash(char *s) {
+static unsigned int stringHash(char *s) {
   int h=0;
   while(*s){
-    h*=131;
+    h*=127;
     h+=*s;
     s++;
   }
   return h;
 }
 
-static int TABLE_CAPACITY = 11;
+static int stringEqual(char* s1, char* s2) {
+  return strcmp(s1, s2) == 0;
+}
+
+static unsigned int intHash(long n) {
+  return (unsigned int) n ;
+}
+
+static int intEqual(long a, long b){
+  return a == b;
+}
+
+static int INIT_CAPACITY = 8;
 
 extern int newHashTableC, freeHashTableC;
 
-HashTable* newHashTable() {
+HashTable* newStringHashTable() {
+  return newHashTable(stringHash, stringEqual);
+}
+
+HashTable* newIntHashTable() {
+  return newHashTable(intHash, intEqual);
+}
+
+HashTable* newHashTable(HashFunc h, EqualsFunc eq) {
   newHashTableC++;
   HashTable* res = MALLOC(HashTable);
-  res->cap = TABLE_CAPACITY;
+  res->cap = INIT_CAPACITY;
   res->size = 0;
   res->a = (LinkedList**) malloc(res->cap * sizeof(LinkedList*));
+  res->h = h;
+  res->eq = eq;
   memset(res->a, 0, res->cap * sizeof(LinkedList*));
   return res;
+}
+
+static void rehash(HashTable* t){
+  LinkedList** old = t->a;
+  int oldCap = t->cap;
+  t->cap *= 2;
+  t->a = (LinkedList**) malloc(t->cap * sizeof(LinkedList*));
+  t->size = 0;
+  memset(t->a, 0, t->cap * sizeof(LinkedList*));
+  int i;
+  for(i=0;i<oldCap;i++){
+    LinkedList* l = old[i], *next;
+    while(l){
+      hashTablePut(t, l->key, l->value);
+      next = l->next;
+      free(l);
+      l = next;
+    }
+  }
+  free(old);
 }
 
 void freeHashTable(HashTable* t) {
@@ -47,25 +89,26 @@ void freeHashTable(HashTable* t) {
   free(t);
 }
 
-static LinkedList* hashTableGetInternal(HashTable* t, char* key) {
-  unsigned idx = hash(key) % t->cap;
+static LinkedList* hashTableGetInternal(HashTable* t, void* key) {
+  unsigned idx = t->h(key) % t->cap;
   LinkedList* l = t->a[idx];
   while(l){
-    if(strcmp(l->key, key)==0) return l;
+    if(t->eq(l->key, key)) return l;
     l = l->next;
   }
   return 0;
 }
 
-void hashTablePut(HashTable* t, char* key, void* value) {
+void hashTablePut(HashTable* t, void* key, void* value) {
   if(LOG){
     printf("put %s\n",key);
   }
+  if(t->size > t->cap) rehash(t);
   LinkedList* l = hashTableGetInternal(t, key);
   if(l) {
     l->value = value;
   } else {
-    unsigned int idx = hash(key) % t->cap;
+    unsigned int idx = t->h(key) % t->cap;
     l = MALLOC(LinkedList);
     l->key = key;
     l->value = value;
@@ -75,7 +118,7 @@ void hashTablePut(HashTable* t, char* key, void* value) {
   }
 }
 
-void* hashTableGet(HashTable* t, char* key){
+void* hashTableGet(HashTable* t, void* key){
   if(LOG){
     printf("get %s\n",key);
   }
@@ -84,7 +127,7 @@ void* hashTableGet(HashTable* t, char* key){
 }
 
 HashTable* hashTableCopy(HashTable* t) {
-  HashTable* res = newHashTable();
+  HashTable* res = newHashTable(t->h, t->eq);
   int i;
   for(i=0;i<t->cap;i++){
     LinkedList* l = t->a[i];

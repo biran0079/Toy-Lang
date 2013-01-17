@@ -11,6 +11,8 @@ typedef void (*ValueFunc)(Value*);
 
 void init();
 void cleanup();
+long getIntId(char *s);
+char* getStrId(long id);
 
 #define YYSTYPE Node*
 

@@ -57,17 +57,13 @@ Value* builtInPrint(List* lst) {
   return newNoneValue();
 }
 
-Value* builtInListCat(List* lst) {
-  
-}
-
 void registerBuiltinFunctions(Env* e) {
-  envPut(e, "len", newBuiltinFun(builtInLen));
-  envPut(e, "ord", newBuiltinFun(builtInOrd));
-  envPut(e, "chr", newBuiltinFun(builtInChr));
-  envPut(e, "sort", newBuiltinFun(builtInSort));
-  envPut(e, "str", newBuiltinFun(builtInStr));
-  envPut(e, "print", newBuiltinFun(builtInPrint));
+  envPut(e, getIntId("len"), newBuiltinFun(builtInLen));
+  envPut(e, getIntId("ord"), newBuiltinFun(builtInOrd));
+  envPut(e, getIntId("chr"), newBuiltinFun(builtInChr));
+  envPut(e, getIntId("sort"), newBuiltinFun(builtInSort));
+  envPut(e, getIntId("str"), newBuiltinFun(builtInStr));
+  envPut(e, getIntId("print"), newBuiltinFun(builtInPrint));
 }
 
 

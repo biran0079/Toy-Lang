@@ -29,14 +29,6 @@ Node* newNode2(NodeType t, int n, ... ) {
   return res;
 }
 
-int chldNum(Node* t) {
-  return listSize((List*) t->data);
-}
-
-Node* chld(Node* e, int i) {
-  return listGet((List*) e->data, i);
-}
-
 void markTailRecursions(Node* t) {
   switch(t->type) {
     case STMTS_TYPE: {
@@ -114,9 +106,9 @@ char* nodeTypeToString(NodeType type) {
 void freeNode(Node* t) {
   freeNodeC++;
   switch(t->type) {
-    case INT_TYPE: break;
-    case STRING_TYPE: 
-    case ID_TYPE: free(t->data); break;
+    case INT_TYPE: 
+    case ID_TYPE: break;
+    case STRING_TYPE: free(t->data); break;
     default: {
       int n = chldNum(t), i;        
       for(i=0; i<n; i++)
