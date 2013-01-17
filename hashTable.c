@@ -99,6 +99,26 @@ static LinkedList* hashTableGetInternal(HashTable* t, void* key) {
   return 0;
 }
 
+void* hashTableRemove(HashTable* t, void* key) {
+  unsigned idx = t->h(key) % t->cap;
+  LinkedList* l = t->a[idx], *p = 0;
+  while(l){
+    if(t->eq(l->key, key)) break;
+    p = l;
+    l = l->next;
+  }
+  if (l==0) return 0;
+  void* res = l->value;
+  if (!p) {
+    t->a[idx] = l->next;
+    free(l);
+  } else {
+    p->next = l->next;
+    free(l);
+  }
+  return res;
+}
+
 void hashTablePut(HashTable* t, void* key, void* value) {
   if(LOG){
     printf("put %s\n",key);

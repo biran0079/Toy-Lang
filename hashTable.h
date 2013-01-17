@@ -27,6 +27,7 @@ HashTable* newHashTable(HashFunc h, EqualsFunc eq);
 void freeHashTable(HashTable* t);
 void hashTablePut(HashTable* t, void* key, void* value);
 void* hashTableGet(HashTable* t, void* key);
+void* hashTableRemove(HashTable* t, void* key);
 HashTable* hashTableCopy(HashTable* t);
 void hashTableClear(HashTable* t);
 void hashTableApplyAllValue(HashTable* t, ValueFunc f);

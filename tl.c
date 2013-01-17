@@ -24,6 +24,7 @@ int hardMemLimit = 1500000, softMemLimit = 1000000;
 List* path;  // where import loads from
 HashTable* idToIntMap;
 HashTable* intToIdMap;
+HashTable* intCache;
 
 int shouldDumpGCHistory = 0;  
 List* gcHistory;
@@ -72,6 +73,7 @@ void init() {
   idToIntMap = newStringHashTable();
   intToIdMap = newIntHashTable();
   registerBuiltinFunctions(globalEnv->data);
+  intCache = newIntHashTable();
 }
 
 void cleanup() {
@@ -91,5 +93,6 @@ void cleanup() {
   free(tlDir);
   freeHashTable(idToIntMap);
   freeHashTable(intToIdMap);
+  freeHashTable(intCache);
 }
 

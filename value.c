@@ -23,15 +23,18 @@ Value* newNoneValue(){
   }
 }
 
+extern HashTable* intCache;
 Value* newIntValue(long x){
-  //printf("creating %d\n", x);
+  Value* res = hashTableGet(intCache, (void*) x);
+  if(res) return res;
   gc();
   newIntValueC++;
-  Value* res=MALLOC(Value);
+  res=MALLOC(Value);
   res->type = INT_VALUE_TYPE;
   res->data = (void*) x;
   res->mark = 0;
   listPush(values, res);
+  hashTablePut(intCache, (void*) x, res);
   return res;
 }
 
@@ -110,7 +113,9 @@ void freeValue(Value* v) {
       freeStringValueC++;
       break;
     case INT_VALUE_TYPE: {
-      freeIntValueC++; break;
+      freeIntValueC++;
+      hashTableRemove(intCache, v->data);
+      break;
     }
     case BUILTIN_FUN_VALUE_TYPE: freeBuiltinFunC++; break;
     case NONE_VALUE_TYPE: return; // none is never freed
