@@ -1,12 +1,12 @@
 #ifndef _AST_H_
 #define _AST_H_
+#include "tl.h"
 #include "list.h"
 #define chldNum(t) listSize((List*)(t)->data)
 #define chld(t,i) ((Node*)listGet((List*)(t)->data, i))
 
 enum NodeType {
   INT_TYPE,
-  INT_ID_TYPE, 
   ID_TYPE,
   STMTS_TYPE,
   ASSIGN_TYPE,
@@ -64,5 +64,7 @@ void freeNode(Node* t);
 void markTailRecursions(Node* t);
 
 char* nodeTypeToString(NodeType type);
+
+Value* nodeToListValue(Node* p);
 
 #endif

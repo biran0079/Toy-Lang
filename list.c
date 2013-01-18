@@ -60,28 +60,26 @@ List* listCopy(List* lst){
 void listClear(List* lst){
   lst->size=0;
 }
-  
-static void swap(void* a[], int i, int j) {
-  if(i==j) return;
-  void* t = a[i];
-  a[i] = a[j];
-  a[j] = t;
-}
 
-static void qsortInternal(void* a[], int l, int r, Comparator cmp) {
-  if (l>=r) return;
-  int i = l+1, j = l+1;
-  while(i <= r) {
-    if(cmp(a[i], a[l]) < 0)
-      swap(a, i, j++);
-    i++;
+static void msortInternal(void* a[], int l, int r, Comparator cmp, void* t[]) {
+  if (r-l <= 1) return;
+  int mid = (l+r)/2;
+  msortInternal(a, l, mid, cmp, t);
+  msortInternal(a, mid, r, cmp, t);
+  int k=l,i=l,j=mid;
+  while(i<mid && j<r) {
+    if(cmp(a[i], a[j])<=0)
+      t[k++]=a[i++];   
+    else
+      t[k++]=a[j++];
   }
-  j--;
-  swap(a, l, j);
-  qsortInternal(a, l, j-1, cmp);
-  qsortInternal(a, j+1, r, cmp);
+  while(i<mid )t[k++]=a[i++];
+  while(j<r) t[k++]=a[j++];
+  for(i=l;i<r;i++)
+    a[i]=t[i];
 }
 
 void listSort(List* lst, Comparator cmp) {
-  qsortInternal(lst->arr, 0, lst->size - 1, cmp);
+  void** t = malloc(listSize(lst) * sizeof(void*));
+  msortInternal(lst->arr, 0, lst->size, cmp, t);
 }

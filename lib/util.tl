@@ -1,14 +1,4 @@
-fun getRandGenerator(seed){
-  fun rand(){
-    seed = seed *  123;
-    seed  = seed + 234;
-    return seed % 1000;
-  }  
-  return rand;
-}
-
 fun getRandomList(n){
-  rand = getRandGenerator(1);
   res=[];
   while(n>0){
     res += rand();  

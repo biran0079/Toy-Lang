@@ -5,7 +5,7 @@ import util;
 HT = hashtable;
 
 s = "hello  this is biran    hello again this is biran again";
-t = HT.new();
+t = HT.newStringHashTable();
 for(w : string.split(s)){
   n = HT.get(t, w);
   if(n==none)

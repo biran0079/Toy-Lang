@@ -1,11 +1,13 @@
 #include "value.h"
+#include "ast.h"
 #include "env.h"
 #include "builtinFun.h"
 #include "util.h"
 
 extern Value* globalEnv;
+extern List* parseTrees;
 
-Value* builtInLen(List* lst) {
+Value* builtinLen(List* lst) {
   if(listSize(lst)!=1) error("len only takes exactly one argument\n");
   Value* l = listGet(lst, 0);
   switch(l->type) {
@@ -15,7 +17,7 @@ Value* builtInLen(List* lst) {
   }
 }
 
-Value* builtInOrd(List* lst) {
+Value* builtinOrd(List* lst) {
   if(listSize(lst)!=1) error("ord only takes exactly one argument\n");
   Value* v = listGet(lst, 0);
   if(v->type != STRING_VALUE_TYPE || strlen((char*) v->data) != 1)
@@ -23,7 +25,7 @@ Value* builtInOrd(List* lst) {
   return newIntValue(*((char*) v->data));
 }
 
-Value* builtInSort(List* lst) {
+Value* builtinSort(List* lst) {
   if(listSize(lst)!=1) error("sort only takes exactly one argument\n");
   Value* v = listGet(lst, 0);
   if(v->type != LIST_VALUE_TYPE) error("sort only applys on list\n");
@@ -31,14 +33,14 @@ Value* builtInSort(List* lst) {
   return newNoneValue();
 }
 
-Value* builtInStr(List* lst) {
+Value* builtinStr(List* lst) {
   if(listSize(lst)!=1) error("str only takes exactly one argument\n");
   Value* v = listGet(lst, 0);
   return newStringValue(valueToString(v));
 }
 
-Value* builtInChr(List* lst) {
-  if(listSize(lst)!=1) error("str only takes exactly one argument\n");
+Value* builtinChr(List* lst) {
+  if(listSize(lst)!=1) error("chr only takes exactly one argument\n");
   Value* v = listGet(lst, 0);
   if(v->type != INT_VALUE_TYPE) error("chr only applys to int\n");
   char* s = (char*) malloc(2);
@@ -47,7 +49,7 @@ Value* builtInChr(List* lst) {
   return newStringValue(s);
 }
 
-Value* builtInPrint(List* lst) {
+Value* builtinPrint(List* lst) {
   int i, n = listSize(lst);
   for(i=0;i<n;i++) {
     if(i) printf(" ");
@@ -57,13 +59,56 @@ Value* builtInPrint(List* lst) {
   return newNoneValue();
 }
 
+Value* builtinRand(List* lst) {
+  return newIntValue(rand());
+}
+
+Value* builtinParse(List* lst) {
+  if(listSize(lst)!=1) error("parse only takes exactly one argument\n");
+  Value* v = listGet(lst, 0);
+  if(v->type != STRING_VALUE_TYPE) error("parse only applys to string\n");
+  char *code = (char*) v->data;
+  FILE* f = fmemopen(code, strlen(code), "r");
+  yyrestart(f);
+  yyparse();
+  fclose(f);
+  return nodeToListValue(listLast(parseTrees));
+}
+
+Value* builtinRead(List* lst){
+  if(listSize(lst)!=1) error("read only takes exactly one argument\n");
+  Value* v = listGet(lst, 0);
+  if(v->type != STRING_VALUE_TYPE) error("read only applys to string\n");
+  FILE* f = fopen((char*) v->data, "r");
+  if(!f) error("failed to open %s\n", v->data);
+  fseek(f, 0L, SEEK_END);
+  int sz = ftell(f);
+  fseek(f, 0L, SEEK_SET);
+  char* res = (char*) malloc(sz+1);
+  if(fread(res, 1, sz, f)!=sz)
+    error("failed to read the whole file of %s\n", v->data);
+  res[sz]=0;
+  return newStringValue(res);
+}
+
+Value* builtinExit(List* lst){
+  if(listSize(lst)!=1) error("exit only takes exactly one argument\n");
+  Value* v = listGet(lst, 0);
+  if(v->type != INT_VALUE_TYPE) error("exit only applys to string\n");
+  exit((long) v->data);
+}
+
 void registerBuiltinFunctions(Env* e) {
-  envPut(e, getIntId("len"), newBuiltinFun(builtInLen));
-  envPut(e, getIntId("ord"), newBuiltinFun(builtInOrd));
-  envPut(e, getIntId("chr"), newBuiltinFun(builtInChr));
-  envPut(e, getIntId("sort"), newBuiltinFun(builtInSort));
-  envPut(e, getIntId("str"), newBuiltinFun(builtInStr));
-  envPut(e, getIntId("print"), newBuiltinFun(builtInPrint));
+  envPut(e, getIntId("len"), newBuiltinFun(builtinLen));
+  envPut(e, getIntId("ord"), newBuiltinFun(builtinOrd));
+  envPut(e, getIntId("chr"), newBuiltinFun(builtinChr));
+  envPut(e, getIntId("sort"), newBuiltinFun(builtinSort));
+  envPut(e, getIntId("str"), newBuiltinFun(builtinStr));
+  envPut(e, getIntId("print"), newBuiltinFun(builtinPrint));
+  envPut(e, getIntId("rand"), newBuiltinFun(builtinRand));
+  envPut(e, getIntId("parse"), newBuiltinFun(builtinParse));
+  envPut(e, getIntId("read"), newBuiltinFun(builtinRead));
+  envPut(e, getIntId("exit"), newBuiltinFun(builtinExit));
 }
 
 

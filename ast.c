@@ -1,4 +1,5 @@
 #include "tl.h"
+#include "value.h"
 #include "ast.h"
 #include "util.h"
 #include "list.h"
@@ -54,8 +55,68 @@ void markTailRecursions(Node* t) {
   }
 }
 
+Value* nodeToListValue(Node* p) {
+  List* l = newList();
+  listPush(l, newStringValue(copyStr(nodeTypeToString(p->type))));
+  switch(p->type){
+    case INT_TYPE: listPush(l, newIntValue((long) p->data));break;
+    case ID_TYPE:  listPush(l, newStringValue(copyStr(getStrId((long) p->data)))); break;
+    case STRING_TYPE:  listPush(l, newStringValue(copyStr((char*) p->data))); break;
+    case STMTS_TYPE:
+    case ASSIGN_TYPE:
+    case ADD_TYPE:
+    case SUB_TYPE:
+    case MUL_TYPE:
+    case DIV_TYPE:
+    case IF_TYPE:
+    case GT_TYPE:
+    case LT_TYPE:
+    case GE_TYPE:
+    case LE_TYPE:
+    case EQ_TYPE:
+    case NE_TYPE:
+    case AND_TYPE:
+    case OR_TYPE:
+    case NOT_TYPE:
+    case WHILE_TYPE:
+    case ARGS_TYPE:
+    case FUN_TYPE:
+    case EXP_LIST_TYPE:
+    case ID_LIST_TYPE:
+    case CALL_TYPE:
+    case TAIL_CALL_TYPE:
+    case RETURN_TYPE:
+    case BREAK_TYPE:
+    case CONTINUE_TYPE:
+    case MOD_TYPE:
+    case LIST_TYPE:
+    case LIST_ACCESS_TYPE:
+    case FOR_TYPE:
+    case ADDEQ_TYPE:
+    case TIME_TYPE:
+    case NONE_TYPE:
+    case FOREACH_TYPE:
+    case TRY_TYPE:
+    case THROW_TYPE:
+    case ADDADD_TYPE:
+    case LOCAL_TYPE:
+    case IMPORT_TYPE:
+    case MODULE_ACCESS_TYPE: {
+      int i, n = chldNum(p);
+      for(i=0;i<n;i++)
+        listPush(l, nodeToListValue(chld(p,i)));
+      break;
+    }
+    default: error("unknown node type in nodeToListValue");
+  }
+  return newListValue(l);
+}
+
 char* nodeTypeToString(NodeType type) {
   switch(type) {
+    case INT_TYPE: return "int";
+    case ID_TYPE: return "id";
+    case STRING_TYPE: return "string";
     case ADD_TYPE: return "+";
     case SUB_TYPE: return "-";
     case MUL_TYPE: return "*";
@@ -77,8 +138,6 @@ char* nodeTypeToString(NodeType type) {
     case ID_LIST_TYPE: return "ids";
     case STMTS_TYPE: return "stmts";
     case LIST_TYPE: return "list";
-    case INT_TYPE: return "int";
-    case ID_TYPE: return "id";
     case IF_TYPE: return "if";
     case NOT_TYPE: return "not";
     case WHILE_TYPE: return "while";
@@ -90,7 +149,6 @@ char* nodeTypeToString(NodeType type) {
     case CONTINUE_TYPE: return "continue";
     case LIST_ACCESS_TYPE: return "list_access";
     case FOR_TYPE: return "for";
-    case STRING_TYPE: return "string";
     case NONE_TYPE: return "none";
     case FOREACH_TYPE: return "foreach";
     case TRY_TYPE: return "try";

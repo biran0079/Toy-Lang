@@ -2,7 +2,7 @@ import hashtable;
 
 HT = hashtable;
 
-t = HT.new();
+t = HT.newStringHashTable();
 HT.put(t, "hello", "world");
 print(HT.get(t,"hello"));
 HT.put(t, "hello", "toy-lang");
