@@ -80,7 +80,7 @@ Value* builtinRead(List* lst){
   Value* v = listGet(lst, 0);
   if(v->type != STRING_VALUE_TYPE) error("read only applys to string\n");
   FILE* f = fopen((char*) v->data, "r");
-  if(!f) error("failed to open %s\n", v->data);
+  if(!f) return newNoneValue();
   fseek(f, 0L, SEEK_END);
   int sz = ftell(f);
   fseek(f, 0L, SEEK_SET);

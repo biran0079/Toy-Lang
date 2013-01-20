@@ -155,7 +155,9 @@ string_exp:
   ;
 
 lambda_exp:
-  LAMBDA '(' id_list ')' '{' stmts '}' { $$ = newNode2(FUN_TYPE, 3, newNode(ID_TYPE, copyStr("lambda")), $3, $6); }
+  LAMBDA '(' id_list ')' '{' stmts '}' {
+    $$ = newNode2(FUN_TYPE, 3, newNode(ID_TYPE, (void*) getIntId(copyStr("lambda"))), $3, $6); 
+  }
   ;
   
 list_exp:

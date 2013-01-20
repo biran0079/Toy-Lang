@@ -442,13 +442,13 @@ Value* eval(Value* ev, Node* p) {
         case ID_TYPE: {
           long id = (long) left->data;
           Value* i = envGet(e, id);
-          if(i->type != INT_VALUE_TYPE) error("++ can only apply to int\n");
+          if(i->type != INT_VALUE_TYPE) error("++ can only apply to int\n%s\n", valueToString(nodeToListValue(p)));
           envPut(e, id, newIntValue((long) i->data + 1));
           return i;
         }
         case LIST_ACCESS_TYPE: {
           Value* lv =  evalAndPushRoot(ev, chld(left, 0));
-          if(lv->type != LIST_VALUE_TYPE) error("++ only applys to left value\n");
+          if(lv->type != LIST_VALUE_TYPE) error("++ only applys to left value\n%s\n", valueToString(nodeToListValue(p)));
           List* l = (List*) lv->data;
           Value* idx = evalAndPushRoot(ev, chld(left, 1));
           if(idx->type != INT_VALUE_TYPE) error("index of list must be int\n");
@@ -488,7 +488,7 @@ Value* eval(Value* ev, Node* p) {
       Value* res = ev;
       for(i=0; i<n; i++) {
         long id = (long) chld(p, i)->data;
-        if(res->type != ENV_VALUE_TYPE) error("module access must use env type\n");
+        if(res->type != ENV_VALUE_TYPE) error("module access must use env type, %s get\n", valueToString(res));
         res = envGet(res->data, id);
       }
       return res;

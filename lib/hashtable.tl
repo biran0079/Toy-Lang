@@ -6,6 +6,7 @@ fun new(hash, eq){
 }
 
 fun newStringHashTable() {
+  local eq;
   eq = lambda (a,b) {return a==b;};
   return new(stringHash, eq); 
 }
@@ -63,4 +64,19 @@ fun keys(table){
     for(item : l)  
       res+=[item[0]];
   return res;
+}
+fun has(table, k) {
+  local hash,eq,t;
+  hash=table[0];
+  eq=table[1];
+  t = table[2];
+  size = len(t);
+  i = hash(k) % size;
+  if(i<0) i += size;
+  l = t[i];
+  llen = len(l);
+  for(i=0;i<llen;i+=1)
+    if(eq(l[i][0], k))
+      return 1;
+  return 0;
 }
