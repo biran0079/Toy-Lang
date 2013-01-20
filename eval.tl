@@ -1,6 +1,8 @@
 import hashtable;
+import list;
+import string;
 
-code = parse("print(1+1);");
+code = parse("print(1+1, 3*4+5);");
 
 fun assert(b){
   if(!b){
@@ -27,7 +29,8 @@ fun eval(l){
     if(funname[1]=="print"){
       exps=l[2];
       assert(exps[0]=="exps");
-      print(eval(exps[1]));
+      args =list.map(eval, list.suffix(exps, 1));
+      print(string.join(" ", list.map(str, args)));
     }
   }
 }

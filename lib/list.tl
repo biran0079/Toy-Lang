@@ -1,19 +1,21 @@
 fun prefix(l, n){
+  local res, i;
   res = [];
   i=0;
   while(i<n){
-    res += l[i];
-    i += 1;
+    res += [l[i]];
+    i ++;
   }
   return res;
 }
 fun suffix(l,n){
+  local res,length, i;
   res=[];
   length = len(l);
   i=n;
   while(i<length){
-    res += l[i];
-    i += 1;
+    res += [l[i]];
+    i ++;
   }
   return res;
 }
@@ -34,4 +36,11 @@ fun isSorted(l){
     i=i+1;  
   }
   return 1;
+}
+
+fun map(f, l){
+  res = [];
+  for(i : l)
+    res+=[f(i)];
+  return res;
 }
