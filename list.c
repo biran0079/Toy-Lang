@@ -83,3 +83,9 @@ void listSort(List* lst, Comparator cmp) {
   void** t = malloc(listSize(lst) * sizeof(void*));
   msortInternal(lst->arr, 0, lst->size, cmp, t);
 }
+
+void listPopTo(List* lst, int size) {
+  if(lst->size < size) 
+    error("size passed to listPopTo is less than list size\n");
+  lst->size = size;
+}

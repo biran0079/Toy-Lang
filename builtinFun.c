@@ -8,7 +8,8 @@ extern Value* globalEnv;
 extern List* parseTrees;
 
 Value* builtinLen(List* lst) {
-  if(listSize(lst)!=1) error("len only takes exactly one argument\n");
+  if(listSize(lst)!=1)
+    error("len only takes exactly one argument\n");
   Value* l = listGet(lst, 0);
   switch(l->type) {
     case LIST_VALUE_TYPE: return newIntValue(listSize(l->data));
@@ -21,7 +22,7 @@ Value* builtinOrd(List* lst) {
   if(listSize(lst)!=1) error("ord only takes exactly one argument\n");
   Value* v = listGet(lst, 0);
   if(v->type != STRING_VALUE_TYPE || strlen((char*) v->data) != 1)
-    error("ord() can only apply to string with length 1\n");
+    error("ord() can only apply to string with length 1, got %s\n", valueToString(v));
   return newIntValue(*((char*) v->data));
 }
 
@@ -70,7 +71,7 @@ Value* builtinParse(List* lst) {
   char *code = (char*) v->data;
   FILE* f = fmemopen(code, strlen(code), "r");
   yyrestart(f);
-  yyparse();
+  if(yyparse()) error("failed to parse code %s\n", code);
   fclose(f);
   return nodeToListValue(listLast(parseTrees));
 }
@@ -98,6 +99,18 @@ Value* builtinExit(List* lst){
   exit((long) v->data);
 }
 
+int sysArgc;
+char** sysArgv;
+
+Value* builtinSysargs(List* l){
+  List* lst = newList();
+  int i;
+  for(i=0;i<sysArgc;i++){
+    listPush(lst, newStringValue(copyStr(sysArgv[i])));
+  }
+  return newListValue(lst);
+}
+
 void registerBuiltinFunctions(Env* e) {
   envPut(e, getIntId("len"), newBuiltinFun(builtinLen));
   envPut(e, getIntId("ord"), newBuiltinFun(builtinOrd));
@@ -109,6 +122,7 @@ void registerBuiltinFunctions(Env* e) {
   envPut(e, getIntId("parse"), newBuiltinFun(builtinParse));
   envPut(e, getIntId("read"), newBuiltinFun(builtinRead));
   envPut(e, getIntId("exit"), newBuiltinFun(builtinExit));
+  envPut(e, getIntId("sysArgs"), newBuiltinFun(builtinSysargs));
 }
 
 

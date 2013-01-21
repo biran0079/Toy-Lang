@@ -2,8 +2,6 @@
 #define _VALUE_H_
 
 #include "tl.h"
-#include "builtinFun.h"
-#include "list.h"
 
 enum ValueType {
   INT_VALUE_TYPE,
@@ -27,7 +25,7 @@ Value* newClosureValue(Node* t, Value* e);
 Value* newEnvValue(Env* e);
 Value* newStringValue(char* s);
 Value* newNoneValue();
-Value* newBuiltinFun(BuitinFun f);
+Value* newBuiltinFun(BuiltinFun f);
 void freeValue(Value* v);
 
 char* valueToString(Value* v);

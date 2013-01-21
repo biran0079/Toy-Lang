@@ -67,7 +67,7 @@ Value* newClosureValue(Node* t, Value* e) {
   return res;
 }
 
-Value* newBuiltinFun(BuitinFun f) {
+Value* newBuiltinFun(BuiltinFun f) {
   gc();
   newBuiltinFunC++;
   Value* res = MALLOC(Value);
@@ -294,6 +294,9 @@ Value* valueAdd(Value* v1, Value* v2) {
 int valueCmp(Value* v1, Value* v2) {
   if(v1->type != v2->type) {
     return -1; // comparing different type
+  }
+  if(v1 == v2) {
+    return 0;
   }
   switch(v1->type) {
     case LIST_VALUE_TYPE: {

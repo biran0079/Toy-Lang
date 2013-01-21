@@ -4,6 +4,9 @@ src = $(wildcard *.c)
 
 all: exe
 
+testeval: exe
+	./testeval.sh
+
 test: exe
 	./test.sh 
 

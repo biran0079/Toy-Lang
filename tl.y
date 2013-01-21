@@ -213,6 +213,8 @@ void help(){
 }
 
 extern char* tlDir;
+extern int sysArgc;
+extern char** sysArgv;
 int main(int argc, char** argv){
 #if YYDEBUG
   yydebug = 1;
@@ -230,6 +232,9 @@ int main(int argc, char** argv){
       }
     } else {
       src = argv[i];
+      sysArgc = argc - i;
+      sysArgv = argv + i;
+      break;
     }
   }
   if(src){

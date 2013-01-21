@@ -6,6 +6,16 @@ fun newEnv(p){
   return [p,hashtable.newStringHashTable()];
 }
 
+fun envHas(e, key) {
+  while(e!=none){
+    if(hashtable.has(e[1], key)) {
+      return 1;
+    }
+    e=e[0];
+  }  
+  return 0;
+}
+
 fun envGet(e, key) {
   while(e!=none){
     if(hashtable.has(e[1], key)) {
@@ -17,6 +27,7 @@ fun envGet(e, key) {
 }
 
 fun envPut(e, key, value) {
+  e0 = e;
   while(1){
     if(hashtable.has(e[1], key)){
       hashtable.put(e[1], key, value);
@@ -26,7 +37,7 @@ fun envPut(e, key, value) {
       e = e[0];
     }
   }
-  hashtable.put(e[1], key, value);
+  hashtable.put(e0[1], key, value);
 }
 
 fun envPutLocal(e, key, value) {
@@ -44,9 +55,7 @@ fun assert(b){
 fun getBuiltinFuns(){
   local res;
   res = hashtable.newStringHashTable();
-  fun put(name, f){
-    hashtable.put(res, name, f);  
-  }
+  hashtable.put(res, "print", print);
   hashtable.put(res, "len", len);
   hashtable.put(res, "ord", ord);
   hashtable.put(res, "chr", chr);
@@ -56,6 +65,7 @@ fun getBuiltinFuns(){
   hashtable.put(res, "parse", parse);
   hashtable.put(res, "read", read);
   hashtable.put(res, "exit", exit);
+  hashtable.put(res, "sysArgs", sysArgs);
   return res;
 }
 
@@ -80,33 +90,147 @@ fun eval(e, l){
       eval(e, l[i]);  
     return none;
   } else if(tag == "int")  return l[1];
-  else if(tag == "+") return eval(e, l[1])+eval(e, l[2]); 
-  else if(tag == "-") return eval(e, l[1])/eval(e, l[2]); 
-  else if(tag == "*") return eval(e, l[1])*eval(e, l[2]); 
-  else if(tag == "/") return eval(e, l[1])/eval(e, l[2]); 
-  else if(tag == "%") return eval(e, l[1])%eval(e, l[2]); 
-  else if(tag == ">") return eval(e, l[1])>eval(e, l[2]); 
-  else if(tag == "<") return eval(e, l[1])<eval(e, l[2]); 
-  else if(tag == ">=") return eval(e, l[1])>=eval(e, l[2]); 
-  else if(tag == "<=") return eval(e, l[1])<=eval(e, l[2]); 
-  else if(tag == "==") return eval(e, l[1])==eval(e, l[2]); 
-  else if(tag == "!=") return eval(e, l[1])!=eval(e, l[2]); 
+  else if(tag == "+") return eval(e, l[1]) + eval(e, l[2]); 
+  else if(tag == "-") return eval(e, l[1]) - eval(e, l[2]); 
+  else if(tag == "*") return eval(e, l[1]) * eval(e, l[2]); 
+  else if(tag == "/") return eval(e, l[1]) / eval(e, l[2]); 
+  else if(tag == "%") return eval(e, l[1]) % eval(e, l[2]); 
+  else if(tag == ">") return eval(e, l[1]) > eval(e, l[2]); 
+  else if(tag == "<") return eval(e, l[1]) < eval(e, l[2]); 
+  else if(tag == ">=") return eval(e, l[1]) >= eval(e, l[2]); 
+  else if(tag == "<=") return eval(e, l[1]) <= eval(e, l[2]); 
+  else if(tag == "==") return eval(e, l[1]) == eval(e, l[2]); 
+  else if(tag == "&&") return eval(e, l[1]) && eval(e, l[2]); 
+  else if(tag == "||") return eval(e, l[1]) || eval(e, l[2]); 
+  else if(tag == "!=") return eval(e, l[1]) != eval(e, l[2]); 
   else if(tag == "not") return !eval(e, l[1]);
   else if(tag == "none") return none;
-  else if(tag == "id") return envGet(e, l[1]);
-  else if(tag == "import") {
+  else if(tag == "id") {
+    if(envHas(e, l[1]))
+      return envGet(e, l[1]);
+    if(hashtable.has(builtInFun, l[1]))
+      return ["builtinFun", hashtable.get(builtInFun, l[1])];
+    return none;
+  } else if(tag == "return") throw ["return", eval(e, l[1])];
+  else if(tag == "module_access") {
     local res;
+    res = e;
+    for(i=1;i<len(l);i++){
+      res = envGet(res, l[i][1]);
+    }
+    return res;
+  } else if(tag == "import") {
+    local res, moduleName;
     res = newEnv(e);
-    eval(res, parse(readFromPath(l[1] + ".tl")));
-    envPut(l[0][1], res);
+    moduleName = l[1][1];
+    eval(res, parse(readFromPath(moduleName + ".tl")));
+    envPut(e, moduleName, res);
+  } else if(tag == "continue") {
+    throw ["continue"];
+  } else if(tag == "break") {
+    throw ["break"];
+  } else if(tag == "for") {
+    for(eval(e, l[1]); eval(e, l[2]); eval(e, l[3])){
+      try{
+        eval(e, l[4]);
+      }catch(ex){
+        if(ex[0] == "continue"){
+          continue;
+        } else if(ex[0] == "break") {
+          break;
+        } else {
+          throw ex;
+        }
+      }  
+    }
+  } else if(tag == "foreach") {
+    for(i : eval(e, l[2])) {
+      envPut(e, l[1][1], i);
+      try {
+        eval(e, l[3]);
+      }catch(ex){
+        if(ex[0] == "continue"){
+          continue;
+        } else if(ex[0] == "break") {
+          break;
+        } else {
+          throw ex;
+        }
+      }  
+    }
+  } else if(tag == "while") {
+    while(eval(e,l[1])){
+      try{
+        eval(e,l[2]);  
+      }catch(ex){
+        if(ex[0] == "continue"){
+          continue;
+        } else if(ex[0] == "break") {
+          break;
+        } else {
+          throw ex;
+        }
+      }  
+    }
+  } else if(tag == "if") {
+    if(eval(e,l[1]))
+      eval(e, l[2]);
+    else {
+      if(len(l) == 4)
+        eval(e, l[3]);
+    }
+  } else if(tag == "fun") {
+    local closure;
+    closure = [e, list.suffix(l, 1)];
+    envPut(e, l[1][1], closure);
+    return closure;
+  } else if(tag == "lambda") {
+    local closure;
+    closure = [e, [["id", "lambda"], l[1], l[2]]];
+    return closure;
   } else if(tag == "local") {
-    for(i=1;i<len(l);i++)
-      envPutLocal(e, l[i][1], none);
+    local ids;
+    ids = l[1];
+    for(i=1;i<len(ids);i++)
+      envPutLocal(e, ids[i][1], none);
+  } else if(tag == "try") {
+    try {
+      eval(e, l[1]);
+    } catch(ex) {
+      if(ex[0] == "exception") {
+        envPutLocal(e, l[2][1], ex[1]);
+        eval(e, l[3]);
+      } else {
+        throw ex;
+      }
+    } finally {
+      if(len(l) == 5)  
+        eval(e, l[4]);
+    }
+  } else if(tag == "throw") {
+    local ex;
+    ex = ["exception", eval(e, l[1])];
+    throw ex;
+  } else if(tag == "time") {
+    time(eval(e, l[1]));
   } else if(tag == "list_access") {
     local lst, idx;
     lst = eval(e, l[1]);
     idx = eval(e, l[2]);
     return lst[idx];
+  } else if(tag == "+=") {
+    local v,res;
+    v = eval(e,l[1]);
+    res = (v+=eval(e, l[2]));
+    if(l[1][0] == "id") {
+      envPut(e, l[1][1], v);
+    } else if(l[1][0] == "list_access") {
+      local lst, idx;
+      lst = eval(e, l[1][1]);
+      idx = eval(e, l[1][2]);
+      lst[idx] = v;
+    }
+    return res;
   } else if(tag == "++") {
     local v,res;
     v = eval(e,l[1]);
@@ -134,28 +258,35 @@ fun eval(e, l){
       print("unknown type for =\n");
       exit(-1);
     }
+    return v;
+  } else if(tag == "local") {
+    for(i=1;i<len(l);i++)
+      envPut(e, l[i][1], none);
   } else if(tag == "list") {
     res = []; 
-    for(i=1;i<len(l);i++)
+    for(i=1;i<len(l);i++){
       res += [eval(e, l[i])];
+    }
     return res;
+  } else if(tag == "string") {
+    return l[1];
   } else if(tag == "exps") {
-    for(i=0;i<len(l);i++)
+    for(i=1;i<len(l);i++)
       res = eval(e, l[i]);
     return res;
-  } else if(tag == "call"){
+  } else if(tag == "call" || tag == "tail_call"){
     funname = l[1];
-    if(funname[0]=="id"){
-      if(funname[1]=="print"){
-        exps=l[2];
+    exps=l[2];
+    closure = eval(e, funname);
+    if(closure[0] == "builtinFun") {
+      local f;
+      if(closure[1]==print){
         assert(exps[0]=="exps");
         args =list.map(lambda(x){return eval(e,x);}, list.suffix(exps, 1));
         print(string.join(" ", list.map(str, args)));
         return ;
-      } else if(hashtable.has(builtInFun, funname[1])){
-        local f;
-        f = hashtable.get(builtInFun, funname[1]);
-        exps=l[2];
+      } else {
+        f = closure[1];
         assert(exps[0]=="exps");
         if(len(exps) == 2) {
           return f(eval(e,exps[1]));
@@ -163,24 +294,26 @@ fun eval(e, l){
           return  f();
         }
       }
+    }else{
+      args =list.map(lambda(x){return eval(e,x);}, list.suffix(exps, 1));
+      e2 = newEnv(closure[0]);
+      f = closure[1];
+      ids = list.suffix(f[1], 1);
+      fbody = f[2];
+      assert(len(ids) == len(args));
+      for(i=0;i<len(ids);i++)
+        envPutLocal(e2, ids[i][1], args[i]);
+      try{
+        eval(e2, fbody);
+      }catch(ex){
+        if(ex[0]=="return") 
+          return ex[1];
+        else 
+          throw ex;
+      }
     }
-    closure = eval(e, funname);
-    args =list.map(lambda(x){return eval(e,x);}, list.suffix(exps, 1));
-    e2 = newEnv(closure[0]);
-    f = closure[1];
-    ids = f[1];
-    fbody = f[2];
-    assert(len(ids) == len(args));
-    for(i=0;i<len(ids);i++)
-      envPutLocal(e2, ids[i], args[i]);
-    return eval(e2, fbody);
+  }else{
+    print("unown tag " + tag + " in " + str(l));
+    exit(-1);
   }
 }
-
-code = parse("print(1+1, 3*4+5, str(123), rand(), 1<2, 3==3, 4>=4, !(1==1), [1,2,3]);\
-    a=1;print(a);b=[1,2,3];b[0]=0;print(b);a++;print(a);b[0]++;\
-    print(b);");
-
-eval(newEnv(none), code);
-
-e  =newEnv(newEnv(none));

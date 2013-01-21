@@ -1,4 +1,5 @@
 #include "env.h"
+#include "value.h"
 #include "util.h"
 
 extern int newEnvC, freeEnvC;
@@ -73,7 +74,43 @@ List* envGetLoopStates(Env* e) {
   return e->state->loopStates;
 }
 
-List* envGetExceptionStates(Env* e) {
+void envPushExceptionStates(Env* e, Exception* ex) {
   if(e->state == 0) initState(e);
-  return e->state->exceptionStates;
+  return listPush(e->state->exceptionStates, ex);
+}
+
+void envPopExceptionStates(Env* e) {
+  if(e->state == 0) error("cannot pop empty exception states\n");
+  Exception* ex = listPop(e->state->exceptionStates);
+  if(ex->finally) exec(ex->finally);
+  freeException(ex);
+}
+
+Exception* envLastExceptionState(Env* e) {
+  if(e->state == 0) return 0;
+  if(listSize(e->state->exceptionStates) == 0)
+    return 0;
+  return listLast(e->state->exceptionStates);
+}
+
+int envNumOfExceptionStates(Env* e) {
+  if(e->state == 0) return 0;
+  return listSize(e->state->exceptionStates);
+}
+
+int envNumOfLoopStates(Env* e) {
+  if(e->state == 0) return 0;
+  return listSize(e->state->loopStates);
+}
+
+Exception* envGetExceptionStates(Env* e, int idx) {
+  if(e->state == 0) return 0;
+  return listGet(e->state->exceptionStates, idx);
+}
+
+void envRestoreStates(Env* e, int loopStateNum, int exceptionStateNum) {
+  if(e->state == 0) return ;
+  listPopTo(e->state->loopStates, loopStateNum);
+  while(envNumOfExceptionStates(e) > exceptionStateNum)
+    envPopExceptionStates(e);
 }

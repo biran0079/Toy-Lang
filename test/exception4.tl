@@ -1,0 +1,13 @@
+fun f(n){
+  if(n==1) throw 0;
+  print(n);
+}
+for(i=0;i<3;i++){
+  try{
+    for(j=0;j<3;j++) {
+      f(j);
+    }
+  }catch(e){
+    continue;  
+  }
+}

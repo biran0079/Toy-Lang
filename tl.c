@@ -4,6 +4,7 @@
 #include "builtinFun.h"
 #include "gc.h"
 #include "hashTable.h"
+#include "value.h"
 #include "util.h"
 
 int newNodeC = 0, newIntValueC = 0, newStringValueC = 0, newClosureValueC = 0, newEnvValueC = 0,
@@ -27,6 +28,8 @@ HashTable* intToIdMap;
 
 int shouldDumpGCHistory = 0;  
 List* gcHistory;
+int sysArgc;
+char** sysArgv;
 
 /*** ALL GLOBAL VARIABLES DECLARES ABOVE!  ***/
 
@@ -56,10 +59,10 @@ void listCreatedObjectsCount() {
   fprintf(stderr, "\tEnv: %d %d\n", newEnvC, freeEnvC);
   fprintf(stderr, "\tList: %d %d\n", newListC, freeListC);
   fprintf(stderr, "\tHashTable: %d %d\n", newHashTableC, freeHashTableC);
-  fprintf(stderr, "\tBuitinFun: %d %d\n", newBuiltinFunC, freeBuiltinFunC);
+  fprintf(stderr, "\tBuiltinFun: %d %d\n", newBuiltinFunC, freeBuiltinFunC);
 }
 
-void init() {
+void init(int argc, char** args) {
   parseTrees = newList();
   values = newList();
   rootValues = newList();

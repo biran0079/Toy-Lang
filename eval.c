@@ -2,6 +2,8 @@
 #include "ast.h"
 #include "value.h"
 #include "env.h"
+#include "execUnit.h"
+#include "exception.h"
 #include "closure.h"
 #include "list.h"
 #include "hashTable.h"
@@ -12,7 +14,6 @@
 extern List* rootValues, *parseTrees;
 extern JmpMsg __jmpMsg__;
 extern Value* globalEnv;
-
 
 static void pushRootValue(Value* v) {
   listPush(rootValues, v);
@@ -26,6 +27,18 @@ static void popRootValueTo(int size) {
 static Value* evalAndPushRoot(Value* ev, Node* p) {
   Value* res = eval(ev, p);
   pushRootValue(res);
+  return res;
+}
+
+static Value* evalBuiltinFun(Value* e, Node* exp_lst, BuiltinFun f) {
+  List* args = newList();
+  int i, n = chldNum(exp_lst);
+  for(i=0; i<n; i++) {
+    Value* v = evalAndPushRoot(e, chld(exp_lst, i));
+    listPush(args, v);
+  }
+  Value* res = f(args);
+  freeList(args);
   return res;
 }
 
@@ -87,7 +100,7 @@ Value* eval(Value* ev, Node* p) {
     case TAIL_CALL_TYPE: {
       Value* closureValue = evalAndPushRoot(ev, chld(p, 0));
       if(closureValue->type == BUILTIN_FUN_VALUE_TYPE) {
-        Value* res = evalBuiltInFun(ev, chld(p, 1), closureValue->data);
+        Value* res = evalBuiltinFun(ev, chld(p, 1), closureValue->data);
         popRootValueTo(initSize);
         return res;
       }
@@ -109,7 +122,7 @@ Value* eval(Value* ev, Node* p) {
     case CALL_TYPE: {
       Value* closureValue = evalAndPushRoot(ev, chld(p, 0));
       if(closureValue->type == BUILTIN_FUN_VALUE_TYPE) {
-        Value* res = evalBuiltInFun(ev, chld(p, 1), closureValue->data);
+        Value* res = evalBuiltinFun(ev, chld(p, 1), closureValue->data);
         popRootValueTo(initSize);
         return res;
       }
@@ -125,33 +138,37 @@ Value* eval(Value* ev, Node* p) {
       for(i=0; i<chldNum(ids); i++)
         envPutLocal(e2, (long) chld(ids, i)->data, eval(ev, chld(args, i)));
       while(1){
+        int loopN = envNumOfLoopStates(e), exN = envNumOfExceptionStates(e);
         int ret = setjmp(e2->retState);
         if(!ret){
           eval(ev2, chld(f, 2));
           // if reach here, no return statement is called, so none is returned 
           popRootValueTo(initSize);
           return newNoneValue();
-        } else if(__jmpMsg__.type == RETURN_MSG_TYPE) {
-          // return is called;
-          Value* returnValue = __jmpMsg__.data;
-          popRootValueTo(initSize);
-          return returnValue;
-        } if(__jmpMsg__.type == TAIL_CALL_MSG_TYPE) {
-          // tail recursive call, reuse environment e2
-          Closure* tc = __jmpMsg__.data;
-          f = tc->f;
-          ev2 = tc->e;
-          e2 = ev2->data;
-          popRootValueTo(initSize);
-          pushRootValue(ev2); // ev2 is all we need to keep
-          continue;
-        } if(__jmpMsg__.type == EXCEPTION_MSG_TYPE) {
-          // exception passed out
-          Value* v = __jmpMsg__.data;
-          popRootValueTo(initSize);
-          throwValue(e, v);
-        } else {
-          error("unknown  return value from longjmp in function call\n");
+        } else{
+          envRestoreStates(e, loopN, exN);
+          if(__jmpMsg__.type == RETURN_MSG_TYPE) {
+            // return is called;
+            Value* returnValue = __jmpMsg__.data;
+            popRootValueTo(initSize);
+            return returnValue;
+          } if(__jmpMsg__.type == TAIL_CALL_MSG_TYPE) {
+            // tail recursive call, reuse environment e2
+            Closure* tc = __jmpMsg__.data;
+            f = tc->f;
+            ev2 = tc->e;
+            e2 = ev2->data;
+            popRootValueTo(initSize);
+            pushRootValue(ev2); // ev2 is all we need to keep
+            continue;
+          } if(__jmpMsg__.type == EXCEPTION_MSG_TYPE) {
+            // exception passed out
+            Value* v = __jmpMsg__.data;
+            popRootValueTo(initSize);
+            throwValue(e, v);
+          } else {
+            error("unknown  return value from longjmp in function call\n");
+          }
         }
       }
     }
@@ -296,9 +313,11 @@ Value* eval(Value* ev, Node* p) {
       jmp_buf buf;
       listPush(envGetLoopStates(e), buf);
       for(eval(ev, chld(p,0)); eval(ev, chld(p, 1))->data; eval(ev, chld(p, 2))){
+          int loopN = envNumOfLoopStates(e), exN = envNumOfExceptionStates(e);
           if(setjmp(buf)==0) {
             eval(ev, chld(p, 3));
           } else {
+            envRestoreStates(e, loopN, exN);
             JmpMsg* msg = &__jmpMsg__;
             if(msg->type == CONTINUE_MSG_TYPE)
               continue;
@@ -323,9 +342,11 @@ Value* eval(Value* ev, Node* p) {
       int len = listSize(l);
       for(i=0;i<len;i++) {
         envPut(e, (long) id->data, listGet(l, i));
+        int loopN = envNumOfLoopStates(e), exN = envNumOfExceptionStates(e);
         if(setjmp(buf)==0) {
           eval(ev, chld(p, 2));
         } else {
+          envRestoreStates(e, loopN, exN);
           JmpMsg* msg = &__jmpMsg__;
           if(msg->type == CONTINUE_MSG_TYPE)
             continue;
@@ -344,9 +365,11 @@ Value* eval(Value* ev, Node* p) {
         jmp_buf buf;
         listPush(envGetLoopStates(e), buf);
         while(eval(ev, chld(p, 0))->data){
+          int loopN = envNumOfLoopStates(e), exN = envNumOfExceptionStates(e);
           if(setjmp(buf)==0) {
             eval(ev, chld(p, 1));
           } else {
+            envRestoreStates(e, loopN, exN);
             JmpMsg* msg = &__jmpMsg__;
             if(msg->type == CONTINUE_MSG_TYPE)
               continue;
@@ -381,7 +404,7 @@ Value* eval(Value* ev, Node* p) {
            valueCmp(evalAndPushRoot(ev, chld(p, 0)), evalAndPushRoot(ev, chld(p, 1))) == 0);
     case NE_TYPE: 
       return newIntValue(
-           valueCmp(evalAndPushRoot(ev, chld(p, 0)), evalAndPushRoot(ev, chld(p, 1))) != 0);
+           !valueEquals(evalAndPushRoot(ev, chld(p, 0)), evalAndPushRoot(ev, chld(p, 1))));
     case AND_TYPE:
       return newIntValue(
            eval(ev, chld(p, 0))->data && eval(ev, chld(p, 1))->data);
@@ -402,33 +425,32 @@ Value* eval(Value* ev, Node* p) {
       return newNoneValue();
     }
     case TRY_TYPE: {
-      jmp_buf buf;
-      listPush(envGetExceptionStates(e), buf);
+      ExecUnit* finally= chldNum(p) == 4 ? newExecUnit(ev, chld(p, 3)) : 0;
+      Exception* ex = newException(finally);
+      envPushExceptionStates(e, ex);
       Node* tryBlock = chld(p, 0);
       long catchId = (long) chld(p, 1)->data;
       Node* catchBlock = chld(p, 2);
-      Node* finallyBlock = chldNum(p) == 4 ? chld(p, 3) : 0;
-      int res = setjmp(buf);
-      if(res==0){
+      int loopN = envNumOfLoopStates(e), exN = envNumOfExceptionStates(e);
+      if(setjmp(ex->buf) == 0) {
         // try block
         eval(ev, tryBlock);
-        listPop(envGetExceptionStates(e)); // pop when out of try block
       } else {
         // catch block
-        if(setjmp(listLast(envGetExceptionStates(e))) == 0) {
-          // exception caught        
+        envRestoreStates(e, loopN, exN);
+        if(setjmp(ex->buf) == 0) {
           Value* v = __jmpMsg__.data;
-          envPut(e, catchId, v);
+          envPutLocal(e, catchId, v);
           eval(ev, catchBlock);
         } else {
-          //exception throw from catch
-          if(finallyBlock) eval(ev, finallyBlock);
-          listPop(envGetExceptionStates(e));
+          // exception from catch block
           Value* v = __jmpMsg__.data;
+          envRestoreStates(e, loopN, exN);
+          envPopExceptionStates(e);
           throwValue(e, v);
         }
       }
-      if(finallyBlock) eval(ev, finallyBlock);
+      envPopExceptionStates(e);
       return newNoneValue();
     }
     case THROW_TYPE: {
@@ -474,8 +496,8 @@ Value* eval(Value* ev, Node* p) {
       FILE* f = openFromPath(s, "r");
       if(!f) ("cannot open file %s\n", s);
       yyrestart(f);
+      if(yyparse()) error("failed to parse %s\n", s);
       free(s);
-      yyparse();
       Value* res = newEnvValue(newEnv(globalEnv));
       pushRootValue(res);
       eval(res, listLast(parseTrees));
@@ -500,28 +522,16 @@ Value* eval(Value* ev, Node* p) {
 }
 
 void throwValue(Env* e, Value* v) {
-  if(listSize(envGetExceptionStates(e))) {
+  if(envLastExceptionState(e)) {
     // currently in try block
-    tlLongjmp(listLast(envGetExceptionStates(e)), EXCEPTION_MSG_TYPE, v);
+    tlLongjmp(envLastExceptionState(e)->buf, EXCEPTION_MSG_TYPE, v);
   } else {
     // If has parent stack frame, pass to it. Report error otherwise
-    if (e->parent) {
+    if (e->parent != newNoneValue()) {
       tlLongjmp(e->retState, EXCEPTION_MSG_TYPE, v);
     } else {
-      error("uncaught exception:\n%s\n", valueToString(v));
+      error("uncaught exception: %s\n", valueToString(v));
     }
   }
-  error("should never reach here\n");
 }
 
-Value* evalBuiltInFun(Value* e, Node* exp_lst, BuitinFun f) {
-  List* args = newList();
-  int i, n = chldNum(exp_lst);
-  for(i=0; i<n; i++) {
-    Value* v = evalAndPushRoot(e, chld(exp_lst, i));
-    listPush(args, v);
-  }
-  Value* res = f(args);
-  freeList(args);
-  return res;
-}

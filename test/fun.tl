@@ -1,7 +1,3 @@
-fun f(a){ }
-fun g(){ }
-print(f);
-print(g);
 fun x(a,b){
   print(a);  
   print(b);  
