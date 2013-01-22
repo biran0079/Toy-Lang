@@ -14,7 +14,7 @@ static void initState(Env* e){
 static void freeState(Env* e) {
   freeList(e->state->loopStates);
   freeList(e->state->exceptionStates);
-  free(e->state);
+  tlFree(e->state);
 }
 
 Env* newEnv(Value* parentEnv){
@@ -35,7 +35,7 @@ void freeEnv(Env* e) {
     freeState(e);
     e->state = 0;
   }
-  free(e);
+  tlFree(e);
 }
 
 Value* envGet(Env* e, long key){
@@ -82,7 +82,11 @@ void envPushExceptionStates(Env* e, Exception* ex) {
 void envPopExceptionStates(Env* e) {
   if(e->state == 0) error("cannot pop empty exception states\n");
   Exception* ex = listPop(e->state->exceptionStates);
-  if(ex->finally) exec(ex->finally);
+  if(ex->finally) {
+    Value* e = ex->finally->ev;
+    Node* p = ex->finally->p;
+    eval(e, p);
+  }
   freeException(ex);
 }
 

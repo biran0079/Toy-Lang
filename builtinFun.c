@@ -1,6 +1,7 @@
 #include "value.h"
 #include "ast.h"
 #include "env.h"
+#include "eval.h"
 #include "builtinFun.h"
 #include "util.h"
 
@@ -44,7 +45,7 @@ Value* builtinChr(List* lst) {
   if(listSize(lst)!=1) error("chr only takes exactly one argument\n");
   Value* v = listGet(lst, 0);
   if(v->type != INT_VALUE_TYPE) error("chr only applys to int\n");
-  char* s = (char*) malloc(2);
+  char* s = (char*) tlMalloc(2);
   s[0] = (long) v->data;
   s[1] = 0;
   return newStringValue(s);
@@ -79,13 +80,15 @@ Value* builtinParse(List* lst) {
 Value* builtinRead(List* lst){
   if(listSize(lst)!=1) error("read only takes exactly one argument\n");
   Value* v = listGet(lst, 0);
-  if(v->type != STRING_VALUE_TYPE) error("read only applys to string\n");
+  if(v->type != STRING_VALUE_TYPE) {
+    error("read only applys to string, got type %d\n", v->type);
+  }
   FILE* f = fopen((char*) v->data, "r");
   if(!f) return newNoneValue();
   fseek(f, 0L, SEEK_END);
   int sz = ftell(f);
   fseek(f, 0L, SEEK_SET);
-  char* res = (char*) malloc(sz+1);
+  char* res = (char*) tlMalloc(sz+1);
   if(fread(res, 1, sz, f)!=sz)
     error("failed to read the whole file of %s\n", v->data);
   res[sz]=0;
@@ -104,11 +107,14 @@ char** sysArgv;
 
 Value* builtinSysargs(List* l){
   List* lst = newList();
+  Value* res = newListValue(lst);
+  pushRootValue(res);
   int i;
-  for(i=0;i<sysArgc;i++){
-    listPush(lst, newStringValue(copyStr(sysArgv[i])));
+  for(i=0;i<sysArgc;i++) {
+    Value* s = newStringValue(copyStr(sysArgv[i]));
+    listPush(lst, s);
   }
-  return newListValue(lst);
+  return res;
 }
 
 void registerBuiltinFunctions(Env* e) {

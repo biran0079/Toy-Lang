@@ -11,6 +11,5 @@ typedef struct ExecUnit {
 
 ExecUnit* newExecUnit(Value* ev, Node* p);
 void freeExecUnit(ExecUnit* eu);
-Value* exec(ExecUnit* eu);
 
 #endif

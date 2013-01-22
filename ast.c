@@ -57,6 +57,8 @@ void markTailRecursions(Node* t) {
 
 Value* nodeToListValue(Node* p) {
   List* l = newList();
+  Value* res = newListValue(l);
+  pushRootValue(res);
   listPush(l, newStringValue(copyStr(nodeTypeToString(p->type))));
   switch(p->type){
     case INT_TYPE: listPush(l, newIntValue((long) p->data));break;
@@ -109,7 +111,7 @@ Value* nodeToListValue(Node* p) {
     }
     default: error("unknown node type in nodeToListValue");
   }
-  return newListValue(l);
+  return res;
 }
 
 char* nodeTypeToString(NodeType type) {
@@ -166,7 +168,7 @@ void freeNode(Node* t) {
   switch(t->type) {
     case INT_TYPE: 
     case ID_TYPE: break;
-    case STRING_TYPE: free(t->data); break;
+    case STRING_TYPE: tlFree(t->data); break;
     default: {
       int n = chldNum(t), i;        
       for(i=0; i<n; i++)
@@ -175,5 +177,5 @@ void freeNode(Node* t) {
       break;
     }
   }
-  free(t);
+  tlFree(t);
 }

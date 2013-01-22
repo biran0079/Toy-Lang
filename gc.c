@@ -2,6 +2,7 @@
 #include "list.h"
 #include "value.h"
 #include "env.h"
+#include "tljmp.h"
 #include "closure.h"
 #include "util.h"
 
@@ -61,7 +62,7 @@ static void pushGCHistory(int before, int after) {
 void clearGCHistory() {
   int i, n = listSize(gcHistory);
   for(i=0; i<n;i++) {
-    free(listGet(gcHistory, i));
+    tlFree(listGet(gcHistory, i));
   }
   freeList(gcHistory);
 }
@@ -87,12 +88,16 @@ void forceGC() {
   pushGCHistory(before, after);
 }
 
-extern int hardMemLimit, softMemLimit;
+extern int memoryUsage, memoryLimit, gcTestMode;
 
 void gc() {
-  if(listSize(values) >= hardMemLimit) {
+  if(gcTestMode) {
     forceGC();
-    if(listSize(values) >= softMemLimit) {
+    return;
+  }
+  if(memoryUsage >= memoryLimit) {
+    forceGC();
+    if(memoryUsage >= memoryLimit) {
       listCreatedObjectsCount();
       error("out of memory\n");
     }

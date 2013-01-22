@@ -43,7 +43,7 @@ HashTable* newHashTable(HashFunc h, EqualsFunc eq) {
   HashTable* res = MALLOC(HashTable);
   res->cap = INIT_CAPACITY;
   res->size = 0;
-  res->a = (LinkedList**) malloc(res->cap * sizeof(LinkedList*));
+  res->a = (LinkedList**) tlMalloc(res->cap * sizeof(LinkedList*));
   res->h = h;
   res->eq = eq;
   memset(res->a, 0, res->cap * sizeof(LinkedList*));
@@ -54,7 +54,7 @@ static void rehash(HashTable* t){
   LinkedList** old = t->a;
   int oldCap = t->cap;
   t->cap *= 2;
-  t->a = (LinkedList**) malloc(t->cap * sizeof(LinkedList*));
+  t->a = (LinkedList**) tlMalloc(t->cap * sizeof(LinkedList*));
   t->size = 0;
   memset(t->a, 0, t->cap * sizeof(LinkedList*));
   int i;
@@ -63,11 +63,12 @@ static void rehash(HashTable* t){
     while(l){
       hashTablePut(t, l->key, l->value);
       next = l->next;
-      free(l);
+      l->next = 0;
+      tlFree(l);
       l = next;
     }
   }
-  free(old);
+  tlFree(old);
 }
 
 void freeHashTable(HashTable* t) {
@@ -79,14 +80,15 @@ void freeHashTable(HashTable* t) {
       LinkedList* nl = l->next;
       l->key = 0;
       l->value = 0;
-      free(l);
+      l->next = 0;
+      tlFree(l);
       l = nl;
     }
   }
-  free(t->a);
+  tlFree(t->a);
   t->a = 0;
   t->cap = t->size = 0;
-  free(t);
+  tlFree(t);
 }
 
 static LinkedList* hashTableGetInternal(HashTable* t, void* key) {
@@ -111,10 +113,10 @@ void* hashTableRemove(HashTable* t, void* key) {
   void* res = l->value;
   if (!p) {
     t->a[idx] = l->next;
-    free(l);
+    tlFree(l);
   } else {
     p->next = l->next;
-    free(l);
+    tlFree(l);
   }
   return res;
 }
@@ -165,7 +167,7 @@ void hashTableClear(HashTable* t) {
     LinkedList *l = t->a[i], *nl;
     while(l){
       nl = l->next;
-      free(l);
+      tlFree(l);
       l = nl;
     }
     t->a[i]=0;

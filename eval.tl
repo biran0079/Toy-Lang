@@ -306,10 +306,11 @@ fun eval(e, l){
       try{
         eval(e2, fbody);
       }catch(ex){
-        if(ex[0]=="return") 
+        if(ex[0]=="return") {
           return ex[1];
-        else 
+        } else {
           throw ex;
+        }
       }
     }
   }else{

@@ -15,7 +15,7 @@ extern List* rootValues, *parseTrees;
 extern JmpMsg __jmpMsg__;
 extern Value* globalEnv;
 
-static void pushRootValue(Value* v) {
+void pushRootValue(Value* v) {
   listPush(rootValues, v);
 }
 
@@ -87,7 +87,7 @@ Value* eval(Value* ev, Node* p) {
         }
         case STRING_VALUE_TYPE: {
           char *s = (char*) v->data;
-          char *ss = (char*) malloc(2 * sizeof(char));
+          char *ss = (char*) tlMalloc(2 * sizeof(char));
           ss[0] = s[idx];
           ss[1] = 0;
           res = newStringValue(ss);
@@ -116,7 +116,7 @@ Value* eval(Value* ev, Node* p) {
       for(i=0; i<chldNum(ids); i++)
         envPutLocal(e2, (long) chld(ids, i)->data, eval(ev, chld(args, i)));
       Value* res = newClosureValue(f, ev2);
-      tlLongjmp(e->retState, TAIL_CALL_MSG_TYPE, res->data);
+      tlLongjmp(e->retState, TAIL_CALL_MSG_TYPE, res);
       // actuall call is handled by CALL_TYPE
     }
     case CALL_TYPE: {
@@ -154,7 +154,8 @@ Value* eval(Value* ev, Node* p) {
             return returnValue;
           } if(__jmpMsg__.type == TAIL_CALL_MSG_TYPE) {
             // tail recursive call, reuse environment e2
-            Closure* tc = __jmpMsg__.data;
+            Value* closureValue = __jmpMsg__.data;
+            Closure* tc = closureValue->data;
             f = tc->f;
             ev2 = tc->e;
             e2 = ev2->data;
@@ -443,8 +444,9 @@ Value* eval(Value* ev, Node* p) {
           envPutLocal(e, catchId, v);
           eval(ev, catchBlock);
         } else {
-          // exception from catch block
+          // exception from catch or finally block
           Value* v = __jmpMsg__.data;
+          pushRootValue(v);
           envRestoreStates(e, loopN, exN);
           envPopExceptionStates(e);
           throwValue(e, v);
@@ -497,7 +499,7 @@ Value* eval(Value* ev, Node* p) {
       if(!f) ("cannot open file %s\n", s);
       yyrestart(f);
       if(yyparse()) error("failed to parse %s\n", s);
-      free(s);
+      tlFree(s);
       Value* res = newEnvValue(newEnv(globalEnv));
       pushRootValue(res);
       eval(res, listLast(parseTrees));

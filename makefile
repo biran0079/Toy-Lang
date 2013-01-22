@@ -4,11 +4,11 @@ src = $(wildcard *.c)
 
 all: exe
 
-testeval: exe
-	./testeval.sh
-
 test: exe
 	./test.sh 
+
+testeval: exe
+	./testeval.sh
 
 gctest: exe
 	./gctest.sh
@@ -23,7 +23,7 @@ flex: tl.l bison
 	flex tl.l
 
 clear:
-	rm tl.exe tl *.o
+	rm tl.exe tl *.o lex.yy.c tl.tab.c tl.tab.h 
 
 bench: exe
 	./benchmark.sh

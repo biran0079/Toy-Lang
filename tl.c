@@ -21,12 +21,14 @@ List* values;  // all values created
 List* rootValues;  // all values should be treated as root when gc
 Value* globalEnv;
 JmpMsg __jmpMsg__;
-int hardMemLimit = 1000000, softMemLimit = 1000000;
+int memoryLimit = 100000000;
+int memoryUsage = 0;
 List* path;  // where import loads from
 HashTable* idToIntMap;
 HashTable* intToIdMap;
 
 int shouldDumpGCHistory = 0;  
+int gcTestMode = 0;  
 List* gcHistory;
 int sysArgc;
 char** sysArgv;
@@ -87,11 +89,11 @@ void cleanup() {
     freeNode(listGet(parseTrees, i));
   n = listSize(path);
   for(i=0;i<n;i++)
-    free(listGet(path, i));
+    tlFree(listGet(path, i));
   freeList(path);
   freeList(parseTrees);
   if(!shouldDumpGCHistory) clearGCHistory();
-  free(tlDir);
+  tlFree(tlDir);
   freeHashTable(idToIntMap);
   freeHashTable(intToIdMap);
 }

@@ -8,9 +8,5 @@ ExecUnit* newExecUnit(Value* ev, Node* p){
 }
 
 void freeExecUnit(ExecUnit* eu){
-  free(eu);
-}
-
-Value* exec(ExecUnit* eu){
-  return eval(eu->ev, eu->p);
+  tlFree(eu);
 }

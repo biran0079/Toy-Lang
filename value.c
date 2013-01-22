@@ -105,7 +105,7 @@ void freeValue(Value* v) {
       freeListValueC++;
       break;
     case STRING_VALUE_TYPE:
-      free((char*) v->data);
+      tlFree((char*) v->data);
       freeStringValueC++;
       break;
     case INT_VALUE_TYPE: {
@@ -117,7 +117,7 @@ void freeValue(Value* v) {
     default: error("unkonwn value type passed to freeValue: %d\n", v->type);
   }
   v->type = NONE_VALUE_TYPE;
-  free(v);
+  tlFree(v);
 }
 
 
@@ -190,7 +190,7 @@ static int valueToStringInternal(Value* v, char *s, int n) {
 
 char* valueToString(Value* v) {
   int l = valueToStringInternal(v, 0, 0) + 1;
-  char *s = (char*) malloc(l);
+  char *s = (char*) tlMalloc(l);
   valueToStringInternal(v, s, l);
   return s;
 }
@@ -276,7 +276,7 @@ Value* valueAdd(Value* v1, Value* v2) {
     case STRING_VALUE_TYPE: {
       if(v2->type == STRING_VALUE_TYPE) {
         char *s1 = (char*) v1->data, *s2 = (char*) v2->data;
-        char *res = (char*) malloc(strlen(s1) + strlen(s2) + 1);
+        char *res = (char*) tlMalloc(strlen(s1) + strlen(s2) + 1);
         *res = 0;
         strcat(res, s1);
         strcat(res, s2);

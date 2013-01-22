@@ -5,5 +5,6 @@
 
 Value* eval(Value* ev, Node* p);
 void throwValue(Env* e, Value* v);
+void pushRootValue(Value* v);
 
 #endif

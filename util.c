@@ -1,8 +1,34 @@
 #include "util.h"
 #include "list.h"
 
+extern int memoryUsage;
+
+typedef struct MemBlock {
+  int size;
+} MemBlock;
+
+void* tlMalloc(int size) {
+  memoryUsage += size;
+  MemBlock* m = malloc(size + sizeof(MemBlock));
+  m-> size = size;
+  return m + 1;
+}
+
+void* tlRealloc(void* t, int size) {
+  MemBlock* m = (MemBlock*) t - 1;
+  m = (MemBlock*) realloc(m, size + sizeof(MemBlock));
+  return m + 1;
+}
+
+void tlFree(void* t) {
+  MemBlock* m = (MemBlock*) t - 1;
+  memoryUsage -= m->size;
+  free(m);
+}
+
+
 void* copy(void* t, int size) {
-  void* res = malloc(size);
+  void* res = tlMalloc(size);
   memcpy(res, t, size);
   return res;
 }
@@ -12,7 +38,7 @@ char* copyStr(char* t) {
 }
 
 char* catStr(char* s1, char* s2) {
-  char* s = (char*) malloc(strlen(s1) + strlen(s2) + 1);
+  char* s = (char*) tlMalloc(strlen(s1) + strlen(s2) + 1);
   s[0]=0;
   strcat(s, s1);
   strcat(s, s2);
@@ -30,7 +56,7 @@ long strToLong(char* s){
 }
 
 char* literalStringToString(char *s) {
-  char *ss = malloc(strlen(s)+1);
+  char *ss = tlMalloc(strlen(s)+1);
   int l = 0;
   s++;  // skil "
   while(*s!='"') {
@@ -49,7 +75,7 @@ char* literalStringToString(char *s) {
     s++;
   }
   ss[l++] = 0;
-  return realloc(ss, l);
+  return tlRealloc(ss, l);
 }
 
 void error(char* format,...) {

@@ -1,6 +1,7 @@
 #ifndef _TLJMP_H_
 #define _TLJMP_H_
 
+#include "tl.h"
 #include <setjmp.h>
 
 typedef enum JmpMsgType {
@@ -13,10 +14,10 @@ typedef enum JmpMsgType {
 
 typedef struct JmpMsg {
   JmpMsgType type;
-  void* data;
+  Value* data;
 } JmpMsg;
 
 
-void tlLongjmp(jmp_buf buf, JmpMsgType type, void* data);
+void tlLongjmp(jmp_buf buf, JmpMsgType type, Value* data);
 
 #endif

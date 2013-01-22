@@ -8,6 +8,6 @@ Exception* newException(ExecUnit* finally) {
 }
 
 Exception* freeException(Exception* e) {
-  freeExecUnit(e->finally);
-  free(e);
+  if(e->finally) freeExecUnit(e->finally);
+  tlFree(e);
 }

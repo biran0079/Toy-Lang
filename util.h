@@ -1,7 +1,7 @@
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
-#define MALLOC(T) (T*)malloc(sizeof(T))
+#define MALLOC(T) (T*)tlMalloc(sizeof(T))
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +10,9 @@
 #include <time.h>
 #include <stdarg.h>
 
+void* tlMalloc(int size);
+void* tlRealloc(void* t, int size);
+void tlFree(void* t);
 void* copy(void* t, int size);
 char* copyStr(char* t);
 char* catStr(char* s1, char* s2);

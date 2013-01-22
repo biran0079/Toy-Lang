@@ -2,7 +2,7 @@
 #include "util.h"
 
 static void resize(List* lst, int cap) {
-  lst->arr = realloc(lst->arr, cap * sizeof(void*));
+  lst->arr = tlRealloc(lst->arr, cap * sizeof(void*));
   lst->cap = cap;
 }
 
@@ -20,11 +20,11 @@ List* newList() {
 void freeList(List* lst) {
   freeListC++;
   int i;
-  free(lst->arr);
+  tlFree(lst->arr);
   lst->arr = 0;
   lst-> cap = 0;
   lst-> size = 0;
-  free(lst);
+  tlFree(lst);
 }
 
 void listPush(List* lst, void* e) {
@@ -80,7 +80,7 @@ static void msortInternal(void* a[], int l, int r, Comparator cmp, void* t[]) {
 }
 
 void listSort(List* lst, Comparator cmp) {
-  void** t = malloc(listSize(lst) * sizeof(void*));
+  void** t = tlMalloc(listSize(lst) * sizeof(void*));
   msortInternal(lst->arr, 0, lst->size, cmp, t);
 }
 

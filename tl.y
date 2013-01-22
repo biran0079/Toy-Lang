@@ -34,8 +34,8 @@ extern List* rootValues;
 extern List* values;
 extern List* path;
 extern Value* globalEnv;
-extern int hardMemLimit;
-extern int shouldDumpGCHistory;
+extern int memoryLimit;
+extern int shouldDumpGCHistory, gcTestMode;
 extern FILE* yyin;
 
 %}
@@ -46,6 +46,7 @@ prog:
     listPush(parseTrees, $1);
   }
   ;
+
 stmts:
   stmts stmt {
     listPush((List*) $1->data, $2);
@@ -53,6 +54,7 @@ stmts:
   }
   | empty {$1->type = STMTS_TYPE; $$ = $1;}
   ;
+
 stmt:
   exp ';' {
     $$ = $1;
@@ -208,6 +210,7 @@ void help(){
                   "\t\twhich can be compiled to image using dot tool\n"
                   "\t-m <int>\tconfig memory limit for trigering GC\n"
                   "\t-h\tdump GC history to chart in html when GC\n"
+                  "\t-g\tGC test mode, whenever gc is called, forceGC is called. Memory limit is ignored.\n"
                   );
   exit(-1);
 }
@@ -226,8 +229,9 @@ int main(int argc, char** argv){
     if(argv[i][0]=='-') {
       switch(argv[i][1]) {
         case 'd' : toDot = 1;break;
-        case 'm' : i++; hardMemLimit = atoi(argv[i]); break;
+        case 'm' : i++; memoryLimit = atoi(argv[i]); break;
         case 'h' : shouldDumpGCHistory = 1; break;
+        case 'g' : gcTestMode = 1; break;
         default: help();
       }
     } else {

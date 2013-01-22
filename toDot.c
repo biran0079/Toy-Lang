@@ -5,7 +5,7 @@
 static char* maybeTruncateString(char *s){
   int len = strlen(s);
   if(len>10){
-    char *res = (char*) malloc(14);
+    char *res = (char*) tlMalloc(14);
     memcpy(res, s, 10);
     res[10] = 0;
     strcat(res, "...");
@@ -24,7 +24,7 @@ static char* escapeForDot(char*s){
   for(i=0;s[i];i++) 
     if(dotNeedEscape(s[i]))
       ct++;
-  char *res = (char*) malloc(strlen(s) + ct + 1);
+  char *res = (char*) tlMalloc(strlen(s) + ct + 1);
   int j=0;
   for(i=0;s[i];i++){
     if(dotNeedEscape(s[i]))
