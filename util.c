@@ -16,7 +16,9 @@ void* tlMalloc(int size) {
 
 void* tlRealloc(void* t, int size) {
   MemBlock* m = (MemBlock*) t - 1;
+  memoryUsage += size - m->size;
   m = (MemBlock*) realloc(m, size + sizeof(MemBlock));
+  m->size = size;
   return m + 1;
 }
 
@@ -105,6 +107,7 @@ FILE* openFromPath(char* s, char* mode) {
     char * p = listGet(path, i);
     char *fname = catStr(p, s);
     f = fopen(fname, mode);
+    tlFree(fname);
     if(f)break;
   }
   return f;

@@ -55,7 +55,9 @@ Value* builtinPrint(List* lst) {
   int i, n = listSize(lst);
   for(i=0;i<n;i++) {
     if(i) printf(" ");
-    printf("%s", valueToString(listGet(lst, i)));
+    char *s = valueToString(listGet(lst, i));
+    printf("%s", s);
+    tlFree(s);
   }
   printf("\n");
   return newNoneValue();

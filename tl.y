@@ -158,7 +158,7 @@ string_exp:
 
 lambda_exp:
   LAMBDA '(' id_list ')' '{' stmts '}' {
-    $$ = newNode2(FUN_TYPE, 3, newNode(ID_TYPE, (void*) getIntId(copyStr("lambda"))), $3, $6); 
+    $$ = newNode2(FUN_TYPE, 3, newNode(ID_TYPE, (void*) getIntId("lambda")), $3, $6); 
   }
   ;
   
@@ -218,6 +218,7 @@ void help(){
 extern char* tlDir;
 extern int sysArgc;
 extern char** sysArgv;
+extern int memoryUsage;
 int main(int argc, char** argv){
 #if YYDEBUG
   yydebug = 1;
@@ -262,7 +263,7 @@ int main(int argc, char** argv){
     if (!f) error("failed to open %s\n", s);
     nodeToDot(f, listGet(parseTrees, 0));
     fclose(f);
-    free(s);
+    tlFree(s);
   } else {
     eval(globalEnv, listGet(parseTrees, 0));
   }

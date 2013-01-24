@@ -94,7 +94,8 @@ void cleanup() {
   freeList(parseTrees);
   if(!shouldDumpGCHistory) clearGCHistory();
   tlFree(tlDir);
-  freeHashTable(idToIntMap);
+  freeStringHashTable(idToIntMap);
   freeHashTable(intToIdMap);
+  tlFree(newNoneValue());
 }
 

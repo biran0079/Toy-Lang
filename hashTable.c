@@ -198,3 +198,15 @@ void hashTableAddAllToList(HashTable* t, List* q) {
     }
   }
 }
+
+void freeStringHashTable(HashTable* t) {
+  int i;
+  for(i=0;i<t->cap;i++) {
+    LinkedList *l = t->a[i];
+    while(l){
+      tlFree(l->key);
+      l = l->next;
+    }
+  }
+  freeHashTable(t);
+}

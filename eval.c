@@ -87,7 +87,7 @@ Value* eval(Value* ev, Node* p) {
         }
         case STRING_VALUE_TYPE: {
           char *s = (char*) v->data;
-          char *ss = (char*) tlMalloc(2 * sizeof(char));
+          char *ss = (char*) tlMalloc(2);
           ss[0] = s[idx];
           ss[1] = 0;
           res = newStringValue(ss);
@@ -504,6 +504,7 @@ Value* eval(Value* ev, Node* p) {
       pushRootValue(res);
       eval(res, listLast(parseTrees));
       envPut(e, (long) id->data, res);
+      popRootValueTo(initSize);
       return newNoneValue();
     }
     case MODULE_ACCESS_TYPE: {

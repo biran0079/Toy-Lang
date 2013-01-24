@@ -11,7 +11,7 @@ static char* maybeTruncateString(char *s){
     strcat(res, "...");
     return res;
   }
-  return s;
+  return copyStr(s);
 }
 
 static int dotNeedEscape(char c){
@@ -43,7 +43,9 @@ static int nodeToDotHelper(FILE* o, Node *t, int* nextId, long n, ...){
   char* s;
   int i;
   va_start(l, n);
-  fprintf(o, "%d [label=\"{%s|{", id, escapeForDot(nodeTypeToString(t->type)));
+  s = escapeForDot(nodeTypeToString(t->type));
+  fprintf(o, "%d [label=\"{%s|{", id, s);
+  tlFree(s);
   for(i=0;i<n;i++){
     if(i) fprintf(o, "|");
     fprintf(o, "<%d> %s", i, va_arg(l, char*));
@@ -62,9 +64,14 @@ static int nodeToDotInternal(FILE* o, Node* t, int* nextId){
   switch(t->type) {
     case INT_TYPE: fprintf(o, "%d [label=\"INT(%ld)\"];\n", id, (long) t->data);break;
     case ID_TYPE:  fprintf(o, "%d [label=\"ID(%s)\"];\n", id, getStrId((long) t->data));break;
-    case STRING_TYPE: fprintf(o, "%d [label=\"STRING(%s)\"];\n", id, 
-                          escapeForDot(maybeTruncateString((char*) t->data)));
-                      break;
+    case STRING_TYPE: {
+        char *s = maybeTruncateString((char*) t->data);
+        char *s2 = escapeForDot(s);
+        fprintf(o, "%d [label=\"STRING(%s)\"];\n", id, s2);
+        tlFree(s);
+        tlFree(s2);
+        break;
+    }
     case NONE_TYPE: fprintf(o, "%d [label=\"none\"];\n", id);break;
     case BREAK_TYPE: fprintf(o, "%d [label=\"break\"]", id);break;
     case CONTINUE_TYPE: fprintf(o, "%d [label=\"continue\"]", id);break;
