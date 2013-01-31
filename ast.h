@@ -25,7 +25,6 @@ enum NodeType {
   OR_TYPE,
   NOT_TYPE,
   WHILE_TYPE,
-  ARGS_TYPE,
   FUN_TYPE,
   EXP_LIST_TYPE,
   ID_LIST_TYPE,

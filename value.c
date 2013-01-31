@@ -1,4 +1,5 @@
 #include "tl.h"
+#include "env.h"
 #include "value.h"
 #include "list.h"
 #include "util.h"
@@ -87,6 +88,7 @@ Value* newEnvValue(Env* e) {
   res->data = e;
   res->mark = 0;
   listPush(values, res);
+  envPutLocal(e, getIntId("this"), res);
   return res;
 }
 

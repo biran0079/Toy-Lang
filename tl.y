@@ -132,6 +132,7 @@ list_access:
 left_value:
   list_access  { $$ = $1; }
   | ID         { $$ = $1; }
+  | module_access         { $$ = $1; }
 
 int_exp:
   INT { $$ = $1; }

@@ -200,8 +200,20 @@ Value* eval(Value* ev, Node* p) {
           return res;
         }
         case ID_TYPE: {
-          Value* res = eval(ev, chld(p, 1));
+            Value* res = eval(ev, chld(p, 1));
           envPut(e, (long) left->data, res);
+          return res;
+        }
+        case MODULE_ACCESS_TYPE: {
+          Value* res = eval(ev, chld(p, 1));
+          int n = chldNum(left);
+          Value* env = ev;
+          for(i=0; i < n - 1; i++) {
+            long id = (long) chld(left, i)->data;
+            if(env->type != ENV_VALUE_TYPE) error("module access must use env type, %s get\n", valueToString(env));
+            env = envGet(env->data, id);
+          }
+          envPutLocal(env->data, (long) chld(left, i)->data, res);
           return res;
         }
         default: error("left hand side of = must be a left value\n");
@@ -509,7 +521,6 @@ Value* eval(Value* ev, Node* p) {
     }
     case MODULE_ACCESS_TYPE: {
       int n = chldNum(p);
-      int i;
       Value* res = ev;
       for(i=0; i<n; i++) {
         long id = (long) chld(p, i)->data;
