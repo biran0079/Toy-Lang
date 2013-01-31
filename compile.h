@@ -22,11 +22,18 @@ typedef enum InstType {
   OR_INST,
   NOT_INST,
   MOD_INST,
-  GOTO,
-  LOAD,
+  GOTO_INST,
+  LOAD_INST,
   STORE_INST,
   LIST_STORE_INST,
   JUMP_ON_FALSE_INST,
+  CLOSURE_INST,
+  RETURN_INST,
+  LIST_ACCESS_INST,
+  ADDEQ_INST,
+  TIME_START_INST,
+  TIME_END_INST,
+  THROW_INST,
 } InstType;
 
 typedef struct Instruction {
