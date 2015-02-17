@@ -93,6 +93,7 @@ static void msortInternal(void* a[], int l, int r, Comparator cmp, void* t[]) {
 void listSort(List* lst, Comparator cmp) {
   void** t = tlMalloc(listSize(lst) * sizeof(void*));
   msortInternal(lst->arr, 0, lst->size, cmp, t);
+  tlFree(t);
 }
 
 void listPopTo(List* lst, int size) {

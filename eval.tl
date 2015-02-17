@@ -3,7 +3,10 @@ import list;
 import string;
 
 fun newEnv(p){
-  return [p,hashtable.newStringHashTable()];
+  local res;
+  res = [p,hashtable.newStringHashTable()];
+  envPut(res, "this", res);
+  return res;
 }
 
 fun envHas(e, key) {
@@ -45,9 +48,10 @@ fun envPutLocal(e, key, value) {
 }
 
 
-fun assert(b){
+fun assert(b, msg){
   if(!b){
     print("assertion failure\n"); 
+    print(msg);
     exit(-1);
   }
 }
@@ -254,7 +258,14 @@ fun eval(e, l){
       lst[idx] = v;
     }else if(left[0]=="id"){
       envPut(e, left[1], v);
-    }else{
+    }else if(left[0]=="module_access"){
+      local res;
+      res = e;
+      for(i=1;i<len(left)-1;i++){
+        res = envGet(res, left[i][1]);
+      }
+      envPut(res, left[i][1], v);
+    }else {
       print("unknown type for =\n");
       exit(-1);
     }
@@ -281,13 +292,13 @@ fun eval(e, l){
     if(closure[0] == "builtinFun") {
       local f;
       if(closure[1]==print){
-        assert(exps[0]=="exps");
+        assert(exps[0]=="exps", "exps type expected for argument of print");
         args =list.map(lambda(x){return eval(e,x);}, list.suffix(exps, 1));
         print(string.join(" ", list.map(str, args)));
         return ;
       } else {
         f = closure[1];
-        assert(exps[0]=="exps");
+        assert(exps[0]=="exps", "exps type expected for arguments of print");
         if(len(exps) == 2) {
           return f(eval(e,exps[1]));
         } else if(len(exps) == 1){
@@ -300,7 +311,7 @@ fun eval(e, l){
       f = closure[1];
       ids = list.suffix(f[1], 1);
       fbody = f[2];
-      assert(len(ids) == len(args));
+      assert(len(ids) == len(args),str(len(ids)) + " parameter needed, " + str(len(args)) + " parameters get\n");
       for(i=0;i<len(ids);i++)
         envPutLocal(e2, ids[i][1], args[i]);
       try{

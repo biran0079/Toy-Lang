@@ -32,4 +32,5 @@ HashTable* hashTableCopy(HashTable* t);
 void hashTableClear(HashTable* t);
 void hashTableApplyAllValue(HashTable* t, ValueFunc f);
 void hashTableAddAllToList(HashTable* t, List* q);
+void freeStringHashTable(HashTable* t);
 #endif

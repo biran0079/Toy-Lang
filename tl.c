@@ -21,7 +21,7 @@ List* values;  // all values created
 List* rootValues;  // all values should be treated as root when gc
 Value* globalEnv;
 JmpMsg __jmpMsg__;
-int memoryLimit = 100000000;
+int memoryLimit = 200000000;
 int memoryUsage = 0;
 List* path;  // where import loads from
 HashTable* idToIntMap;
@@ -70,12 +70,13 @@ void init(int argc, char** args) {
   rootValues = newList();
   gcHistory = newList();
   path = newList();
+  idToIntMap = newStringHashTable();
+  intToIdMap = newIntHashTable();
+
   listPush(path, copyStr("./"));
   listPush(path, catStr(tlDir, "lib/"));
   globalEnv = newEnvValue(newEnv(newNoneValue()));
   listPush(rootValues, globalEnv);
-  idToIntMap = newStringHashTable();
-  intToIdMap = newIntHashTable();
   registerBuiltinFunctions(globalEnv->data);
 }
 
@@ -94,7 +95,8 @@ void cleanup() {
   freeList(parseTrees);
   if(!shouldDumpGCHistory) clearGCHistory();
   tlFree(tlDir);
-  freeHashTable(idToIntMap);
+  freeStringHashTable(idToIntMap);
   freeHashTable(intToIdMap);
+  tlFree(newNoneValue());
 }
 

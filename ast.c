@@ -81,7 +81,6 @@ Value* nodeToListValue(Node* p) {
     case OR_TYPE:
     case NOT_TYPE:
     case WHILE_TYPE:
-    case ARGS_TYPE:
     case FUN_TYPE:
     case EXP_LIST_TYPE:
     case ID_LIST_TYPE:
@@ -143,7 +142,6 @@ char* nodeTypeToString(NodeType type) {
     case IF_TYPE: return "if";
     case NOT_TYPE: return "not";
     case WHILE_TYPE: return "while";
-    case ARGS_TYPE: return "args";
     case FUN_TYPE: return "fun";
     case CALL_TYPE: return "call";
     case TAIL_CALL_TYPE: return "tail_call";
