@@ -2,6 +2,7 @@
 #define _TL_H_
 #include "list.h"
 
+typedef struct Token Token;
 typedef struct Node Node;
 typedef struct Value Value;
 typedef struct Closure Closure;

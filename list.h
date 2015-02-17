@@ -10,6 +10,7 @@ typedef struct List {
 
 List* newList();
 void freeList(List* lst);
+void listPushFront(List* lst, void* e);
 void listPush(List* lst, void* e);
 void* listPop(List* lst); 
 void* listLast(List* lst);

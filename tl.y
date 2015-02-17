@@ -218,7 +218,9 @@ void help(){
 extern char* tlDir;
 extern int sysArgc;
 extern char** sysArgv;
+#ifdef BUILD_INTERPRETER
 int main(int argc, char** argv){
+
 #if YYDEBUG
   yydebug = 1;
 #endif
@@ -278,3 +280,4 @@ int main(int argc, char** argv){
   }
   return 0;
 }
+#endif

@@ -58,7 +58,7 @@ long strToLong(char* s){
 char* literalStringToString(char *s) {
   char *ss = tlMalloc(strlen(s)+1);
   int l = 0;
-  s++;  // skil "
+  s++;  // skip "
   while(*s!='"') {
     if(*s == '\\') {
       s++;
@@ -78,7 +78,7 @@ char* literalStringToString(char *s) {
   return tlRealloc(ss, l);
 }
 
-void error(char* format,...) {
+int error(char* format,...) {
   va_list ap;
   va_start(ap, format);
   vfprintf(stderr, format, ap);
@@ -108,4 +108,21 @@ FILE* openFromPath(char* s, char* mode) {
     if(f)break;
   }
   return f;
+}
+
+char* readFile(char *path) {
+  FILE* f = fopen(path, "r");
+  if(!f) return 0;
+  fseek(f, 0L, SEEK_END);
+  int sz = ftell(f);
+  fseek(f, 0L, SEEK_SET);
+  char* res = (char*) tlMalloc(sz+1);
+  char* s = res;
+  while (sz) {
+    size_t len = fread(s, 1, sz, f);
+    s += len;
+    sz -= len;
+  }
+  *s = 0;
+  return res;
 }

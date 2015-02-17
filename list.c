@@ -34,6 +34,17 @@ void listPush(List* lst, void* e) {
   lst->arr[lst->size++] = e;
 }
 
+void listPushFront(List* lst, void* e) {
+  if (lst->cap == lst->size) {
+    resize(lst, lst->cap * 2);
+  }
+  int i;
+  for (i = lst->size; i > 0; i--) {
+    lst->arr[i] = lst->arr[i - 1];
+  }
+  lst->arr[0] = e;
+}
+
 void* listPop(List* lst){
   if(lst->size == 0) error("cannot pop empty list\n");
   return lst->arr[--lst->size];

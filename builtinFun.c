@@ -66,6 +66,9 @@ Value* builtinRand(List* lst) {
 }
 
 Value* builtinParse(List* lst) {
+#ifdef _WIN32
+  error("parse() built int function not supported in windows.");
+#else
   if(listSize(lst)!=1) error("parse only takes exactly one argument\n");
   Value* v = listGet(lst, 0);
   if(v->type != STRING_VALUE_TYPE) error("parse only applys to string\n");
@@ -75,6 +78,7 @@ Value* builtinParse(List* lst) {
   if(yyparse()) error("failed to parse code %s\n", code);
   fclose(f);
   return nodeToListValue(listLast(parseTrees));
+#endif
 }
 
 Value* builtinRead(List* lst){
@@ -83,16 +87,9 @@ Value* builtinRead(List* lst){
   if(v->type != STRING_VALUE_TYPE) {
     error("read only applys to string, got type %d\n", v->type);
   }
-  FILE* f = fopen((char*) v->data, "r");
-  if(!f) return newNoneValue();
-  fseek(f, 0L, SEEK_END);
-  int sz = ftell(f);
-  fseek(f, 0L, SEEK_SET);
-  char* res = (char*) tlMalloc(sz+1);
-  if(fread(res, 1, sz, f)!=sz)
-    error("failed to read the whole file of %s\n", v->data);
-  res[sz]=0;
-  return newStringValue(res);
+  char* res = readFile((char*) v->data);
+  if (res) return newStringValue(res);
+  return newNoneValue();
 }
 
 Value* builtinExit(List* lst){

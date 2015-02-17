@@ -13,8 +13,14 @@ testeval: exe
 gctest: exe
 	./gctest.sh
 
-exe: flex bison 
-	gcc $(gccflag) *.c -o tl
+exe: flex bison
+	gcc $(gccflag) *.c -o tl -DBUILD_INTERPRETER
+
+tokenizer:
+	gcc $(gccflag) *.c -o tokenizer -DBUILD_TOKENIZER
+
+parser: *.c
+	gcc $(gccflag) *.c -o parser -DBUILD_PARSER
 
 bison: tl.y
 	bison -d tl.y
@@ -30,4 +36,3 @@ bench: exe
 
 draw: exe
 	./draw.sh
-
