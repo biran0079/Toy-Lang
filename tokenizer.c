@@ -89,8 +89,8 @@ int isLetter(char c) {
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
-int parseInt(char** sp) {
-  int res = 0;
+long parseInt(char** sp) {
+  long res = 0;
   char* s = *sp;
   do {
     res *= 10;

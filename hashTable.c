@@ -2,8 +2,6 @@
 #include "list.h"
 #include "util.h"
 
-#define LOG 0
-
 static unsigned int stringHash(char *s) {
   int h=0;
   while(*s){
@@ -122,9 +120,6 @@ void* hashTableRemove(HashTable* t, void* key) {
 }
 
 void hashTablePut(HashTable* t, void* key, void* value) {
-  if(LOG){
-    printf("put %s\n",key);
-  }
   if(t->size > t->cap) rehash(t);
   LinkedList* l = hashTableGetInternal(t, key);
   if(l) {
@@ -141,9 +136,6 @@ void hashTablePut(HashTable* t, void* key, void* value) {
 }
 
 void* hashTableGet(HashTable* t, void* key){
-  if(LOG){
-    printf("get %s\n",key);
-  }
   LinkedList* l = hashTableGetInternal(t, key);
   return l ? l->value : 0;
 }
