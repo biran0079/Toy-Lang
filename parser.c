@@ -13,17 +13,22 @@ Node* post_process(Node* tree) {
   return tree;
 }
 
-Node* stmts(List* t, int* ip) {
-  if (listSize(t) == *ip) {
-    return newNode2(STMTS_TYPE, 0);
-  } else {
-    Node* fst = stmt(t, ip);
-    fst || error("failed to parse stmt\n");
-    Node* rst = stmts(t, ip);
-    rst || error("failed to parse stmts\n");
+Node* nonEmptyStmts(List* t, int* ip) {
+  Node* fst, *rst;
+  if ((fst = stmt(t, ip)) && (rst = stmt(t, ip))) {
     listPushFront(rst->data, fst);
     return rst;
   }
+  return 0;
+}
+
+Node* stmts(List* t, int* ip) {
+  int i0 = *ip;
+  Node* n;
+  if (n = nonEmptyStmts(t, ip)) {
+    return n;
+  }
+  return newNode2(STMTS_TYPE, 0);
 }
 
 
@@ -41,6 +46,7 @@ Node* tokenToNode(Token* token) {
 #define M2(T1,T2) M(T1) && M(T2)
 
 Node* match(List* t, int* ip, Token_t type) {
+  if (listSize(t) <= *ip) return 0;
   Token* token = (Token*) listGet(t, *ip);
   if (token->type == type) {
     (*ip)++;
