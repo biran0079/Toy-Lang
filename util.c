@@ -123,6 +123,7 @@ char* readFile(char *path) {
   char* s = res;
   while (sz) {
     size_t len = fread(s, 1, sz, f);
+    if (len == 0) break;
     s += len;
     sz -= len;
   }

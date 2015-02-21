@@ -5,7 +5,15 @@
 
 Node* parse(List* tokens) {
   int idx = 0;;
-  return post_process(stmts(tokens, &idx));
+  Node* tree = stmts(tokens, &idx);
+  if (idx < listSize(tokens)) {
+    int i;
+    for (i = 0; i < idx; i++) {
+      printf("%s\n", tokenTypeToStr(((Token*) listGet(tokens, i))->type));
+    }
+    error("failed to parse the while program.");
+  }
+  return post_process(tree);
 }
 
 Node* post_process(Node* tree) {
@@ -15,7 +23,7 @@ Node* post_process(Node* tree) {
 
 Node* nonEmptyStmts(List* t, int* ip) {
   Node* fst, *rst;
-  if ((fst = stmt(t, ip)) && (rst = stmt(t, ip))) {
+  if ((fst = stmt(t, ip)) && (rst = stmts(t, ip))) {
     listPushFront(rst->data, fst);
     return rst;
   }
@@ -56,6 +64,7 @@ Node* match(List* t, int* ip, Token_t type) {
 }
 
 Node* stmt(List* t, int* ip) {
+  if (listSize(t) <= *ip) return 0;
   Node *n1, *n2, *n3;
   int i0 = *ip;
   if ((n1 = expr(t, ip)) && M(SEMICOLON_T)) {
@@ -74,10 +83,11 @@ Node* stmt(List* t, int* ip) {
 
 // module access
 Node* expr0(List* t, int* ip) {
+  if (listSize(t) <= *ip) return 0;
   int i0 = *ip;
   Node *n1, *n2;
   if ((n1 = M(ID_T)) && M(DOT_T) && (n2 = expr0(t, ip))) {
-    listPushFront(n2->data, n1->data);
+    listPushFront(n2->data, n1);
     return n2;
   } else if ((*ip = i0), (n1 = M(ID_T)) && M(DOT_T) && (n2 = M(ID_T))) {
     return newNode2(MODULE_ACCESS_TYPE, 2, n1, n2);
@@ -90,6 +100,7 @@ Node* expr(List* t, int* ip) {
 }
 
 Node* block(List* t, int* ip) {
+  if (listSize(t) <= *ip) return 0;
   int i0 = *ip;
   Node* n;
   if (M(OP_CB_T) && (n = stmts(t, ip)) && M(CLO_CB_T)) {
