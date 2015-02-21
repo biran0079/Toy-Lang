@@ -65,6 +65,7 @@ void listCreatedObjectsCount() {
 }
 
 void init(int argc, char** args) {
+  tlDir = getFolder(args[0]);
   parseTrees = newList();
   values = newList();
   rootValues = newList();

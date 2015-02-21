@@ -252,7 +252,6 @@ int main(int argc, char** argv){
   } else {
     src = "stdin";
   }
-  tlDir = getFolder(argv[0]);
   init();
   if(src){
     char *s = getFolder(src);

@@ -48,8 +48,9 @@ enum NodeType {
   LOCAL_TYPE,
   IMPORT_TYPE,
   MODULE_ACCESS_TYPE,
+  __DUMMY_TYPE, // Used for parsing. Not part of language.
 };
-
+ 
 struct Node {
   NodeType type;
   void* data;

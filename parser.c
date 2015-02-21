@@ -1,5 +1,7 @@
 #include "parser.h"
 #include "util.h"
+#include "builtinFun.h"
+#include "value.h"
 
 Node* parse(List* tokens) {
   int idx = 0;;
@@ -24,14 +26,25 @@ Node* stmts(List* t, int* ip) {
   }
 }
 
+
+Node* tokenToNode(Token* token) {
+  static Node* dummyNode = 0;
+  switch (token->type) {
+    case INT_T: return newNode(INT_TYPE, token->data);
+    case STRING_T: return newNode(STRING_TYPE, (void*) getIntId(token->data));
+    case ID_T: return newNode(ID_TYPE, (void*) getIntId(token->data));
+    default: return dummyNode ? dummyNode : (dummyNode = newNode(__DUMMY_TYPE, 0));
+  }
+}
+
 #define M(TYPE) match(t, ip, TYPE)
 #define M2(T1,T2) M(T1) && M(T2)
 
-Token* match(List* t, int* ip, Token_t type) {
+Node* match(List* t, int* ip, Token_t type) {
   Token* token = (Token*) listGet(t, *ip);
   if (token->type == type) {
     (*ip)++;
-    return token;
+    return tokenToNode(token);
   }
   return 0;
 }
@@ -41,7 +54,7 @@ Node* stmt(List* t, int* ip) {
   int i0 = *ip;
   if ((n1 = expr(t, ip)) && M(SEMICOLON_T)) {
     return n1;
-  } else if ((*ip = i0) && M2(IF_T, OP_B_T) && (n1 = expr(t, ip)) && M(CLO_B_T) && (n2 = block(t, ip))) {
+  } else if ((*ip = i0), M2(IF_T, OP_B_T) && (n1 = expr(t, ip)) && M(CLO_B_T) && (n2 = block(t, ip))) {
     int i1 = *ip;
     if (M(ELSE_T) && (n3 = block(t, ip))) {
       return newNode2(IF_TYPE, 3, n1, n2, n3);
@@ -56,14 +69,13 @@ Node* stmt(List* t, int* ip) {
 // module access
 Node* expr0(List* t, int* ip) {
   int i0 = *ip;
-  Token *t1, *t2;
-  Node* n;
-  if ((t1 = M(ID_T)) && M(DOT_T) && (n = expr0(t, ip))) {
-    listPushFront(n->data, t1->data);
-    return n;
-  } else if ((*ip = i0) && (t1 = M(ID_T)) && M(DOT_T) && (t2 = M(ID_T))) {
-    return newNode2(MODULE_ACCESS_TYPE, 2, t1->data, t2->data);
-  } 
+  Node *n1, *n2;
+  if ((n1 = M(ID_T)) && M(DOT_T) && (n2 = expr0(t, ip))) {
+    listPushFront(n2->data, n1->data);
+    return n2;
+  } else if ((*ip = i0), (n1 = M(ID_T)) && M(DOT_T) && (n2 = M(ID_T))) {
+    return newNode2(MODULE_ACCESS_TYPE, 2, n1, n2);
+  }
   return 0;
 }
 
@@ -76,10 +88,14 @@ Node* block(List* t, int* ip) {
   Node* n;
   if (M(OP_CB_T) && (n = stmts(t, ip)) && M(CLO_CB_T)) {
     return n;
-  } else if ((*ip = i0) && (n = stmt(t, ip))) {
+  } else if ((*ip = i0), (n = stmt(t, ip))) {
     return n;
   }
   return 0;
+}
+
+void printAst(Node* ast) {
+  printf("%s\n", valueToString(nodeToListValue(ast)));
 }
 
 #undef M
@@ -87,6 +103,10 @@ Node* block(List* t, int* ip) {
 
 #ifdef BUILD_PARSER
 int main(int argc, char** args) {
+  init(argc, args);
+  if (argc != 2) {
+    error("One argument (input file) required.");
+  }
   char* src = args[1];
   char* code = readFile(src);
   List* tokens = tokenize(code);
@@ -94,12 +114,7 @@ int main(int argc, char** args) {
   if (!tree) {
     error("failed to parse file %s\n", src);
   }
-  char* s = catStr(src, ".dot");
-  FILE* f=fopen(s, "w");
-  if (!f) error("failed to open %s\n", s);
-  nodeToDot(f, tree);
-  fclose(f);
-  free(s);
+  printAst(tree);
   return 0;
 }
 #endif

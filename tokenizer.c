@@ -59,7 +59,6 @@ Token* newToken(Token_t type, void* data) {
   Token* res = MALLOC(Token);
   res->type = type;
   res->data = data;
-  printf("%s\n", tokenTypeToStr(type));
   return res;
 }
 
@@ -76,6 +75,7 @@ void skipWhiteSpaces(char** sp) {
   while (1) {
     switch (**sp) {
       case ' ': case '\t': case '\r': case '\n': (*sp)++; break;
+      case 0: return;
       default: return;
     }
   }
@@ -252,8 +252,13 @@ List* tokenize(char* s) {
 
 #ifdef BUILD_TOKENIZER
 int main(int argc, char** args) {
+  init(argc, args);
   char* code = readFile(args[1]);
   List* tokens = tokenize(code);
+  int i;
+  for (i = 0; i < listSize(tokens); i++) {
+    printf("%s\n", tokenTypeToStr(((Token*) listGet(tokens, i))->type));
+  }
   return 0;
 }
 #endif

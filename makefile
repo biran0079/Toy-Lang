@@ -16,7 +16,7 @@ gctest: exe
 exe: flex bison
 	gcc $(gccflag) *.c -o tl -DBUILD_INTERPRETER
 
-tokenizer:
+tokenizer: *.c
 	gcc $(gccflag) *.c -o tokenizer -DBUILD_TOKENIZER
 
 parser: *.c

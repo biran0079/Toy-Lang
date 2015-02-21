@@ -43,6 +43,7 @@ void listPushFront(List* lst, void* e) {
     lst->arr[i] = lst->arr[i - 1];
   }
   lst->arr[0] = e;
+  lst->size++;
 }
 
 void* listPop(List* lst){
