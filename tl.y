@@ -252,7 +252,7 @@ int main(int argc, char** argv){
   } else {
     src = "stdin";
   }
-  init();
+  init(argc, argv);
   if(src){
     char *s = getFolder(src);
     if(strcmp(s, "./")) listPush(path, s);

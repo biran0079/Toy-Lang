@@ -12,7 +12,7 @@ typedef enum NodeType NodeType;
 typedef void (*ValueFunc)(Value*);
 typedef Value* (*BuiltinFun)(List* l); 
 
-void init();
+void init(int argc, char** argv);
 void cleanup();
 long getIntId(char *s);
 char* getStrId(long id);
