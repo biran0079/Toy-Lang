@@ -1,7 +1,7 @@
 #ifndef _ENV_H_
 #define _ENV_H_
 
-#include "tl.h"
+#include "core.h"
 #include "hashTable.h"
 #include "exception.h"
 #include "execUnit.h"

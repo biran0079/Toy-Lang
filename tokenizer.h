@@ -1,7 +1,7 @@
 #ifndef __TOKENIZER_H__
 #define __TOKENIZER_H__
 #include "list.h"
-#include "tl.h"
+#include "core.h"
 
 typedef enum {
   INT_T,

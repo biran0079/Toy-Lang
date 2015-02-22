@@ -1,7 +1,7 @@
 D       [0-9]
 L       [a-zA-Z]
 %{
-#include "tl.h"
+#include "core.h"
 #include "ast.h"
 #include "util.h"
 #include "hashTable.h"

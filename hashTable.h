@@ -1,7 +1,7 @@
 #ifndef _HASH_TABLE_H_
 #define _HASH_TABLE_H_
 
-#include "tl.h"
+#include "core.h"
 #include "list.h"
 
 typedef struct LinkedList LinkedList;

@@ -1,7 +1,7 @@
 #ifndef _CLOSURE_H_
 #define _CLOSURE_H_
 
-#include "tl.h"
+#include "core.h"
 
 struct Closure {
   Node* f;

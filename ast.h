@@ -1,6 +1,6 @@
 #ifndef _AST_H_
 #define _AST_H_
-#include "tl.h"
+#include "core.h"
 #include "list.h"
 #define chldNum(t) listSize((List*)(t)->data)
 #define chld(t,i) ((Node*)listGet((List*)(t)->data, i))
@@ -54,6 +54,7 @@ enum NodeType {
 struct Node {
   NodeType type;
   void* data;
+  int flag;
 };
 
 Node* newNode(NodeType type, void* data);

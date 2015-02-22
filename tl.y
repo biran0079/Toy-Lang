@@ -20,7 +20,7 @@
 %left '.'
 
 %{
-#include "tl.h"
+#include "core.h"
 #include "ast.h"
 #include "list.h"
 #include "value.h"

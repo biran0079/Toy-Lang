@@ -1,6 +1,6 @@
 #ifndef _EVAL_H_
 #define _EVAL_H_
-#include "tl.h"
+#include "core.h"
 #include "builtinFun.h"
 
 Value* eval(Value* ev, Node* p);

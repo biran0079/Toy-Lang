@@ -1,7 +1,7 @@
 #ifndef _TLJMP_H_
 #define _TLJMP_H_
 
-#include "tl.h"
+#include "core.h"
 #include <setjmp.h>
 
 typedef enum JmpMsgType {

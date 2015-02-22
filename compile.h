@@ -1,6 +1,6 @@
 #ifndef _COMPILE_H_
 #define _COMPILE_H_
-#include "tl.h"
+#include "core.h"
 #include "list.h"
 #include "util.h"
 

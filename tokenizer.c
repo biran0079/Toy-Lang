@@ -180,7 +180,7 @@ List* tokenize(char* s) {
       listPush(res, newToken(TRY_T, (void*) 0));
     else if (startsWithAndConsume(sp, "catch")) 
       listPush(res, newToken(CATCH_T, (void*) 0));
-    else if (startsWithAndConsume(sp, "fianlly")) 
+    else if (startsWithAndConsume(sp, "finally")) 
       listPush(res, newToken(FINALLY_T, (void*) 0));
     else if (startsWithAndConsume(sp, "throw")) 
       listPush(res, newToken(THROW_T, (void*) 0));

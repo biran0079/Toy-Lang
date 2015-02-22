@@ -1,7 +1,7 @@
 #ifndef _VALUE_H_
 #define _VALUE_H_
 
-#include "tl.h"
+#include "core.h"
 
 enum ValueType {
   INT_VALUE_TYPE,
