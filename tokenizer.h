@@ -59,5 +59,7 @@ struct Token {
 };
 
 List* tokenize(char* s);
+
+char* tokenTypeToStr(Token_t type);
 #endif
 

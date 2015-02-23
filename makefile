@@ -1,11 +1,10 @@
 gccflag = -DYYDEBUG=0 -g
 
-src = $(wildcard *.c)
 
 all: exe
 
 test: exe
-	./test.sh 
+	./test.sh
 
 testparser: parser
 	./testparser.sh
@@ -32,7 +31,7 @@ flex: tl.l bison
 	flex tl.l
 
 clear:
-	rm tl.exe tl *.o lex.yy.c tl.tab.c tl.tab.h 
+	rm tl.exe tl *.o lex.yy.c tl.tab.c tl.tab.h
 
 bench: exe
 	./benchmark.sh
