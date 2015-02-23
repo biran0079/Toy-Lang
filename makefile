@@ -38,3 +38,6 @@ bench: exe
 
 draw: exe
 	./draw.sh
+
+parserbenchmark: *.c
+	gcc $(gccflag) *.c -o parserbenchmark -DPARSER_BENCHMARK
