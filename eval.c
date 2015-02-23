@@ -508,9 +508,13 @@ Value* eval(Value* ev, Node* p) {
       char *s = catStr(getStrId((long) id->data), ".tl");
       FILE* f = openFromPath(s, "r");
       if(!f) ("cannot open file %s\n", s);
+#ifdef USE_YY_PARSER
       yyrestart(f);
       if(yyparse()) error("failed to parse %s\n", s);
       tlFree(s);
+#else
+      if (!parse(tokenize(readFile(f)))) error("failed to parse %s\n", s);
+#endif
       Value* res = newEnvValue(newEnv(globalEnv));
       pushRootValue(res);
       eval(res, listLast(parseTrees));

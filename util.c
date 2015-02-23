@@ -113,8 +113,11 @@ FILE* openFromPath(char* s, char* mode) {
   return f;
 }
 
-char* readFile(char *path) {
-  FILE* f = fopen(path, "r");
+char* readFileWithPath(char *path) {
+  return readFile(fopen(path, "r"));
+}
+
+char* readFile(FILE* f) {
   if(!f) return 0;
   fseek(f, 0L, SEEK_END);
   int sz = ftell(f);

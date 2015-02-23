@@ -62,6 +62,14 @@ Token* newToken(Token_t type, void* data) {
   return res;
 }
 
+int isDigit(char c) {
+  return c >= '0' && c <= '9';
+}
+
+int isLetter(char c) {
+  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
 int startsWithAndConsume(char** sp, char* p) {
   int len = strlen(p);
   if (strncmp(*sp, p, len) == 0) {
@@ -79,14 +87,6 @@ void skipWhiteSpaces(char** sp) {
       default: return;
     }
   }
-}
-
-int isDigit(char c) {
-  return c >= '0' && c <= '9';
-}
-
-int isLetter(char c) {
-  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
 long parseInt(char** sp) {
@@ -144,6 +144,45 @@ char* parseID(char** sp) {
   return res;
 }
 
+Token* newTokenForId(char* s) {
+  if (0 == strcmp(s, "if")) 
+    return newToken(IF_T, (void*) 0);
+  else if (0 == strcmp(s, "else")) 
+    return newToken(ELSE_T, (void*) 0);
+  else if (0 == strcmp(s, "while")) 
+    return newToken(WHILE_T, (void*) 0);
+  else if (0 == strcmp(s, "break")) 
+    return newToken(BREAK_T, (void*) 0);
+  else if (0 == strcmp(s, "continue")) 
+    return newToken(CONTINUE_T, (void*) 0);
+  else if (0 == strcmp(s, "fun")) 
+    return newToken(FUN_T, (void*) 0);
+  else if (0 == strcmp(s, "for")) 
+    return newToken(FOR_T, (void*) 0);
+  else if (0 == strcmp(s, "lambda")) 
+    return newToken(LAMBDA_T, (void*) 0);
+  else if (0 == strcmp(s, "return")) 
+    return newToken(RETURN_T, (void*) 0);
+  else if (0 == strcmp(s, "time")) 
+    return newToken(TIME_T, (void*) 0);
+  else if (0 == strcmp(s, "none")) 
+    return newToken(NONE_T, (void*) 0);
+  else if (0 == strcmp(s, "try")) 
+    return newToken(TRY_T, (void*) 0);
+  else if (0 == strcmp(s, "catch")) 
+    return newToken(CATCH_T, (void*) 0);
+  else if (0 == strcmp(s, "finally")) 
+    return newToken(FINALLY_T, (void*) 0);
+  else if (0 == strcmp(s, "throw")) 
+    return newToken(THROW_T, (void*) 0);
+  else if (0 == strcmp(s, "local")) 
+    return newToken(LOCAL_T, (void*) 0);
+  else if (0 == strcmp(s, "import")) 
+    return newToken(IMPORT_T, (void*) 0);
+  else
+    return newToken(ID_T, (void*) s);
+}
+
 List* tokenize(char* s) {
   List* res = newList();
   while (1) {
@@ -154,40 +193,8 @@ List* tokenize(char* s) {
       listPush(res, newToken(INT_T, (void*) parseInt(sp)));
     else if (*s == '"')
       listPush(res, newToken(STRING_T, (void*) parseString(sp)));
-    else if (startsWithAndConsume(sp, "if")) 
-      listPush(res, newToken(IF_T, (void*) 0));
-    else if (startsWithAndConsume(sp, "else")) 
-      listPush(res, newToken(ELSE_T, (void*) 0));
-    else if (startsWithAndConsume(sp, "while")) 
-      listPush(res, newToken(WHILE_T, (void*) 0));
-    else if (startsWithAndConsume(sp, "break")) 
-      listPush(res, newToken(BREAK_T, (void*) 0));
-    else if (startsWithAndConsume(sp, "continue")) 
-      listPush(res, newToken(CONTINUE_T, (void*) 0));
-    else if (startsWithAndConsume(sp, "fun")) 
-      listPush(res, newToken(FUN_T, (void*) 0));
-    else if (startsWithAndConsume(sp, "for")) 
-      listPush(res, newToken(FOR_T, (void*) 0));
-    else if (startsWithAndConsume(sp, "lambda")) 
-      listPush(res, newToken(LAMBDA_T, (void*) 0));
-    else if (startsWithAndConsume(sp, "return")) 
-      listPush(res, newToken(RETURN_T, (void*) 0));
-    else if (startsWithAndConsume(sp, "time")) 
-      listPush(res, newToken(TIME_T, (void*) 0));
-    else if (startsWithAndConsume(sp, "none")) 
-      listPush(res, newToken(NONE_T, (void*) 0));
-    else if (startsWithAndConsume(sp, "try")) 
-      listPush(res, newToken(TRY_T, (void*) 0));
-    else if (startsWithAndConsume(sp, "catch")) 
-      listPush(res, newToken(CATCH_T, (void*) 0));
-    else if (startsWithAndConsume(sp, "finally")) 
-      listPush(res, newToken(FINALLY_T, (void*) 0));
-    else if (startsWithAndConsume(sp, "throw")) 
-      listPush(res, newToken(THROW_T, (void*) 0));
-    else if (startsWithAndConsume(sp, "local")) 
-      listPush(res, newToken(LOCAL_T, (void*) 0));
-    else if (startsWithAndConsume(sp, "import")) 
-      listPush(res, newToken(IMPORT_T, (void*) 0));
+    else if (isLetter(*s)) 
+      listPush(res, newTokenForId(parseID(sp)));
     else if (startsWithAndConsume(sp, "++")) 
       listPush(res, newToken(ADDADD_T, (void*) 0));
     else if (startsWithAndConsume(sp, "+=")) 
@@ -242,8 +249,6 @@ List* tokenize(char* s) {
       listPush(res, newToken(OP_CB_T, (void*) 0));
     else if (startsWithAndConsume(sp, "}")) 
       listPush(res, newToken(CLO_CB_T, (void*) 0));
-    else if (isLetter(*s)) 
-      listPush(res, newToken(ID_T, (void*) parseID(sp)));
     else 
       error("fail to parse at %s\n", s);
   }
@@ -253,7 +258,7 @@ List* tokenize(char* s) {
 #ifdef BUILD_TOKENIZER
 int main(int argc, char** args) {
   init(argc, args);
-  char* code = readFile(args[1]);
+  char* code = readFileWithPath(args[1]);
   List* tokens = tokenize(code);
   int i;
   for (i = 0; i < listSize(tokens); i++) {

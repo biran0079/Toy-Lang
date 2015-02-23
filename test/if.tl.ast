@@ -1,0 +1,1 @@
+[stmts, [if, [int, 1], [call, [id, print], [exps, [int, 1]]], [call, [id, print], [exps, [int, 0]]]], [if, [int, 0], [call, [id, print], [exps, [int, 1]]], [call, [id, print], [exps, [int, 0]]]], [if, [int, 0], [stmts, [call, [id, print], [exps, [int, 1]]]], [if, [int, 0], [stmts, [call, [id, print], [exps, [int, 1]]]], [stmts, [call, [id, print], [exps, [int, 3]]]]]]]

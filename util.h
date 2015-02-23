@@ -21,6 +21,7 @@ char* literalStringToString(char *s);
 int error(char* msg, ...);
 char* getFolder(char* s);
 FILE* openFromPath(char* s, char* mode);
-char* readFile(char* path);
+char* readFileWithPath(char* path);
+char* readFile(FILE* f);
 
 #endif

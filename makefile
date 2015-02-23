@@ -7,6 +7,9 @@ all: exe
 test: exe
 	./test.sh 
 
+testparser: parser
+	./testparser.sh
+
 testeval: exe
 	./testeval.sh
 

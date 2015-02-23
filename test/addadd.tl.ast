@@ -1,0 +1,1 @@
+[stmts, [=, [id, a], [int, 1]], [call, [id, print], [exps, [++, [id, a]]]], [call, [id, print], [exps, [id, a]]], [=, [id, b], [list, [int, 2], [int, 3]]], [call, [id, print], [exps, [++, [list_access, [id, b], [int, 0]]]]], [call, [id, print], [exps, [list_access, [id, b], [int, 0]]]]]

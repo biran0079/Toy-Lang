@@ -18,6 +18,4 @@ Node* nonEmptyExpList(List* t, int *ip);
 Node* idList(List* t, int *ip);
 Node* nonEmptyIdList(List* t, int *ip);
 
-void printAst(Node* ast);
-
 #endif

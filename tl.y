@@ -228,6 +228,7 @@ int main(int argc, char** argv){
   int toDot = 0;
   int i;
   char* src = 0;
+  int printParseTree = 0;
   for(i=1; i<argc;i++) {
     if(argv[i][0]=='-') {
       switch(argv[i][1]) {
@@ -235,6 +236,7 @@ int main(int argc, char** argv){
         case 'm' : i++; memoryLimit = atoi(argv[i]); break;
         case 'h' : shouldDumpGCHistory = 1; break;
         case 'g' : gcTestMode = 1; break;
+        case 'p' : printParseTree = 1; break;
         default: help();
       }
     } else {
@@ -257,7 +259,11 @@ int main(int argc, char** argv){
     char *s = getFolder(src);
     if(strcmp(s, "./")) listPush(path, s);
   }
+#ifdef USE_YY_PARSER
   yyparse();
+#else 
+    parse(tokenize(readFileWithPath(src)));
+#endif
   if(toDot) {
     char* s = catStr(src, ".dot");
     FILE* f=fopen(s, "w");
@@ -265,6 +271,8 @@ int main(int argc, char** argv){
     nodeToDot(f, listGet(parseTrees, 0));
     fclose(f);
     tlFree(s);
+  }else if (printParseTree) {
+    printAst(listGet(parseTrees, 0));
   } else {
     eval(globalEnv, listGet(parseTrees, 0));
   }

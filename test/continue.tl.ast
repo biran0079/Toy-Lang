@@ -1,0 +1,1 @@
+[stmts, [=, [id, a], [int, 0]], [while, [<, [id, a], [int, 10]], [stmts, [=, [id, a], [+, [id, a], [int, 1]]], [if, [==, [%, [id, a], [int, 2]], [int, 0]], [continue]], [call, [id, print], [exps, [id, a]]]]]]

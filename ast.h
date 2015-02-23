@@ -54,7 +54,6 @@ enum NodeType {
 struct Node {
   NodeType type;
   void* data;
-  int flag;
 };
 
 Node* newNode(NodeType type, void* data);
@@ -67,5 +66,7 @@ void markTailRecursions(Node* t);
 char* nodeTypeToString(NodeType type);
 
 Value* nodeToListValue(Node* p);
+
+void printAst(Node* ast);
 
 #endif

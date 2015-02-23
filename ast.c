@@ -10,7 +10,6 @@ Node* newNode(NodeType t, void* i) {
   Node* res = MALLOC(Node);
   res->type = t;
   res->data = i;
-  res->flag = 0;
   return res;
 }
 
@@ -26,7 +25,6 @@ Node* newNode2(NodeType t, int n, ... ) {
   }
   res->type = t;
   res->data = (void*) l;
-  res->flag = 0;
   va_end(v);
   return res;
 }
@@ -178,3 +176,8 @@ void freeNode(Node* t) {
   }
   tlFree(t);
 }
+
+void printAst(Node* ast) {
+  printf("%s\n", valueToString(nodeToListValue(ast)));
+}
+

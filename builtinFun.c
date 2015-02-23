@@ -68,19 +68,23 @@ Value* builtinRand(List* lst) {
 }
 
 Value* builtinParse(List* lst) {
-#ifdef _WIN32
-  error("parse() built int function not supported in windows.");
-#else
   if(listSize(lst)!=1) error("parse only takes exactly one argument\n");
   Value* v = listGet(lst, 0);
   if(v->type != STRING_VALUE_TYPE) error("parse only applys to string\n");
   char *code = (char*) v->data;
+#if USE_YY_PARSER
+#ifdef _WIN32
+  error("Win32 does not support built in parse with YY parser.");
+#else
   FILE* f = fmemopen(code, strlen(code), "r");
   yyrestart(f);
   if(yyparse()) error("failed to parse code %s\n", code);
   fclose(f);
-  return nodeToListValue(listLast(parseTrees));
 #endif
+#else 
+  if (!parse(tokenize(code))) error("failed to parse %s\n", code);
+#endif
+  return nodeToListValue(listLast(parseTrees));
 }
 
 Value* builtinRead(List* lst){
@@ -89,7 +93,7 @@ Value* builtinRead(List* lst){
   if(v->type != STRING_VALUE_TYPE) {
     error("read only applys to string, got type %d\n", v->type);
   }
-  char* res = readFile((char*) v->data);
+  char* res = readFileWithPath((char*) v->data);
   if (res) return newStringValue(res);
   return newNoneValue();
 }
