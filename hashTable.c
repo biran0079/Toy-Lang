@@ -2,6 +2,8 @@
 #include "list.h"
 #include "util.h"
 
+int newHashTableC = 0, freeHashTableC = 0;
+
 static unsigned int stringHash(char *s) {
   int h=0;
   while(*s){

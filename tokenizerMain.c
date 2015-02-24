@@ -1,8 +1,9 @@
 #include "tokenizer.h"
 #include "util.h"
+#include "idMap.h"
 
 int main(int argc, char** args) {
-  init(argc, args);
+  initIdMap();
   char* code = readFileWithPath(args[1]);
   List* tokens = tokenize(code);
   int i;

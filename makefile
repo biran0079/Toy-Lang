@@ -1,5 +1,7 @@
 CFLAGS = -DYYDEBUG=0 -g
 
+all: tl
+
 lex.yy.c: tl.l tl.tab.c
 	flex tl.l
 
@@ -7,9 +9,7 @@ lex.yy.c: tl.l tl.tab.c
 	bison -d $<
 
 CORE_OBJS = ast.o builtinFun.o closure.o compile.o core.o dumpGCHistory.o env.o eval.o exception.o \
-	execUnit.o gc.o hashTable.o list.o tljmp.o toDot.o util.o value.o
-
-TOKENIZER_MAIN = tokenizerMain.o
+	execUnit.o gc.o hashTable.o list.o tljmp.o toDot.o util.o value.o idMap.o
 
 PARSER_OBJs = tokenizer.o parser.o 
 
@@ -35,8 +35,8 @@ parser: $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_MAIN_OBJ)
 parserbenchmark: $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_BENCHMARK_OBJ) $(YY_PARSER_OBJS)
 	gcc $(CFLAGS) $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_BENCHMARK_OBJ) $(YY_PARSER_OBJS) -o parserbenchmark 
 
-tokenizer: $(CORE_OBJS) $(PARSER_OBJs) $(TOKENIZER_MAIN)
-	gcc $(CFLAGS) $(CORE_OBJS) $(PARSER_OBJs) $(TOKENIZER_MAIN) -o tokenizer
+tokenizer: list.o idMap.o hashtable.o util.o tokenizerMain.o tokenizer.o
+	gcc $(CFLAGS) list.o idMap.o hashtable.o util.o tokenizerMain.o tokenizer.o -o tokenizer
 
 
 test: tl
@@ -48,7 +48,7 @@ testparser: parser
 testeval: tl
 	./testeval.sh
 
-gctest: tl
+testgc: tl
 	./gctest.sh
 
 clear:
@@ -59,5 +59,3 @@ benchmark: tl
 
 draw: tl
 	./draw.sh
-
-all: tl

@@ -1,7 +1,7 @@
 #include "util.h"
 #include "list.h"
 
-extern int memoryUsage;
+int memoryUsage = 0;
 
 typedef struct MemBlock {
   int size;
@@ -97,20 +97,6 @@ char* getFolder(char* s) {
     res[i+1]=0;
     return res;
   }
-}
-
-extern List* path;
-FILE* openFromPath(char* s, char* mode) {
-  int i, n = listSize(path);
-  FILE* f = 0;
-  for(i=0;i<n;i++) {
-    char * p = listGet(path, i);
-    char *fname = catStr(p, s);
-    f = fopen(fname, mode);
-    tlFree(fname);
-    if(f)break;
-  }
-  return f;
 }
 
 char* readFileWithPath(char *path) {

@@ -3,7 +3,7 @@
 #include "util.h"
 #include "list.h"
 
-extern int newNodeC, freeNodeC;
+int newNodeC = 0, freeNodeC = 0;
 
 Node* newNode(NodeType t, void* i) {
   newNodeC++;

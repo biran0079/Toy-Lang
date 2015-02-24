@@ -14,7 +14,6 @@ extern List* path;
 extern Value* globalEnv;
 extern int memoryLimit;
 extern int shouldDumpGCHistory, gcTestMode;
-extern char* tlDir;
 extern int sysArgc;
 extern char** sysArgv;
 #ifdef USE_YY_PARSER

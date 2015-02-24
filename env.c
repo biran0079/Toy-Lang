@@ -2,7 +2,7 @@
 #include "value.h"
 #include "util.h"
 
-extern int newEnvC, freeEnvC;
+int newEnvC = 0, freeEnvC = 0;
 
 
 static void initState(Env* e){

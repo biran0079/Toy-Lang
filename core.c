@@ -7,25 +7,14 @@
 #include "value.h"
 #include "util.h"
 
-int newNodeC = 0, newIntValueC = 0, newStringValueC = 0, newClosureValueC = 0, newEnvValueC = 0,
-    newListValueC = 0, newClosureC = 0, newEnvC = 0, newBuiltinFunC = 0;
-int freeNodeC = 0, freeIntValueC = 0, freeStringValueC = 0, freeClosureValueC = 0, freeEnvValueC = 0,
-    freeListValueC = 0, freeClosureC = 0, freeEnvC=0, freeBuiltinFunC = 0;
-int newListC = 0, newHashTableC = 0, freeListC = 0, freeHashTableC = 0;
-
-/*** ALL GLOBAL VARIABLES DECLARES BELOW!  ***/
-
-char* tlDir;
 List* parseTrees;
 List* values;  // all values created
 List* rootValues;  // all values should be treated as root when gc
 Value* globalEnv;
 JmpMsg __jmpMsg__;
 int memoryLimit = 200000000;
-int memoryUsage = 0;
 List* path;  // where import loads from
-HashTable* idToIntMap;
-HashTable* intToIdMap;
+
 
 int shouldDumpGCHistory = 0;  
 int gcTestMode = 0;  
@@ -34,22 +23,6 @@ int sysArgc;
 char** sysArgv;
 
 /*** ALL GLOBAL VARIABLES DECLARES ABOVE!  ***/
-
-long getIntId(char *s) {
-  long res = (long) hashTableGet(idToIntMap, s);
-  if(!res){
-    void* key = copyStr(s);
-    void* value = (void*)(idToIntMap->size + 1L);
-    hashTablePut(idToIntMap, key, value);
-    hashTablePut(intToIdMap, value, key);
-    res = idToIntMap->size;
-  }
-  return res;
-}
-
-char* getStrId(long id) {
-  return hashTableGet(intToIdMap, (void*) id);
-}
 
 void listCreatedObjectsCount() {
   fprintf(stderr, "\tNode: %d %d\n", newNodeC, freeNodeC);
@@ -65,23 +38,24 @@ void listCreatedObjectsCount() {
 }
 
 void init(int argc, char** args) {
-  tlDir = getFolder(args[0]);
+  initIdMap();
+  path = newList();
+  char* tlDir = getFolder(args[0]);
+  listPush(path, catStr(tlDir, "lib/"));
+  tlFree(tlDir);
   parseTrees = newList();
   values = newList();
   rootValues = newList();
   gcHistory = newList();
-  path = newList();
-  idToIntMap = newStringHashTable();
-  intToIdMap = newIntHashTable();
 
   listPush(path, copyStr("./"));
-  listPush(path, catStr(tlDir, "lib/"));
   globalEnv = newEnvValue(newEnv(newNoneValue()));
   listPush(rootValues, globalEnv);
   registerBuiltinFunctions(globalEnv->data);
 }
 
 void cleanup() {
+  cleanupIdMap();
   listClear(rootValues);
   forceGC();
   freeList(rootValues);
@@ -95,9 +69,20 @@ void cleanup() {
   freeList(path);
   freeList(parseTrees);
   if(!shouldDumpGCHistory) clearGCHistory();
-  tlFree(tlDir);
-  freeStringHashTable(idToIntMap);
-  freeHashTable(intToIdMap);
   tlFree(newNoneValue());
 }
+
+FILE* openFromPath(char* s, char* mode) {
+  int i, n = listSize(path);
+  FILE* f = 0;
+  for(i=0;i<n;i++) {
+    char * p = listGet(path, i);
+    char *fname = catStr(p, s);
+    f = fopen(fname, mode);
+    tlFree(fname);
+    if(f)break;
+  }
+  return f;
+}
+
 

@@ -6,8 +6,9 @@
 #include "ast.h"
 #include "gc.h"
 
-extern int newIntValueC, newStringValueC, newClosureValueC, newEnvValueC, newListValueC, newBuiltinFunC;
-extern int freeIntValueC, freeStringValueC, freeClosureValueC, freeEnvValueC, freeListValueC, freeBuiltinFunC;
+int newIntValueC = 0, newStringValueC = 0, newClosureValueC = 0, newEnvValueC = 0, newListValueC = 0, newBuiltinFunC = 0;
+int freeIntValueC = 0, freeStringValueC = 0, freeClosureValueC = 0, freeEnvValueC = 0, freeListValueC = 0, freeBuiltinFunC = 0;
+
 extern List* values;
 
 Value* newNoneValue(){

@@ -1,7 +1,7 @@
 #include "closure.h"
 #include "util.h"
 
-extern int newClosureC, freeClosureC;
+int newClosureC = 0, freeClosureC = 0;
 
 Closure* newClosure(Node* f, Value* e){
   newClosureC++;
