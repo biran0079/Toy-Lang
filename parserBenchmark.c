@@ -1,5 +1,3 @@
-#ifdef PARSER_BENCHMARK
-
 #include "parser.h"
 #include "util.h"
 #include <stdio.h>
@@ -20,7 +18,7 @@ int main(int argc, char** args) {
     parse(tokenize(code));
   printf("new parser %f src\n", (clock() - st) * 1.0 / CLOCKS_PER_SEC);
 
-  FILE* f = fmemopen(code, strlen(code), "r");
+  FILE* f = fopen(src, "r");
 
   st = clock();
   for (i = 0; i < 100; i++) {
@@ -33,5 +31,3 @@ int main(int argc, char** args) {
   fclose(f);
   return 0;
 }
-
-#endif

@@ -255,15 +255,3 @@ List* tokenize(char* s) {
   return res;
 }
 
-#ifdef BUILD_TOKENIZER
-int main(int argc, char** args) {
-  init(argc, args);
-  char* code = readFileWithPath(args[1]);
-  List* tokens = tokenize(code);
-  int i;
-  for (i = 0; i < listSize(tokens); i++) {
-    printf("%s\n", tokenTypeToStr(((Token*) listGet(tokens, i))->type));
-  }
-  return 0;
-}
-#endif

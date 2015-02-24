@@ -1,43 +1,63 @@
-gccflag = -DYYDEBUG=0 -g
+CFLAGS = -DYYDEBUG=0 -g
+
+lex.yy.c: tl.l tl.tab.c
+	flex tl.l
+
+%.tab.c %.tab.h: %.y
+	bison -d $<
+
+CORE_OBJS = ast.o builtinFun.o closure.o compile.o core.o dumpGCHistory.o env.o eval.o exception.o \
+	execUnit.o gc.o hashTable.o list.o tljmp.o toDot.o util.o value.o
+
+TOKENIZER_MAIN = tokenizerMain.o
+
+PARSER_OBJs = tokenizer.o parser.o 
+
+YY_PARSER_OBJS = lex.yy.o tl.tab.o
+
+TL_MAIN_OBJ = main.o
+
+PARSER_MAIN_OBJ = parserMain.o
+
+PARSER_BENCHMARK_OBJ = parserBenchmark.o
+
+tl: $(CORE_OBJS) $(PARSER_OBJs) $(TL_MAIN_OBJ)
+	gcc $(CFLAGS) $(CORE_OBJS) $(PARSER_OBJs) $(TL_MAIN_OBJ) -o tl
+
+# clear before building yytl
+yytl: CFLAGS = -DYYDEBUG=0 -g -DUSE_YY_PARSER 
+yytl: clear $(CORE_OBJS) $(TL_MAIN_OBJ) $(YY_PARSER_OBJS)
+	gcc $(CFLAGS) $(CORE_OBJS) $(TL_MAIN_OBJ) $(YY_PARSER_OBJS) -o yytl
+
+parser: $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_MAIN_OBJ)
+	gcc $(CFLAGS) $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_MAIN_OBJ) -o parser
+
+parserbenchmark: $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_BENCHMARK_OBJ) $(YY_PARSER_OBJS)
+	gcc $(CFLAGS) $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_BENCHMARK_OBJ) $(YY_PARSER_OBJS) -o parserbenchmark 
+
+tokenizer: $(CORE_OBJS) $(PARSER_OBJs) $(TOKENIZER_MAIN)
+	gcc $(CFLAGS) $(CORE_OBJS) $(PARSER_OBJs) $(TOKENIZER_MAIN) -o tokenizer
 
 
-all: exe
-
-test: exe
+test: tl
 	./test.sh
 
 testparser: parser
 	./testparser.sh
 
-testeval: exe
+testeval: tl
 	./testeval.sh
 
-gctest: exe
+gctest: tl
 	./gctest.sh
 
-exe: flex bison
-	gcc $(gccflag) *.c -o tl -DBUILD_INTERPRETER
-
-tokenizer: *.c
-	gcc $(gccflag) *.c -o tokenizer -DBUILD_TOKENIZER
-
-parser: *.c
-	gcc $(gccflag) *.c -o parser -DBUILD_PARSER
-
-bison: tl.y
-	bison -d tl.y
-
-flex: tl.l bison
-	flex tl.l
-
 clear:
-	rm tl.exe tl *.o lex.yy.c tl.tab.c tl.tab.h
+	rm -f tl.exe tl *.o lex.yy.c tl.tab.c tl.tab.h
 
-bench: exe
+benchmark: tl
 	./benchmark.sh
 
-draw: exe
+draw: tl
 	./draw.sh
 
-parserbenchmark: *.c
-	gcc $(gccflag) *.c -o parserbenchmark -DPARSER_BENCHMARK
+all: tl
