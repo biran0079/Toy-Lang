@@ -9,3 +9,6 @@ lex.yy.c
 *.html
 gmon.out
 gprof.out
+parser
+parserbenchmark
+tokenizer
