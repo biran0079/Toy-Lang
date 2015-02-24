@@ -27,6 +27,7 @@ void help(){
                   "\t-m <int>\tconfig memory limit for trigering GC\n"
                   "\t-h\tdump GC history to chart in html when GC\n"
                   "\t-g\tGC test mode, whenever gc is called, forceGC is called. Memory limit is ignored.\n"
+                  "\t-p\tprint abstract syntax tree without executing the code.\n"
                   );
   exit(-1);
 }
@@ -53,21 +54,18 @@ int main(int argc, char** argv){
       break;
     }
   }
-  if(src){
+  if (!src) {
+    error("One input file argument is required.");
+  }
 #ifdef USE_YY_PARSER
-    yyin = fopen(src, "r");
-    if(!yyin) {
-      error("cannot open input file\n");
-    }
+  yyin = fopen(src, "r");
+  if(!yyin) {
+    error("cannot open input file\n");
+  }
 #endif
-  } else {
-    src = "stdin";
-  }
   init(argc, argv);
-  if(src){
-    char *s = getFolder(src);
-    if(strcmp(s, "./")) listPush(path, s);
-  }
+  char *s = getFolder(src);
+  if(strcmp(s, "./")) listPush(path, s);
 #ifdef USE_YY_PARSER
   yyparse();
 #else 
