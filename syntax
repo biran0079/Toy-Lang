@@ -1,0 +1,100 @@
+prog = stmts
+
+stmts = stmt stmts
+      | EMPTY
+
+stmt = expr ;
+     | IF ( expr ) block
+     | IF ( expr ) blocl ELSE block
+     | FOR ( expList ; expList ; expList ) block
+     | FOR ( ID : expr ) block
+     | WHILE ( expr ) block
+     | FUN  ID ( idList) { stmts }
+     | LOCAL idList ;
+     | TRY block CATCH ( ID ) block
+     | TRY block CATCH ( ID ) block FINALLY block
+     | THROW expr ;
+     | RETURN expr ;
+     | RETURN ;
+     | CONTINUE ;
+     | BREAK ;
+     | IMPORT ID ;
+
+
+idList = nonEmptyIdList
+       | EMPTY
+
+nonEmptyIdList = ID , nonEmptyIdList
+               | ID
+
+moduleAccess = ID . moduleAccess
+             | ID . ID
+
+listExpr = [ expList ]
+
+listAccessOrCallInternal = [ expr ] listAccessOrCallInternal
+                         | ( expr ) listAccessOrCallInternal
+                         | ++
+                         | EMPTY
+
+expr0 = INT
+      | NONE
+      | - INT
+      | ( expr ) listAccessOrCallInternal
+      | moduleAccess listAccessOrCallInternal
+      | ID listAccessOrCallInternal
+      | STRING listAccessOrCallInternal
+      | listExpr listAccessOrCallInternal
+
+mulDivModInternal = * expr0 mulDivModInternal
+                  | / expr0 mulDivModInternal
+                  | % expr0 mulDivModInternal
+                  | EMPTY
+
+expr1 = expr0 mulDivModInternal
+
+addSubInternal = + expr1 addSubInternal
+               | - expr1 addSubInternal
+               | EMPTY
+
+expr2 = expr1 addSubInternal
+
+expr3 = ! expr3
+      | expr2 == expr2
+      | expr2 != expr2
+      | expr2 > expr2
+      | expr2 >= expr2
+      | expr2 < expr2
+      | expr2 <= expr2
+
+andInternal = && expr3 andInternal
+            | EMPTY
+
+expr4 = expr3 andInternal
+
+orInternal = || expr4 orInternal
+           | EMPTY
+
+expr5 = expr4 orInternal
+
+lambdaExpr = LAMBDA ( idList ) { stmts }
+
+timeExpr = time ( expr )
+
+assignmentExpr = expr0 = expr
+               | expr0 += expr
+
+expr = assignmentExpr
+     | lambdaExpr
+     | timeExpr
+     | expr5
+
+block = { stmts }
+      | stmt
+
+expList = nonEmptyExpList
+        | EMPTY
+
+nonEmptyExpList = expr , nonEmptyExpList
+                | expr
+

@@ -21,24 +21,14 @@ Node* parse(List* tokens) {
   return tree;
 }
 
-Node* nonEmptyStmts(List* t, int* ip) {
+Node* stmts(List* t, int* ip) {
   Node* fst, *rst;
   if ((fst = stmt(t, ip)) && (rst = stmts(t, ip))) {
     listPushFront(rst->data, fst);
     return rst;
   }
-  return 0;
-}
-
-Node* stmts(List* t, int* ip) {
-  int i0 = *ip;
-  Node* n;
-  if (n = nonEmptyStmts(t, ip)) {
-    return n;
-  }
   return newNode2(STMTS_TYPE, 0);
 }
-
 
 Node* tokenToNode(Token* token) {
   static Node* dummyNode = 0;
@@ -224,20 +214,20 @@ Node* expr0(List* t, int* ip) {
   return 0;
 }
 
-List* mulDivModinternal(List* t, int* ip) {
+List* mulDivModInternal(List* t, int* ip) {
   int i0 = *ip;
   List* l;
   Node* n;
   if (M(MUL_T) && (n = expr0(t, ip))) {
-    l = mulDivModinternal(t, ip);
+    l = mulDivModInternal(t, ip);
     listPushFront(l, newNode2(MUL_TYPE, 2, 0, n));
     return l;
   } else if ((*ip = i0), M(DIV_T) && (n = expr0(t, ip))) {
-    l = mulDivModinternal(t, ip);
+    l = mulDivModInternal(t, ip);
     listPushFront(l, newNode2(DIV_TYPE, 2, 0, n));
     return l;
   } else if ((*ip = i0), M(MOD_T) && (n = expr0(t, ip))) {
-    l = mulDivModinternal(t, ip);
+    l = mulDivModInternal(t, ip);
     listPushFront(l, newNode2(MOD_TYPE, 2, 0, n));
     return l;
   } 
@@ -249,7 +239,7 @@ List* mulDivModinternal(List* t, int* ip) {
 Node* expr1(List* t, int* ip) {
   Node *n;
   if (n = expr0(t, ip)) {
-    return buildTree(n, mulDivModinternal(t, ip));
+    return buildTree(n, mulDivModInternal(t, ip));
   }
   return 0;
 }
