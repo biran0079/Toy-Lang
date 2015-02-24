@@ -2,6 +2,7 @@
 #define _AST_H_
 #include "core.h"
 #include "list.h"
+#include "Env.h"
 #define chldNum(t) listSize((List*)(t)->data)
 #define chld(t,i) ((Node*)listGet((List*)(t)->data, i))
 
@@ -51,9 +52,12 @@ enum NodeType {
   __DUMMY_TYPE, // Used for parsing. Not part of language.
 };
  
+typedef Value* (*EvalFunc)(Value*, Node*);
+
 struct Node {
   NodeType type;
   void* data;
+  EvalFunc eval;
 };
 
 Node* newNode(NodeType type, void* data);

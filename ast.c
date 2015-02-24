@@ -10,6 +10,7 @@ Node* newNode(NodeType t, void* i) {
   Node* res = MALLOC(Node);
   res->type = t;
   res->data = i;
+  res->eval = 0;
   return res;
 }
 
@@ -25,6 +26,7 @@ Node* newNode2(NodeType t, int n, ... ) {
   }
   res->type = t;
   res->data = (void*) l;
+  res->eval = 0;
   va_end(v);
   return res;
 }

@@ -81,7 +81,8 @@ int main(int argc, char** argv){
   }else if (printParseTree) {
     printAst(listGet(parseTrees, 0));
   } else {
-    eval(globalEnv, listGet(parseTrees, 0));
+    Node* tree = listGet(parseTrees, 0);
+    tree->eval(globalEnv, tree);
   }
   cleanup();
   if(shouldDumpGCHistory) {
