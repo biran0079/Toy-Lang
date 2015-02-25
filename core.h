@@ -16,6 +16,7 @@ void init(int argc, char** argv);
 void cleanup();
 long getIntId(char *s);
 char* getStrId(long id);
+void listCreatedObjectsCount();
 
 extern int newNodeC, freeNodeC;
 extern int newListC, freeListC;

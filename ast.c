@@ -160,6 +160,7 @@ char* nodeTypeToString(NodeType type) {
     case MODULE_ACCESS_TYPE: return "module_access";
     default: error("unknown node type %d\n", type);
   }
+  return 0; // never reach here
 }
 
 void freeNode(Node* t) {

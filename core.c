@@ -1,3 +1,4 @@
+#include "ast.h"
 #include "core.h"
 #include "env.h"
 #include "tljmp.h"
@@ -6,6 +7,7 @@
 #include "hashTable.h"
 #include "value.h"
 #include "util.h"
+#include "idMap.h"
 
 List* parseTrees;
 List* values;  // all values created

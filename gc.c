@@ -5,6 +5,7 @@
 #include "tljmp.h"
 #include "closure.h"
 #include "util.h"
+#include "core.h"
 
 extern List* values, *rootValues, *gcHistory;
 
@@ -45,8 +46,9 @@ static void mark() {
       }
       case STRING_VALUE_TYPE:
       case INT_VALUE_TYPE:
+      case BUILTIN_FUN_VALUE_TYPE:
       case NONE_VALUE_TYPE: break;
-      defalut: error("cannot mark unknown value\n");
+      default: error("cannot mark unknown value\n");
     }
   }
   freeList(q);

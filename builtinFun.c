@@ -1,3 +1,5 @@
+#include "parser.h"
+#include "tokenizer.h"
 #include "value.h"
 #include "ast.h"
 #include "env.h"
@@ -17,6 +19,7 @@ Value* builtinLen(List* lst) {
     case STRING_VALUE_TYPE: return newIntValue(strlen(l->data));
     default: error("len() cannot apply on value type %d\n", l->type);
   }
+  return 0; // never reach here
 }
 
 Value* builtinOrd(List* lst) {

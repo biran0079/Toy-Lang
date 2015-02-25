@@ -22,21 +22,21 @@ PARSER_MAIN_OBJ = parserMain.o
 PARSER_BENCHMARK_OBJ = parserBenchmark.o
 
 tl: $(CORE_OBJS) $(PARSER_OBJs) $(TL_MAIN_OBJ)
-	gcc $(CFLAGS) $(CORE_OBJS) $(PARSER_OBJs) $(TL_MAIN_OBJ) -o tl
+	$(CC) $(CFLAGS) $(CORE_OBJS) $(PARSER_OBJs) $(TL_MAIN_OBJ) -o tl
 
 # clear before building yytl
 yytl: CFLAGS = -DYYDEBUG=0 -g -DUSE_YY_PARSER 
 yytl: clear $(CORE_OBJS) $(TL_MAIN_OBJ) $(YY_PARSER_OBJS)
-	gcc $(CFLAGS) $(CORE_OBJS) $(TL_MAIN_OBJ) $(YY_PARSER_OBJS) -o yytl
+	$(CC) $(CFLAGS) $(CORE_OBJS) $(TL_MAIN_OBJ) $(YY_PARSER_OBJS) -o yytl
 
 parser: $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_MAIN_OBJ)
-	gcc $(CFLAGS) $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_MAIN_OBJ) -o parser
+	$(CC) $(CFLAGS) $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_MAIN_OBJ) -o parser
 
 parserbenchmark: $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_BENCHMARK_OBJ) $(YY_PARSER_OBJS)
-	gcc $(CFLAGS) $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_BENCHMARK_OBJ) $(YY_PARSER_OBJS) -o parserbenchmark 
+	$(CC) $(CFLAGS) $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_BENCHMARK_OBJ) $(YY_PARSER_OBJS) -o parserbenchmark 
 
 tokenizer: list.o idMap.o hashtable.o util.o tokenizerMain.o tokenizer.o
-	gcc $(CFLAGS) list.o idMap.o hashtable.o util.o tokenizerMain.o tokenizer.o -o tokenizer
+	$(CC) $(CFLAGS) list.o idMap.o hashtable.o util.o tokenizerMain.o tokenizer.o -o tokenizer
 
 
 test: tl

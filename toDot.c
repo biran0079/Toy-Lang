@@ -37,7 +37,7 @@ static char* escapeForDot(char*s){
 
 static int nodeToDotInternal(FILE* o, Node* t, int* nextId);
 
-static int nodeToDotHelper(FILE* o, Node *t, int* nextId, long n, ...){
+static void nodeToDotHelper(FILE* o, Node *t, int* nextId, long n, ...){
   int id = *nextId - 1;
   va_list l;
   char* s;

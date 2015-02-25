@@ -7,7 +7,7 @@ Exception* newException(ExecUnit* finally) {
   return res;
 }
 
-Exception* freeException(Exception* e) {
+void freeException(Exception* e) {
   if(e->finally) freeExecUnit(e->finally);
   tlFree(e);
 }

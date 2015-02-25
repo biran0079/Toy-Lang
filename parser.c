@@ -168,7 +168,7 @@ Node* stmt(List* t, int* ip) {
 Node* idList(List* t, int *ip) {
   int i0 = *ip;
   Node* n;
-  if (n = nonEmptyIdList(t, ip)) {
+  if ((n = nonEmptyIdList(t, ip))) {
     return n;
   } else {
     *ip = i0;
@@ -251,7 +251,7 @@ Node* expr0(List* t, int* ip) {
   int i0 = *ip;
   Node* n;
   List* l;
-  if (n = M(INT_T)) {
+  if ((n = M(INT_T))) {
     return n;
   } else if ((*ip = i0), (n = M(NONE_T))) {
     return n;
@@ -296,7 +296,7 @@ List* mulDivModInternal(List* t, int* ip) {
 // * / %
 Node* expr1(List* t, int* ip) {
   Node *n;
-  if (n = expr0(t, ip)) {
+  if ((n = expr0(t, ip))) {
     return buildTree(n, mulDivModInternal(t, ip));
   }
   return 0;
@@ -321,7 +321,7 @@ List* addSubInternal(List* t, int* ip) {
 // + -
 Node* expr2(List* t, int* ip) {
   Node *n;
-  if (n = expr1(t, ip)) {
+  if ((n = expr1(t, ip))) {
     return buildTree(n, addSubInternal(t, ip));
   }
   return 0;
@@ -364,6 +364,7 @@ Node* expr3(List* t, int* ip) {
     *ip = i1;
     return n1;
   }
+  return 0;
 }
 
 List* andInternal(List* t, int* ip) {
@@ -381,7 +382,7 @@ List* andInternal(List* t, int* ip) {
 
 Node* expr4(List* t, int *ip) {
   Node *n;
-  if (n = expr3(t, ip)) {
+  if ((n = expr3(t, ip))) {
     return buildTree(n, andInternal(t, ip));
   }
   return 0;
@@ -402,7 +403,7 @@ List* orInternal(List* t, int* ip) {
 
 Node* expr5(List* t, int * ip) {
   Node *n;
-  if (n = expr4(t, ip)) {
+  if ((n = expr4(t, ip))) {
     return buildTree(n, orInternal(t, ip));
   }
   return 0;
@@ -427,7 +428,7 @@ Node* timeExpr(List* t, int* ip) {
 Node* expr(List* t, int* ip) {
   int i0 = *ip;
   Node* n;
-  if (n = assignmentExpr(t, ip)) {
+  if ((n = assignmentExpr(t, ip))) {
     return n;
   } else if ((*ip = i0), (n = lambdaExpr(t, ip))) {
     return n;
@@ -454,7 +455,7 @@ Node* expList(List* t, int *ip) {
   if (listSize(t) < *ip) return 0;
   int i0 = *ip;
   Node* n;
-  if (n = nonEmptyExpList(t, ip)) {
+  if ((n = nonEmptyExpList(t, ip))) {
     return n;
   } else {
     *ip = i0;

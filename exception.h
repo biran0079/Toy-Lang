@@ -9,6 +9,6 @@ typedef struct Exception {
 } Exception;
 
 Exception* newException(ExecUnit* finally);
-Exception* freeException(Exception* e);
+void freeException(Exception* e);
 
 #endif

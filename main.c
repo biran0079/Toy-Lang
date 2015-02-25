@@ -6,6 +6,9 @@
 #include "gc.h"
 #include "dumpGCHistory.h"
 #include "util.h"
+#include "tokenizer.h"
+#include "parser.h"
+#include "toDot.h"
 
 extern List* parseTrees;
 extern List* rootValues;
@@ -69,7 +72,8 @@ int main(int argc, char** argv){
 #ifdef USE_YY_PARSER
   yyparse();
 #else 
-  parse(tokenize(readFileWithPath(src)));
+  List* tokens = tokenize(readFileWithPath(src));
+  parse(tokens);
 #endif
   if(toDot) {
     char* s = catStr(src, ".dot");

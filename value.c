@@ -291,6 +291,7 @@ Value* valueAdd(Value* v1, Value* v2) {
     case ENV_VALUE_TYPE: error("Environment value cannot add to anything\n");
     default: error("unknown value type passed to valueAdd: %d\n", v1->type);
   }
+  return 0; // never reach here
 }
 
 int valueCmp(Value* v1, Value* v2) {

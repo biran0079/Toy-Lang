@@ -9,6 +9,8 @@
 #include "eval.h"
 #include "tljmp.h"
 #include "util.h"
+#include "parser.h"
+#include "tokenizer.h"
 
 extern List* rootValues, *parseTrees;
 extern JmpMsg __jmpMsg__;
@@ -99,6 +101,7 @@ Value* evalListAccess(Value* ev, Node* p) {
       res = newStringValue(ss);
       break;
     }
+    default: error("list access does not support value type %s\n", valueToString(v));
   }
   popRootValueTo(initSize);
   return res;
@@ -129,6 +132,7 @@ Value* evalTailRecursion(Value* ev, Node* p) {
   Value* res = newClosureValue(f, ev2);
   tlLongjmp(e->retState, TAIL_CALL_MSG_TYPE, res);
   // actuall call is handled by CALL_TYPE
+  return 0; // never reach here;
 }
 
 Value* evalCall(Value* ev, Node* p) {
@@ -196,6 +200,7 @@ Value* evalReturn(Value* ev, Node* p) {
   if(e->parent == newNoneValue()) error("cannot call return outside a function.\n");
   Node* t = chld(p, 0);
   tlLongjmp(e->retState, RETURN_MSG_TYPE, t->eval(ev, t));
+  return 0; // never reach here;
 }
 
 Value* evalId(Value* ev, Node* p) {
@@ -250,6 +255,7 @@ Value* evalAssign(Value* ev, Node* p) {
     }
     default: error("left hand side of = must be a left value\n");
   }
+  return 0; // never reach here;
 }
 
 Value* evalAddEq(Value* ev, Node* p) {
@@ -315,6 +321,7 @@ Value* evalAddEq(Value* ev, Node* p) {
     }
     default: error("left hand side of += must be left value\n");
   }
+  return 0; // never reach here
 }
 
 Value* evalAdd(Value* ev, Node* p) {
@@ -463,11 +470,13 @@ Value* evalWhile(Value* ev, Node* p) {
 Value* evalContinue(Value* ev, Node* p) {
   Env* e = ev->data;
   tlLongjmp(listLast(envGetLoopStates(e)), CONTINUE_MSG_TYPE, 0);
+  return 0; // never reach here
 }
 
 Value* evalBreak(Value* ev, Node* p) {
   Env* e = ev->data;
   tlLongjmp(listLast(envGetLoopStates(e)), BREAK_MSG_TYPE, 0);
+  return 0; // never reach here
 }
 
 Value* evalGT(Value* ev, Node* p) {
@@ -569,6 +578,7 @@ Value* evalThrow(Value* ev, Node* p) {
   Node* t = chld(p, 0);
   Value* v = t->eval(ev, t);           
   throwValue(e, v);
+  return 0; // never reach here
 }
 
 Value* evalAddAdd(Value* ev, Node* p) {
@@ -597,7 +607,9 @@ Value* evalAddAdd(Value* ev, Node* p) {
       popRootValueTo(initSize);
       return i;
     }
+    default: error("++ does not support value type %s\n", nodeTypeToString(left->type));
   } 
+  return 0; // never reach here
 }
 
 Value* evalLocal(Value* ev, Node* p) {
@@ -616,7 +628,7 @@ Value* evalImport(Value* ev, Node* p) {
   Node* id = chld(p, 0);
   char *s = catStr(getStrId((long) id->data), ".tl");
   FILE* f = openFromPath(s, "r");
-  if(!f) ("cannot open file %s\n", s);
+  if(!f) error("cannot open file %s\n", s);
 #ifdef USE_YY_PARSER
   yyrestart(f);
   if(yyparse()) error("failed to parse %s\n", s);
@@ -646,6 +658,7 @@ Value* evalModuleAccess(Value* ev, Node* p) {
 
 Value* evalError(Value* ev, Node* p) {
   error("cannot eval unknown node type %d\n", p->type);
+  return 0; // never reach here
 }
 
 void throwValue(Env* e, Value* v) {

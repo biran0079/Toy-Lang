@@ -7,4 +7,6 @@ char* getStrId(long id);
 
 void initIdMap();
 
+void cleanupIdMap();
+
 #endif
