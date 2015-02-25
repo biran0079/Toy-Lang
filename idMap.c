@@ -1,5 +1,5 @@
 #include "idMap.h"
-#include "hashtable.h"
+#include "hashTable.h"
 #include "util.h"
 
 static HashTable *idToIntMap, *intToIdMap;

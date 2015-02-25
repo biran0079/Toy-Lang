@@ -2,7 +2,7 @@
 #define _AST_H_
 #include "core.h"
 #include "list.h"
-#include "Env.h"
+#include "env.h"
 #define chldNum(t) listSize((List*)(t)->data)
 #define chld(t,i) ((Node*)listGet((List*)(t)->data, i))
 
