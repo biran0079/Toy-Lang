@@ -60,3 +60,6 @@ benchmark: tl
 
 draw: tl
 	./draw.sh
+
+format:
+	clang-format -i --style=Google *.c *.h
