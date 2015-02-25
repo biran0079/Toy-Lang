@@ -87,7 +87,7 @@ Value* evalListAccess(Value* ev, Node* p) {
   Value *res;
   switch(v->type) {
     case LIST_VALUE_TYPE: {
-      List* l = (List*) v->data;                      
+      List* l = (List*) v->data;
       res = listGet(l, idx);
       break;
     }

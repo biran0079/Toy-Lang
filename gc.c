@@ -26,7 +26,7 @@ static void mark() {
         break;
       }
       case ENV_VALUE_TYPE: {
-        Env* e = v->data;                    
+        Env* e = v->data;
         hashTableAddAllToList(e->t, q);
         listPush(q, e->parent);
         for(i=0;i<envNumOfExceptionStates(e);i++){
