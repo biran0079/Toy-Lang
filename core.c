@@ -8,6 +8,7 @@
 #include "value.h"
 #include "util.h"
 #include "idMap.h"
+#include "opStack.h"
 
 List *parseTrees;
 List *values;      // all values created
@@ -41,6 +42,7 @@ void listCreatedObjectsCount() {
 
 void init(int argc, char **args) {
   initIdMap();
+  initOpStack();
   path = newList();
   char *tlDir = getFolder(args[0]);
   listPush(path, catStr(tlDir, "lib/"));
@@ -58,6 +60,7 @@ void init(int argc, char **args) {
 
 void cleanup() {
   cleanupIdMap();
+  cleanupOpStack();
   listClear(rootValues);
   forceGC();
   freeList(rootValues);

@@ -1,4 +1,5 @@
-CFLAGS = -DYYDEBUG=0 -g
+CFLAGS = 
+CC = gcc
 
 all: tl
 
@@ -9,7 +10,7 @@ lex.yy.c: tl.l tl.tab.c
 	bison -d $<
 
 CORE_OBJS = ast.o builtinFun.o closure.o compile.o core.o dumpGCHistory.o env.o eval.o exception.o \
-	execUnit.o gc.o hashTable.o list.o tljmp.o toDot.o util.o value.o idMap.o
+	execUnit.o gc.o hashTable.o list.o tljmp.o toDot.o util.o value.o idMap.o opStack.o
 
 PARSER_OBJs = tokenizer.o parser.o 
 
