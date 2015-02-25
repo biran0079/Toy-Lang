@@ -41,7 +41,8 @@ void compileInternal(Node* p, List* res, List* loop) {
         compileInternal(chld(p, 1), res, loop);
         listPush(res, newInst(LIST_STORE_INST, 1, ch->data));
       } else {
-        error("unkonwn node type in first child of assign node: %d\n", ch->type);
+        error("unkonwn node type in first child of assign node: %d\n",
+ch->type);
       }
       break;
     }
@@ -75,39 +76,39 @@ void compileInternal(Node* p, List* res, List* loop) {
       break;
     }
     case GT_TYPE: {
-      listPush(res, newInst(GT_INST, 0));             
+      listPush(res, newInst(GT_INST, 0));
       break;
     }
     case LT_TYPE: {
-      listPush(res, newInst(LT_INST, 0));             
+      listPush(res, newInst(LT_INST, 0));
       break;
     }
     case GE_TYPE: {
-      listPush(res, newInst(GE_INST, 0));             
+      listPush(res, newInst(GE_INST, 0));
       break;
     }
     case LE_TYPE: {
-      listPush(res, newInst(LE_INST, 0));             
+      listPush(res, newInst(LE_INST, 0));
       break;
     }
     case EQ_TYPE: {
-      listPush(res, newInst(EQ_INST, 0));             
+      listPush(res, newInst(EQ_INST, 0));
       break;
     }
     case NE_TYPE: {
-      listPush(res, newInst(NE_INST, 0));             
+      listPush(res, newInst(NE_INST, 0));
       break;
     }
     case AND_TYPE: {
-      listPush(res, newInst(AND_INST, 0));             
+      listPush(res, newInst(AND_INST, 0));
       break;
     }
     case OR_TYPE: {
-      listPush(res, newInst(OR_INST, 0));             
+      listPush(res, newInst(OR_INST, 0));
       break;
     }
     case NOT_TYPE: {
-      listPush(res, newInst(NOT_INST, 0));             
+      listPush(res, newInst(NOT_INST, 0));
       break;
     }
     case WHILE_TYPE: {
@@ -144,7 +145,7 @@ void compileInternal(Node* p, List* res, List* loop) {
     case EXP_LIST_TYPE: {
       for(i=0; i<chldNum(argLst); i++) {
         compileInternal(chld(p, i), res, loop);
-      }                  
+      }
       break;
     }
     case TAIL_CALL_TYPE:
@@ -226,20 +227,20 @@ void compileInternal(Node* p, List* res, List* loop) {
         listPush(res, newInst(NONE_INST, 0));
         listPush(res, newInst(STORE_INST, 1, chld(p, i)->data));
       }
-      break;                
+      break;
     }
     case ADDADD_TYPE: {
-                      
+
     }
     case FOR_TYPE: {
     }
     case FOREACH_TYPE: {
     }
     case IMPORT_TYPE: {
-                      
+
     }
     case MODULE_ACCESS_TYPE: {
-                             
+
     }
   }
 }

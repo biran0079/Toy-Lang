@@ -5,10 +5,10 @@
 #include <setjmp.h>
 typedef struct Exception {
   jmp_buf buf;
-  ExecUnit* finally;
+  ExecUnit *finally;
 } Exception;
 
-Exception* newException(ExecUnit* finally);
-void freeException(Exception* e);
+Exception *newException(ExecUnit *finally);
+void freeException(Exception *e);
 
 #endif

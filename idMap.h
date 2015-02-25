@@ -3,7 +3,7 @@
 
 long getIntId(char *s);
 
-char* getStrId(long id);
+char *getStrId(long id);
 
 void initIdMap();
 

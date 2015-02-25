@@ -4,12 +4,11 @@
 #include "core.h"
 
 struct Closure {
-  Node* f;
-  Value* e;
+  Node *f;
+  Value *e;
 };
 
-Closure* newClosure(Node* f, Value* e);
-void freeClosure(Closure* c);
-
+Closure *newClosure(Node *f, Value *e);
+void freeClosure(Closure *c);
 
 #endif

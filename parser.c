@@ -4,58 +4,143 @@
 #include "eval.h"
 #include "ast.h"
 
-extern List* parseTrees;
+extern List *parseTrees;
 
-Node* postProcess(Node* p) {
+Node *postProcess(Node *p) {
   switch (p->type) {
-    case STMTS_TYPE: p->eval = evalStmts; break;
-    case EXP_LIST_TYPE: p->eval = evalExpList; break;
-    case NONE_TYPE: p->eval = evalNone; break;
-    case LIST_TYPE: p->eval = evalList; break;
-    case LIST_ACCESS_TYPE: p->eval = evalListAccess; break;
-    case TAIL_CALL_TYPE: p->eval = evalTailRecursion; break;
-    case CALL_TYPE: p->eval = evalCall; break;
-    case RETURN_TYPE: p->eval = evalReturn; break;
-    case ID_TYPE: p->eval = evalId; break;
-    case INT_TYPE: p->eval = evalInt; break;
-    case STRING_TYPE: p->eval = evalString; break;
-    case ASSIGN_TYPE: p->eval = evalAssign; break;
-    case ADDEQ_TYPE: p->eval = evalAddEq; break;
-    case ADD_TYPE: p->eval = evalAdd; break;
-    case SUB_TYPE: p->eval = evalSub; break;
-    case MUL_TYPE: p->eval = evalMul; break;
-    case DIV_TYPE: p->eval = evalDiv; break;
-    case MOD_TYPE: p->eval = evalMod; break;
-    case IF_TYPE: p->eval = evalIf; break;
-    case FOR_TYPE: p->eval = evalFor; break;
-    case FOREACH_TYPE: p->eval = evalForEach; break;
-    case WHILE_TYPE: p->eval = evalWhile; break;
-    case CONTINUE_TYPE: p->eval = evalContinue; break;
-    case BREAK_TYPE: p->eval = evalBreak; break;
-    case GT_TYPE: p->eval = evalGT; break;
-    case LT_TYPE: p->eval = evalLT; break;
-    case GE_TYPE: p->eval = evalGE; break;
-    case LE_TYPE: p->eval = evalLE; break;
-    case EQ_TYPE: p->eval = evalEQ; break;
-    case NE_TYPE: p->eval = evalNE; break;
-    case AND_TYPE: p->eval = evalAnd; break;
-    case OR_TYPE: p->eval = evalOr; break;
-    case NOT_TYPE: p->eval = evalNot; break;
-    case FUN_TYPE: p->eval = evalFun; break;
-    case TIME_TYPE: p->eval = evalTime; break;
-    case TRY_TYPE: p->eval = evalTry; break;
-    case THROW_TYPE: p->eval = evalThrow; break;
-    case ADDADD_TYPE: p->eval = evalAddAdd; break;
-    case LOCAL_TYPE: p->eval = evalLocal; break;
-    case IMPORT_TYPE: p->eval = evalImport; break;
-    case MODULE_ACCESS_TYPE: p->eval = evalModuleAccess; break;
-    default: p->eval = evalError; break; // types should never eval id list
+    case STMTS_TYPE:
+      p->eval = evalStmts;
+      break;
+    case EXP_LIST_TYPE:
+      p->eval = evalExpList;
+      break;
+    case NONE_TYPE:
+      p->eval = evalNone;
+      break;
+    case LIST_TYPE:
+      p->eval = evalList;
+      break;
+    case LIST_ACCESS_TYPE:
+      p->eval = evalListAccess;
+      break;
+    case TAIL_CALL_TYPE:
+      p->eval = evalTailRecursion;
+      break;
+    case CALL_TYPE:
+      p->eval = evalCall;
+      break;
+    case RETURN_TYPE:
+      p->eval = evalReturn;
+      break;
+    case ID_TYPE:
+      p->eval = evalId;
+      break;
+    case INT_TYPE:
+      p->eval = evalInt;
+      break;
+    case STRING_TYPE:
+      p->eval = evalString;
+      break;
+    case ASSIGN_TYPE:
+      p->eval = evalAssign;
+      break;
+    case ADDEQ_TYPE:
+      p->eval = evalAddEq;
+      break;
+    case ADD_TYPE:
+      p->eval = evalAdd;
+      break;
+    case SUB_TYPE:
+      p->eval = evalSub;
+      break;
+    case MUL_TYPE:
+      p->eval = evalMul;
+      break;
+    case DIV_TYPE:
+      p->eval = evalDiv;
+      break;
+    case MOD_TYPE:
+      p->eval = evalMod;
+      break;
+    case IF_TYPE:
+      p->eval = evalIf;
+      break;
+    case FOR_TYPE:
+      p->eval = evalFor;
+      break;
+    case FOREACH_TYPE:
+      p->eval = evalForEach;
+      break;
+    case WHILE_TYPE:
+      p->eval = evalWhile;
+      break;
+    case CONTINUE_TYPE:
+      p->eval = evalContinue;
+      break;
+    case BREAK_TYPE:
+      p->eval = evalBreak;
+      break;
+    case GT_TYPE:
+      p->eval = evalGT;
+      break;
+    case LT_TYPE:
+      p->eval = evalLT;
+      break;
+    case GE_TYPE:
+      p->eval = evalGE;
+      break;
+    case LE_TYPE:
+      p->eval = evalLE;
+      break;
+    case EQ_TYPE:
+      p->eval = evalEQ;
+      break;
+    case NE_TYPE:
+      p->eval = evalNE;
+      break;
+    case AND_TYPE:
+      p->eval = evalAnd;
+      break;
+    case OR_TYPE:
+      p->eval = evalOr;
+      break;
+    case NOT_TYPE:
+      p->eval = evalNot;
+      break;
+    case FUN_TYPE:
+      p->eval = evalFun;
+      break;
+    case TIME_TYPE:
+      p->eval = evalTime;
+      break;
+    case TRY_TYPE:
+      p->eval = evalTry;
+      break;
+    case THROW_TYPE:
+      p->eval = evalThrow;
+      break;
+    case ADDADD_TYPE:
+      p->eval = evalAddAdd;
+      break;
+    case LOCAL_TYPE:
+      p->eval = evalLocal;
+      break;
+    case IMPORT_TYPE:
+      p->eval = evalImport;
+      break;
+    case MODULE_ACCESS_TYPE:
+      p->eval = evalModuleAccess;
+      break;
+    default:
+      p->eval = evalError;
+      break;  // types should never eval id list
   }
   switch (p->type) {
     case INT_TYPE:
     case STRING_TYPE:
-    case ID_TYPE: break;  // leaves
-    default:{
+    case ID_TYPE:
+      break;  // leaves
+    default: {
       int n = chldNum(p), i;
       for (i = 0; i < n; i++) postProcess(chld(p, i));
     }
@@ -63,13 +148,14 @@ Node* postProcess(Node* p) {
   return p;
 }
 
-Node* parse(List* tokens) {
-  int idx = 0;;
-  Node* tree = stmts(tokens, &idx);
+Node *parse(List *tokens) {
+  int idx = 0;
+  ;
+  Node *tree = stmts(tokens, &idx);
   if (idx < listSize(tokens)) {
     int i;
     for (i = 0; i < idx; i++) {
-      printf("%s\n", tokenTypeToStr(((Token*) listGet(tokens, i))->type));
+      printf("%s\n", tokenTypeToStr(((Token *)listGet(tokens, i))->type));
     }
     error("failed to parse the whole program.");
   }
@@ -79,8 +165,8 @@ Node* parse(List* tokens) {
   return postProcess(tree);
 }
 
-Node* stmts(List* t, int* ip) {
-  Node* fst, *rst;
+Node *stmts(List *t, int *ip) {
+  Node *fst, *rst;
   if ((fst = stmt(t, ip)) && (rst = stmts(t, ip))) {
     listPushFront(rst->data, fst);
     return rst;
@@ -88,23 +174,28 @@ Node* stmts(List* t, int* ip) {
   return newNode2(STMTS_TYPE, 0);
 }
 
-Node* tokenToNode(Token* token) {
-  static Node* dummyNode = 0;
+Node *tokenToNode(Token *token) {
+  static Node *dummyNode = 0;
   switch (token->type) {
-    case INT_T: return newNode(INT_TYPE, token->data);
-    case STRING_T: return newNode(STRING_TYPE, token->data);
-    case ID_T: return newNode(ID_TYPE, (void*) getIntId(token->data));
-    case NONE_T: return newNode2(NONE_TYPE, 0);
-    default: return dummyNode ? dummyNode : (dummyNode = newNode(__DUMMY_TYPE, 0));
+    case INT_T:
+      return newNode(INT_TYPE, token->data);
+    case STRING_T:
+      return newNode(STRING_TYPE, token->data);
+    case ID_T:
+      return newNode(ID_TYPE, (void *)getIntId(token->data));
+    case NONE_T:
+      return newNode2(NONE_TYPE, 0);
+    default:
+      return dummyNode ? dummyNode : (dummyNode = newNode(__DUMMY_TYPE, 0));
   }
 }
 
 #define M(TYPE) match(t, ip, TYPE)
-#define M2(T1,T2) M(T1) && M(T2)
+#define M2(T1, T2) M(T1) && M(T2)
 
-Node* match(List* t, int* ip, Token_t type) {
+Node *match(List *t, int *ip, Token_t type) {
   if (listSize(t) <= *ip) return 0;
-  Token* token = (Token*) listGet(t, *ip);
+  Token *token = (Token *)listGet(t, *ip);
   if (token->type == type) {
     (*ip)++;
     return tokenToNode(token);
@@ -112,12 +203,13 @@ Node* match(List* t, int* ip, Token_t type) {
   return 0;
 }
 
-Node* stmt(List* t, int* ip) {
+Node *stmt(List *t, int *ip) {
   Node *n1, *n2, *n3, *n4;
   int i0 = *ip;
   if ((n1 = expr(t, ip)) && M(SEMICOLON_T)) {
     return n1;
-  } else if ((*ip = i0), M2(IF_T, OP_B_T) && (n1 = expr(t, ip)) && M(CLO_B_T) && (n2 = block(t, ip))) {
+  } else if ((*ip = i0), M2(IF_T, OP_B_T) && (n1 = expr(t, ip)) && M(CLO_B_T) &&
+                             (n2 = block(t, ip))) {
     int i1 = *ip;
     if (M(ELSE_T) && (n3 = block(t, ip))) {
       return newNode2(IF_TYPE, 3, n1, n2, n3);
@@ -125,23 +217,28 @@ Node* stmt(List* t, int* ip) {
       *ip = i1;
       return newNode2(IF_TYPE, 2, n1, n2);
     }
-  } else if ((*ip = i0), M2(FOR_T, OP_B_T) && (n1 = expList(t, ip)) && M(SEMICOLON_T) 
-      && (n2 = expList(t, ip)) && M(SEMICOLON_T) && (n3 = expList(t, ip))
-      && M(CLO_B_T) && (n4 = block(t, ip))) {
+  } else if ((*ip = i0), M2(FOR_T, OP_B_T) && (n1 = expList(t, ip)) &&
+                             M(SEMICOLON_T) && (n2 = expList(t, ip)) &&
+                             M(SEMICOLON_T) && (n3 = expList(t, ip)) &&
+                             M(CLO_B_T) && (n4 = block(t, ip))) {
     return newNode2(FOR_TYPE, 4, n1, n2, n3, n4);
-  } else if ((*ip = i0), M2(FOR_T, OP_B_T) && (n1 = M(ID_T)) && M(COLON_T) && (n2 = expr(t, ip))
-        && M(CLO_B_T) && (n3 = block(t, ip))) {
+  } else if ((*ip = i0), M2(FOR_T, OP_B_T) && (n1 = M(ID_T)) && M(COLON_T) &&
+                             (n2 = expr(t, ip)) && M(CLO_B_T) &&
+                             (n3 = block(t, ip))) {
     return newNode2(FOREACH_TYPE, 3, n1, n2, n3);
-  } else if ((*ip = i0), M2(WHILE_T, OP_B_T) && (n1 = expr(t, ip)) && M(CLO_B_T) && (n2 = block(t, ip))) {
+  } else if ((*ip = i0), M2(WHILE_T, OP_B_T) && (n1 = expr(t, ip)) &&
+                             M(CLO_B_T) && (n2 = block(t, ip))) {
     return newNode2(WHILE_TYPE, 2, n1, n2);
-  } else if ((*ip = i0), M(FUN_T) && (n1 = M(ID_T)) && M(OP_B_T) && (n2 = idList(t, ip)) && M(CLO_B_T)
-      && M(OP_CB_T) && (n3 = stmts(t, ip)) && M(CLO_CB_T)) {
+  } else if ((*ip = i0), M(FUN_T) && (n1 = M(ID_T)) && M(OP_B_T) &&
+                             (n2 = idList(t, ip)) && M(CLO_B_T) && M(OP_CB_T) &&
+                             (n3 = stmts(t, ip)) && M(CLO_CB_T)) {
     markTailRecursions(n3);
     return newNode2(FUN_TYPE, 3, n1, n2, n3);
   } else if ((*ip = i0), M(LOCAL_T) && (n1 = idList(t, ip)) && M(SEMICOLON_T)) {
     return newNode2(LOCAL_TYPE, 1, n1);
-  } else if ((*ip = i0), M(TRY_T) && (n1 = block(t, ip)) && M(CATCH_T) && M(OP_B_T)
-      && (n2 = M(ID_T)) && M(CLO_B_T) && (n3 = block(t, ip))) {
+  } else if ((*ip = i0), M(TRY_T) && (n1 = block(t, ip)) && M(CATCH_T) &&
+                             M(OP_B_T) && (n2 = M(ID_T)) && M(CLO_B_T) &&
+                             (n3 = block(t, ip))) {
     int i1 = *ip;
     if (M(FINALLY_T) && (n4 = block(t, ip))) {
       return newNode2(TRY_TYPE, 4, n1, n2, n3, n4);
@@ -165,9 +262,9 @@ Node* stmt(List* t, int* ip) {
   return 0;
 }
 
-Node* idList(List* t, int *ip) {
+Node *idList(List *t, int *ip) {
   int i0 = *ip;
-  Node* n;
+  Node *n;
   if ((n = nonEmptyIdList(t, ip))) {
     return n;
   } else {
@@ -176,7 +273,7 @@ Node* idList(List* t, int *ip) {
   }
 }
 
-Node* nonEmptyIdList(List* t, int *ip) {
+Node *nonEmptyIdList(List *t, int *ip) {
   int i0 = *ip;
   Node *n1, *n2;
   if ((n1 = M(ID_T)) && M(COMMA_T) && (n2 = nonEmptyIdList(t, ip))) {
@@ -189,7 +286,7 @@ Node* nonEmptyIdList(List* t, int *ip) {
 }
 
 // module access
-Node* moduleAccess(List* t, int* ip) {
+Node *moduleAccess(List *t, int *ip) {
   int i0 = *ip;
   Node *n1, *n2;
   if ((n1 = M(ID_T)) && M(DOT_T) && (n2 = moduleAccess(t, ip))) {
@@ -201,8 +298,8 @@ Node* moduleAccess(List* t, int* ip) {
   return 0;
 }
 
-Node* listExpr(List* t, int* ip) {
-  Node* n;
+Node *listExpr(List *t, int *ip) {
+  Node *n;
   if (M(OP_SB_T) && (n = expList(t, ip)) && M(CLO_SB_T)) {
     n->type = LIST_TYPE;
     return n;
@@ -210,53 +307,54 @@ Node* listExpr(List* t, int* ip) {
   return 0;
 }
 
-List* listAccessOrCallInternal(List* t, int* ip) {
+List *listAccessOrCallInternal(List *t, int *ip) {
   int i0 = *ip;
   Node *n;
   List *l;
   if (M(OP_SB_T) && (n = expr(t, ip)) && M(CLO_SB_T)) {
-    n = newNode2(LIST_ACCESS_TYPE, 2, (void*) 0, n);
+    n = newNode2(LIST_ACCESS_TYPE, 2, (void *)0, n);
     l = listAccessOrCallInternal(t, ip);
     listPushFront(l, n);
     return l;
   } else if ((*ip = i0), M(OP_B_T) && (n = expList(t, ip)) && M(CLO_B_T)) {
-    n = newNode2(CALL_TYPE, 2, (void*) 0, n);
+    n = newNode2(CALL_TYPE, 2, (void *)0, n);
     l = listAccessOrCallInternal(t, ip);
     listPushFront(l, n);
     return l;
   } else if ((*ip = i0), M(ADDADD_T)) {
-    n = newNode2(ADDADD_TYPE, 1, (void*) 0);
+    n = newNode2(ADDADD_TYPE, 1, (void *)0);
     // no [] and () can follow ++
     l = newList();
     listPushFront(l, n);
     return l;
   }
   // Restore *ip value if no matching found.
-  // This is different from normal production matcher, because there is no "maching failure".
-  *ip = i0; 
+  // This is different from normal production matcher, because there is no
+  // "maching failure".
+  *ip = i0;
   return newList();
 }
 
-Node* buildTree(Node* fst, List* rst) {
+Node *buildTree(Node *fst, List *rst) {
   int len = listSize(rst), i;
   for (i = 0; i < len; i++) {
-    Node* n = listGet(rst, i);
+    Node *n = listGet(rst, i);
     listSet(n->data, 0, fst);
     fst = n;
   }
   return fst;
 }
 // id, string, int literal, list literal
-Node* expr0(List* t, int* ip) {
+Node *expr0(List *t, int *ip) {
   int i0 = *ip;
-  Node* n;
-  List* l;
+  Node *n;
+  List *l;
   if ((n = M(INT_T))) {
     return n;
   } else if ((*ip = i0), (n = M(NONE_T))) {
     return n;
   } else if ((*ip = i0), M(SUB_T) && (n = M(INT_T))) {
-    n->data = (void*) (-(long) n->data);
+    n->data = (void *)(-(long)n->data);
     return n;
   } else if ((*ip = i0), M(OP_B_T) && (n = expr(t, ip)) && M(CLO_B_T)) {
     return buildTree(n, listAccessOrCallInternal(t, ip));
@@ -272,10 +370,10 @@ Node* expr0(List* t, int* ip) {
   return 0;
 }
 
-List* mulDivModInternal(List* t, int* ip) {
+List *mulDivModInternal(List *t, int *ip) {
   int i0 = *ip;
-  List* l;
-  Node* n;
+  List *l;
+  Node *n;
   if (M(MUL_T) && (n = expr0(t, ip))) {
     l = mulDivModInternal(t, ip);
     listPushFront(l, newNode2(MUL_TYPE, 2, 0, n));
@@ -288,13 +386,13 @@ List* mulDivModInternal(List* t, int* ip) {
     l = mulDivModInternal(t, ip);
     listPushFront(l, newNode2(MOD_TYPE, 2, 0, n));
     return l;
-  } 
+  }
   *ip = i0;
   return newList();
 }
 
 // * / %
-Node* expr1(List* t, int* ip) {
+Node *expr1(List *t, int *ip) {
   Node *n;
   if ((n = expr0(t, ip))) {
     return buildTree(n, mulDivModInternal(t, ip));
@@ -302,10 +400,10 @@ Node* expr1(List* t, int* ip) {
   return 0;
 }
 
-List* addSubInternal(List* t, int* ip) {
+List *addSubInternal(List *t, int *ip) {
   int i0 = *ip;
-  List* l;
-  Node* n;
+  List *l;
+  Node *n;
   if (M(ADD_T) && (n = expr1(t, ip))) {
     l = addSubInternal(t, ip);
     listPushFront(l, newNode2(ADD_TYPE, 2, 0, n));
@@ -314,12 +412,12 @@ List* addSubInternal(List* t, int* ip) {
     l = addSubInternal(t, ip);
     listPushFront(l, newNode2(SUB_TYPE, 2, 0, n));
     return l;
-  } 
+  }
   *ip = i0;
   return newList();
 }
 // + -
-Node* expr2(List* t, int* ip) {
+Node *expr2(List *t, int *ip) {
   Node *n;
   if ((n = expr1(t, ip))) {
     return buildTree(n, addSubInternal(t, ip));
@@ -328,7 +426,7 @@ Node* expr2(List* t, int* ip) {
 }
 
 // = +=
-Node* assignmentExpr(List* t, int* ip) {
+Node *assignmentExpr(List *t, int *ip) {
   Node *n1, *n2;
   if ((n1 = expr0(t, ip))) {
     int i0 = *ip;
@@ -341,7 +439,7 @@ Node* assignmentExpr(List* t, int* ip) {
   return 0;
 }
 
-Node* expr3(List* t, int* ip) {
+Node *expr3(List *t, int *ip) {
   Node *n1, *n2;
   int i0 = *ip;
   if (M(NOT_T) && (n1 = expr3(t, ip))) {
@@ -367,20 +465,20 @@ Node* expr3(List* t, int* ip) {
   return 0;
 }
 
-List* andInternal(List* t, int* ip) {
+List *andInternal(List *t, int *ip) {
   int i0 = *ip;
-  List* l;
-  Node* n;
+  List *l;
+  Node *n;
   if (M(AND_T) && (n = expr3(t, ip))) {
     l = andInternal(t, ip);
     listPushFront(l, newNode2(AND_TYPE, 2, 0, n));
     return l;
-  } 
+  }
   *ip = i0;
   return newList();
 }
 
-Node* expr4(List* t, int *ip) {
+Node *expr4(List *t, int *ip) {
   Node *n;
   if ((n = expr3(t, ip))) {
     return buildTree(n, andInternal(t, ip));
@@ -388,20 +486,20 @@ Node* expr4(List* t, int *ip) {
   return 0;
 }
 
-List* orInternal(List* t, int* ip) {
+List *orInternal(List *t, int *ip) {
   int i0 = *ip;
-  List* l;
-  Node* n;
+  List *l;
+  Node *n;
   if (M(OR_T) && (n = expr4(t, ip))) {
     l = orInternal(t, ip);
     listPushFront(l, newNode2(OR_TYPE, 2, 0, n));
     return l;
-  } 
+  }
   *ip = i0;
   return newList();
 }
 
-Node* expr5(List* t, int * ip) {
+Node *expr5(List *t, int *ip) {
   Node *n;
   if ((n = expr4(t, ip))) {
     return buildTree(n, orInternal(t, ip));
@@ -409,25 +507,27 @@ Node* expr5(List* t, int * ip) {
   return 0;
 }
 
-Node* lambdaExpr(List* t, int* ip) {
+Node *lambdaExpr(List *t, int *ip) {
   Node *n1, *n2;
-  if (M2(LAMBDA_T, OP_B_T) && (n1 = idList(t, ip)) && M2(CLO_B_T, OP_CB_T) && (n2 = stmts(t, ip)) && M(CLO_CB_T)) {
-    return newNode2(FUN_TYPE, 3, newNode(ID_TYPE, (void*) getIntId("lambda")), n1, n2);
+  if (M2(LAMBDA_T, OP_B_T) && (n1 = idList(t, ip)) && M2(CLO_B_T, OP_CB_T) &&
+      (n2 = stmts(t, ip)) && M(CLO_CB_T)) {
+    return newNode2(FUN_TYPE, 3, newNode(ID_TYPE, (void *)getIntId("lambda")),
+                    n1, n2);
   }
   return 0;
 }
 
-Node* timeExpr(List* t, int* ip) {
-  Node* n;
+Node *timeExpr(List *t, int *ip) {
+  Node *n;
   if (M2(TIME_T, OP_B_T) && (n = expr(t, ip)) && M(CLO_B_T)) {
     return newNode2(TIME_TYPE, 1, n);
   }
   return 0;
 }
 
-Node* expr(List* t, int* ip) {
+Node *expr(List *t, int *ip) {
   int i0 = *ip;
-  Node* n;
+  Node *n;
   if ((n = assignmentExpr(t, ip))) {
     return n;
   } else if ((*ip = i0), (n = lambdaExpr(t, ip))) {
@@ -439,10 +539,10 @@ Node* expr(List* t, int* ip) {
   return expr5(t, ip);
 }
 
-Node* block(List* t, int* ip) {
+Node *block(List *t, int *ip) {
   if (listSize(t) <= *ip) return 0;
   int i0 = *ip;
-  Node* n;
+  Node *n;
   if (M(OP_CB_T) && (n = stmts(t, ip)) && M(CLO_CB_T)) {
     return n;
   } else if ((*ip = i0), (n = stmt(t, ip))) {
@@ -451,10 +551,10 @@ Node* block(List* t, int* ip) {
   return 0;
 }
 
-Node* expList(List* t, int *ip) {
+Node *expList(List *t, int *ip) {
   if (listSize(t) < *ip) return 0;
   int i0 = *ip;
-  Node* n;
+  Node *n;
   if ((n = nonEmptyExpList(t, ip))) {
     return n;
   } else {
@@ -463,11 +563,11 @@ Node* expList(List* t, int *ip) {
   }
 }
 
-Node* nonEmptyExpList(List* t, int *ip) {
+Node *nonEmptyExpList(List *t, int *ip) {
   if (listSize(t) <= *ip) return 0;
   int i0 = *ip;
   Node *n1, *n2;
-  if ((n1 = expr(t, ip)) && M(COMMA_T) &&(n2 = nonEmptyExpList(t, ip))) {
+  if ((n1 = expr(t, ip)) && M(COMMA_T) && (n2 = nonEmptyExpList(t, ip))) {
     listPushFront(n2->data, n1);
     return n2;
   } else if ((*ip = i0), n1 = expr(t, ip)) {

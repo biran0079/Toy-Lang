@@ -3,8 +3,8 @@
 #include "core.h"
 #include "list.h"
 #include "env.h"
-#define chldNum(t) listSize((List*)(t)->data)
-#define chld(t,i) ((Node*)listGet((List*)(t)->data, i))
+#define chldNum(t) listSize((List *)(t)->data)
+#define chld(t, i) ((Node *)listGet((List *)(t)->data, i))
 
 enum NodeType {
   INT_TYPE,
@@ -40,7 +40,7 @@ enum NodeType {
   FOR_TYPE,
   ADDEQ_TYPE,
   TIME_TYPE,
-  STRING_TYPE, // liter string
+  STRING_TYPE,  // liter string
   NONE_TYPE,
   FOREACH_TYPE,
   TRY_TYPE,
@@ -49,28 +49,28 @@ enum NodeType {
   LOCAL_TYPE,
   IMPORT_TYPE,
   MODULE_ACCESS_TYPE,
-  __DUMMY_TYPE, // Used for parsing. Not part of language.
+  __DUMMY_TYPE,  // Used for parsing. Not part of language.
 };
- 
-typedef Value* (*EvalFunc)(Value*, Node*);
+
+typedef Value *(*EvalFunc)(Value *, Node *);
 
 struct Node {
   NodeType type;
-  void* data;
+  void *data;
   EvalFunc eval;
 };
 
-Node* newNode(NodeType type, void* data);
-Node* newNode2(NodeType type, int n, ...);
+Node *newNode(NodeType type, void *data);
+Node *newNode2(NodeType type, int n, ...);
 
-void freeNode(Node* t);
+void freeNode(Node *t);
 
-void markTailRecursions(Node* t);
+void markTailRecursions(Node *t);
 
-char* nodeTypeToString(NodeType type);
+char *nodeTypeToString(NodeType type);
 
-Value* nodeToListValue(Node* p);
+Value *nodeToListValue(Node *p);
 
-void printAst(Node* ast);
+void printAst(Node *ast);
 
 #endif

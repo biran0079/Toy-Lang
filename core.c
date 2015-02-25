@@ -9,20 +9,19 @@
 #include "util.h"
 #include "idMap.h"
 
-List* parseTrees;
-List* values;  // all values created
-List* rootValues;  // all values should be treated as root when gc
-Value* globalEnv;
+List *parseTrees;
+List *values;      // all values created
+List *rootValues;  // all values should be treated as root when gc
+Value *globalEnv;
 JmpMsg __jmpMsg__;
 int memoryLimit = 200000000;
-List* path;  // where import loads from
+List *path;  // where import loads from
 
-
-int shouldDumpGCHistory = 0;  
-int gcTestMode = 0;  
-List* gcHistory;
+int shouldDumpGCHistory = 0;
+int gcTestMode = 0;
+List *gcHistory;
 int sysArgc;
-char** sysArgv;
+char **sysArgv;
 
 /*** ALL GLOBAL VARIABLES DECLARES ABOVE!  ***/
 
@@ -30,7 +29,8 @@ void listCreatedObjectsCount() {
   fprintf(stderr, "\tNode: %d %d\n", newNodeC, freeNodeC);
   fprintf(stderr, "\tIntValue: %d %d\n", newIntValueC, freeIntValueC);
   fprintf(stderr, "\tStringValue: %d %d\n", newStringValueC, freeStringValueC);
-  fprintf(stderr, "\tClosureValue: %d %d\n", newClosureValueC, freeClosureValueC);
+  fprintf(stderr, "\tClosureValue: %d %d\n", newClosureValueC,
+          freeClosureValueC);
   fprintf(stderr, "\tListValue: %d %d\n", newListValueC, freeListValueC);
   fprintf(stderr, "\tClosure: %d %d\n", newClosureC, freeClosureC);
   fprintf(stderr, "\tEnv: %d %d\n", newEnvC, freeEnvC);
@@ -39,10 +39,10 @@ void listCreatedObjectsCount() {
   fprintf(stderr, "\tBuiltinFun: %d %d\n", newBuiltinFunC, freeBuiltinFunC);
 }
 
-void init(int argc, char** args) {
+void init(int argc, char **args) {
   initIdMap();
   path = newList();
-  char* tlDir = getFolder(args[0]);
+  char *tlDir = getFolder(args[0]);
   listPush(path, catStr(tlDir, "lib/"));
   tlFree(tlDir);
   parseTrees = newList();
@@ -63,28 +63,24 @@ void cleanup() {
   freeList(rootValues);
   freeList(values);
   int i, n = listSize(parseTrees);
-  for(i=0;i<n;i++)
-    freeNode(listGet(parseTrees, i));
+  for (i = 0; i < n; i++) freeNode(listGet(parseTrees, i));
   n = listSize(path);
-  for(i=0;i<n;i++)
-    tlFree(listGet(path, i));
+  for (i = 0; i < n; i++) tlFree(listGet(path, i));
   freeList(path);
   freeList(parseTrees);
-  if(!shouldDumpGCHistory) clearGCHistory();
+  if (!shouldDumpGCHistory) clearGCHistory();
   tlFree(newNoneValue());
 }
 
-FILE* openFromPath(char* s, char* mode) {
+FILE *openFromPath(char *s, char *mode) {
   int i, n = listSize(path);
-  FILE* f = 0;
-  for(i=0;i<n;i++) {
-    char * p = listGet(path, i);
+  FILE *f = 0;
+  for (i = 0; i < n; i++) {
+    char *p = listGet(path, i);
     char *fname = catStr(p, s);
     f = fopen(fname, mode);
     tlFree(fname);
-    if(f)break;
+    if (f) break;
   }
   return f;
 }
-
-

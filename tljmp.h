@@ -14,10 +14,9 @@ typedef enum JmpMsgType {
 
 typedef struct JmpMsg {
   JmpMsgType type;
-  Value* data;
+  Value *data;
 } JmpMsg;
 
-
-void tlLongjmp(jmp_buf buf, JmpMsgType type, Value* data);
+void tlLongjmp(jmp_buf buf, JmpMsgType type, Value *data);
 
 #endif

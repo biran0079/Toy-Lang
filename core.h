@@ -9,24 +9,26 @@ typedef struct Closure Closure;
 typedef struct Env Env;
 typedef enum ValueType ValueType;
 typedef enum NodeType NodeType;
-typedef void (*ValueFunc)(Value*);
-typedef Value* (*BuiltinFun)(List* l); 
+typedef void (*ValueFunc)(Value *);
+typedef Value *(*BuiltinFun)(List *l);
 
-void init(int argc, char** argv);
+void init(int argc, char **argv);
 void cleanup();
 long getIntId(char *s);
-char* getStrId(long id);
+char *getStrId(long id);
 void listCreatedObjectsCount();
 
 extern int newNodeC, freeNodeC;
 extern int newListC, freeListC;
 extern int newHashTableC, freeHashTableC;
-extern int newIntValueC, newStringValueC, newClosureValueC, newEnvValueC, newListValueC, newBuiltinFunC;
-extern int freeIntValueC, freeStringValueC, freeClosureValueC, freeEnvValueC, freeListValueC, freeBuiltinFunC;
+extern int newIntValueC, newStringValueC, newClosureValueC, newEnvValueC,
+    newListValueC, newBuiltinFunC;
+extern int freeIntValueC, freeStringValueC, freeClosureValueC, freeEnvValueC,
+    freeListValueC, freeBuiltinFunC;
 extern int newClosureC, freeClosureC;
 extern int newEnvC, freeEnvC;
 extern int memoryUsage;
 
-#define YYSTYPE Node*
+#define YYSTYPE Node *
 
 #endif

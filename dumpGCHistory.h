@@ -3,6 +3,6 @@
 
 #include <stdio.h>
 
-void dumpGCHistory(FILE* out);
+void dumpGCHistory(FILE *out);
 
 #endif

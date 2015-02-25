@@ -38,10 +38,10 @@ typedef enum InstType {
 
 typedef struct Instruction {
   InstType type;
-  List* data;
+  List *data;
 } Instruction;
 
-Instruction* newInst(InstType type, int n, ...);
-Instruction* freeInst(Instruction* ins);
-List* compile(Node* p);
-#endif 
+Instruction *newInst(InstType type, int n, ...);
+Instruction *freeInst(Instruction *ins);
+List *compile(Node *p);
+#endif

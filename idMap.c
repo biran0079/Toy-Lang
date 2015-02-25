@@ -15,10 +15,10 @@ void cleanupIdMap() {
 }
 
 long getIntId(char *s) {
-  long res = (long) hashTableGet(idToIntMap, s);
-  if(!res){
-    void* key = copyStr(s);
-    void* value = (void*)(idToIntMap->size + 1L);
+  long res = (long)hashTableGet(idToIntMap, s);
+  if (!res) {
+    void *key = copyStr(s);
+    void *value = (void *)(idToIntMap->size + 1L);
     hashTablePut(idToIntMap, key, value);
     hashTablePut(intToIdMap, value, key);
     res = idToIntMap->size;
@@ -26,6 +26,4 @@ long getIntId(char *s) {
   return res;
 }
 
-char* getStrId(long id) {
-  return hashTableGet(intToIdMap, (void*) id);
-}
+char *getStrId(long id) { return hashTableGet(intToIdMap, (void *)id); }

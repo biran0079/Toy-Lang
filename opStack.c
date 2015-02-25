@@ -5,15 +5,12 @@ void opStackInit() {
   opStackState = newList();
 }
 
-void opStackCleanup() {
+void opStackCleanup() {}
 
-}
+void opStackPush(Value *);
 
-void opStackPush(Value*);
-
-Value* opStackPop();
+Value *opStackPop();
 
 void opStackSave();
 
 void opStackRestore();
-

@@ -3,5 +3,5 @@
 #include "core.h"
 #include "list.h"
 
-void registerBuiltinFunctions(Env* e);
+void registerBuiltinFunctions(Env *e);
 #endif

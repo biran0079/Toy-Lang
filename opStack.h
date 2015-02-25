@@ -4,14 +4,14 @@
 #include "value.h"
 #include "list.h"
 
-static List* opStack;
-static List* opStackState;
+static List *opStack;
+static List *opStackState;
 
 void opStackInit();
 void opStackCleanup();
 
-void opStackPush(Value*);
-Value* opStackPop();
+void opStackPush(Value *);
+Value *opStackPop();
 
 void opStackSave();
 void opStackRestore();

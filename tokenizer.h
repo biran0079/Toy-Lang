@@ -55,11 +55,10 @@ typedef enum {
 
 struct Token {
   Token_t type;
-  void* data;
+  void *data;
 };
 
-List* tokenize(char* s);
+List *tokenize(char *s);
 
-char* tokenTypeToStr(Token_t type);
+char *tokenTypeToStr(Token_t type);
 #endif
-

@@ -5,11 +5,11 @@
 #include "util.h"
 
 typedef struct ExecUnit {
-  Value* ev;
-  Node* p;
+  Value *ev;
+  Node *p;
 } ExecUnit;
 
-ExecUnit* newExecUnit(Value* ev, Node* p);
-void freeExecUnit(ExecUnit* eu);
+ExecUnit *newExecUnit(Value *ev, Node *p);
+void freeExecUnit(ExecUnit *eu);
 
 #endif

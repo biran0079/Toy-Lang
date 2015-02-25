@@ -15,28 +15,28 @@ enum ValueType {
 
 struct Value {
   ValueType type;
-  void* data;
+  void *data;
   char mark;
 };
 
-Value* newIntValue(long x);
-Value* newListValue(List* lst);   // pass in a list of values
-Value* newClosureValue(Node* t, Value* e);
-Value* newEnvValue(Env* e);
-Value* newStringValue(char* s);
-Value* newNoneValue();
-Value* newBuiltinFun(BuiltinFun f);
-void freeValue(Value* v);
+Value *newIntValue(long x);
+Value *newListValue(List *lst);  // pass in a list of values
+Value *newClosureValue(Node *t, Value *e);
+Value *newEnvValue(Env *e);
+Value *newStringValue(char *s);
+Value *newNoneValue();
+Value *newBuiltinFun(BuiltinFun f);
+void freeValue(Value *v);
 
-char* valueToString(Value* v);
+char *valueToString(Value *v);
 
-int valueEquals(Value* v1, Value* v2);
-Value* valueAdd(Value* v1, Value* v2);
-Value* valueSub(Value* v1, Value* v2);
-Value* valueMul(Value* v1, Value* v2);
-Value* valueDiv(Value* v1, Value* v2);
-Value* valueMod(Value* v1, Value* v2);
-Value* valueAddEq(Env* e, Node* v1, Node* v2);
-int valueCmp(Value* v1, Value* v2);
+int valueEquals(Value *v1, Value *v2);
+Value *valueAdd(Value *v1, Value *v2);
+Value *valueSub(Value *v1, Value *v2);
+Value *valueMul(Value *v1, Value *v2);
+Value *valueDiv(Value *v1, Value *v2);
+Value *valueMod(Value *v1, Value *v2);
+Value *valueAddEq(Env *e, Node *v1, Node *v2);
+int valueCmp(Value *v1, Value *v2);
 
 #endif

@@ -4,6 +4,6 @@
 #include "core.h"
 #include <stdio.h>
 
-void nodeToDot(FILE* o, Node* t);
+void nodeToDot(FILE *o, Node *t);
 
 #endif
