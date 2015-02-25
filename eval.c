@@ -11,6 +11,7 @@
 #include "util.h"
 #include "parser.h"
 #include "tokenizer.h"
+#include "opStack.h"
 
 extern List *rootValues, *parseTrees;
 extern JmpMsg __jmpMsg__;
@@ -23,8 +24,16 @@ static void popRootValueTo(int size) {
   rootValues->size = size;
 }
 
+Value* eval(Value* ev, Node *p) {
+  opStackSave();
+  Value* res = eval(ev, p);
+  opStackRestore();
+  opStackPush(res);
+  return res;
+}
+
 static Value *evalAndPushRoot(Value *ev, Node *p) {
-  Value *res = p->eval(ev, p);
+  Value *res = eval(ev, p);
   pushRootValue(res);
   return res;
 }
@@ -46,7 +55,7 @@ Value *evalStmts(Value *ev, Node *p) {
   int i;
   for (i = 0; i < listSize(l); i++) {
     Node *t = listGet(l, i);
-    t->eval(ev, t);
+    eval(ev, t);
   }
   return newNoneValue();
 }
@@ -56,7 +65,7 @@ Value *evalExpList(Value *ev, Node *p) {
   int i, n = chldNum(p);
   for (i = 0; i < n; i++) {
     Node *t = chld(p, i);
-    res = t->eval(ev, t);
+    res = eval(ev, t);
   }
   return res;
 }
@@ -125,7 +134,7 @@ Value *evalTailRecursion(Value *ev, Node *p) {
     error("%s parameter number incorrect\n", valueToString(closureValue));
   for (i = 0; i < chldNum(ids); i++) {
     Node *t = chld(args, i);
-    envPutLocal(e2, (long)chld(ids, i)->data, t->eval(ev, t));
+    envPutLocal(e2, (long)chld(ids, i)->data, eval(ev, t));
   }
   Value *res = newClosureValue(f, ev2);
   tlLongjmp(e->retState, TAIL_CALL_MSG_TYPE, res);
@@ -153,14 +162,14 @@ Value *evalCall(Value *ev, Node *p) {
     error("%s parameter number incorrect\n", valueToString(closureValue));
   for (i = 0; i < chldNum(ids); i++) {
     Node *t = chld(args, i);
-    envPutLocal(e2, (long)chld(ids, i)->data, t->eval(ev, t));
+    envPutLocal(e2, (long)chld(ids, i)->data, eval(ev, t));
   }
   while (1) {
     int loopN = envNumOfLoopStates(e), exN = envNumOfExceptionStates(e);
     int ret = setjmp(e2->retState);
     if (!ret) {
       Node *t = chld(f, 2);
-      t->eval(ev2, t);
+      eval(ev2, t);
       // if reach here, no return statement is called, so none is returned
       popRootValueTo(initSize);
       return newNoneValue();
@@ -200,7 +209,7 @@ Value *evalReturn(Value *ev, Node *p) {
   if (e->parent == newNoneValue())
     error("cannot call return outside a function.\n");
   Node *t = chld(p, 0);
-  tlLongjmp(e->retState, RETURN_MSG_TYPE, t->eval(ev, t));
+  tlLongjmp(e->retState, RETURN_MSG_TYPE, eval(ev, t));
   return 0;  // never reach here;
 }
 
@@ -228,20 +237,20 @@ Value *evalAssign(Value *ev, Node *p) {
       Value *idx = evalAndPushRoot(ev, chld(left, 1));
       if (idx->type != INT_VALUE_TYPE) error("list index must be int\n");
       Node *t = chld(p, 1);
-      listSet(l, (long)idx->data, t->eval(ev, t));
+      listSet(l, (long)idx->data, eval(ev, t));
       Value *res = listGet(l, (long)idx->data);
       popRootValueTo(initSize);
       return res;
     }
     case ID_TYPE: {
       Node *t = chld(p, 1);
-      Value *res = t->eval(ev, t);
+      Value *res = eval(ev, t);
       envPut(e, (long)left->data, res);
       return res;
     }
     case MODULE_ACCESS_TYPE: {
       Node *t = chld(p, 1);
-      Value *res = t->eval(ev, t);
+      Value *res = eval(ev, t);
       int n = chldNum(left);
       Value *env = ev;
       for (i = 0; i < n - 1; i++) {
@@ -376,12 +385,12 @@ Value *evalMod(Value *ev, Node *p) {
 
 Value *evalIf(Value *ev, Node *p) {
   Node *t = chld(p, 0);
-  if (t->eval(ev, t)->data) {
+  if (eval(ev, t)->data) {
     t = chld(p, 1);
-    return t->eval(ev, t);
+    return eval(ev, t);
   } else if (chldNum(p) == 3) {
     t = chld(p, 2);
-    return t->eval(ev, t);
+    return eval(ev, t);
   }
   return newNoneValue();
 }
@@ -391,11 +400,11 @@ Value *evalFor(Value *ev, Node *p) {
   jmp_buf buf;
   listPush(envGetLoopStates(e), buf);
   Node *t1 = chld(p, 0), *t2 = chld(p, 1), *t3 = chld(p, 2);
-  for (t1->eval(ev, t1); t2->eval(ev, t2)->data; t3->eval(ev, t3)) {
+  for (eval(ev, t1); eval(ev, t2)->data; eval(ev, t3)) {
     int loopN = envNumOfLoopStates(e), exN = envNumOfExceptionStates(e);
     if (setjmp(buf) == 0) {
       Node *t4 = chld(p, 3);
-      t4->eval(ev, t4);
+      eval(ev, t4);
     } else {
       envRestoreStates(e, loopN, exN);
       JmpMsg *msg = &__jmpMsg__;
@@ -428,7 +437,7 @@ Value *evalForEach(Value *ev, Node *p) {
     int loopN = envNumOfLoopStates(e), exN = envNumOfExceptionStates(e);
     if (setjmp(buf) == 0) {
       Node *t = chld(p, 2);
-      t->eval(ev, t);
+      eval(ev, t);
     } else {
       envRestoreStates(e, loopN, exN);
       JmpMsg *msg = &__jmpMsg__;
@@ -451,11 +460,11 @@ Value *evalWhile(Value *ev, Node *p) {
   jmp_buf buf;
   listPush(envGetLoopStates(e), buf);
   Node *t = chld(p, 0);
-  while (t->eval(ev, t)->data) {
+  while (eval(ev, t)->data) {
     int loopN = envNumOfLoopStates(e), exN = envNumOfExceptionStates(e);
     if (setjmp(buf) == 0) {
       Node *t = chld(p, 1);
-      t->eval(ev, t);
+      eval(ev, t);
     } else {
       envRestoreStates(e, loopN, exN);
       JmpMsg *msg = &__jmpMsg__;
@@ -515,17 +524,17 @@ Value *evalNE(Value *ev, Node *p) {
 
 Value *evalAnd(Value *ev, Node *p) {
   Node *t1 = chld(p, 0), *t2 = chld(p, 1);
-  return newIntValue(t1->eval(ev, t1)->data && t2->eval(ev, t2)->data);
+  return newIntValue(eval(ev, t1)->data && eval(ev, t2)->data);
 }
 
 Value *evalOr(Value *ev, Node *p) {
   Node *t1 = chld(p, 0), *t2 = chld(p, 1);
-  return newIntValue(t1->eval(ev, t1)->data || t2->eval(ev, t2)->data);
+  return newIntValue(eval(ev, t1)->data || eval(ev, t2)->data);
 }
 
 Value *evalNot(Value *ev, Node *p) {
   Node *t = chld(p, 0);
-  return newIntValue(!t->eval(ev, t)->data);
+  return newIntValue(!eval(ev, t)->data);
 }
 
 Value *evalFun(Value *ev, Node *p) {
@@ -538,7 +547,7 @@ Value *evalFun(Value *ev, Node *p) {
 Value *evalTime(Value *ev, Node *p) {
   clock_t st = clock();
   Node *t = chld(p, 0);
-  Value *res = t->eval(ev, t);
+  Value *res = eval(ev, t);
   fprintf(stderr, "time: %lf secs\n", (clock() - st) * 1.0 / CLOCKS_PER_SEC);
   return newNoneValue();
 }
@@ -554,14 +563,14 @@ Value *evalTry(Value *ev, Node *p) {
   int loopN = envNumOfLoopStates(e), exN = envNumOfExceptionStates(e);
   if (setjmp(ex->buf) == 0) {
     // try block
-    tryBlock->eval(ev, tryBlock);
+    eval(ev, tryBlock);
   } else {
     // catch block
     envRestoreStates(e, loopN, exN);
     if (setjmp(ex->buf) == 0) {
       Value *v = __jmpMsg__.data;
       envPutLocal(e, catchId, v);
-      catchBlock->eval(ev, catchBlock);
+      eval(ev, catchBlock);
     } else {
       // exception from catch or finally block
       Value *v = __jmpMsg__.data;
@@ -578,7 +587,7 @@ Value *evalTry(Value *ev, Node *p) {
 Value *evalThrow(Value *ev, Node *p) {
   Env *e = ev->data;
   Node *t = chld(p, 0);
-  Value *v = t->eval(ev, t);
+  Value *v = eval(ev, t);
   throwValue(e, v);
   return 0;  // never reach here
 }
@@ -647,7 +656,7 @@ Value *evalImport(Value *ev, Node *p) {
   Value *res = newEnvValue(newEnv(globalEnv));
   pushRootValue(res);
   Node *t = listLast(parseTrees);
-  t->eval(res, t);
+  eval(res, t);
   envPut(e, (long)id->data, res);
   popRootValueTo(initSize);
   return newNoneValue();

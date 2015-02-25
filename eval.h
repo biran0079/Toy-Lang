@@ -7,6 +7,7 @@
 void throwValue(Env *e, Value *v);
 void pushRootValue(Value *v);
 
+Value* eval(Value* ev, Node *p);
 Value *evalStmts(Value *e, Node *p);
 Value *evalExpList(Value *ev, Node *p);
 Value *evalNone(Value *ev, Node *p);

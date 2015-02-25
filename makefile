@@ -1,4 +1,4 @@
-CFLAGS = 
+CFLAGS = -g
 
 all: tl
 
