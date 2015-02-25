@@ -1,5 +1,4 @@
 CFLAGS = 
-CC = gcc
 
 all: tl
 

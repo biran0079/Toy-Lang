@@ -1,4 +1,5 @@
 #include "opStack.h"
+#include "util.h"
 
 static List *opStack;
 static List *opStackState;
@@ -25,7 +26,7 @@ Value *opStackPop() {
   return listPop(opStack);
 }
 
-void opStackSave() { listPush(opStackState, (void *)listSize(opStack)); }
+void opStackSave() { listPush(opStackState, (void *)(long) listSize(opStack)); }
 
 void opStackRestore() {
   if (listSize(opStackState) == 0) {
