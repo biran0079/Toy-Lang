@@ -2,9 +2,11 @@
 #include "value.h"
 #include "list.h"
 #include "util.h"
+#include "idMap.h"
 #include "closure.h"
 #include "ast.h"
 #include "gc.h"
+#include "mem.h"
 
 int newIntValueC = 0, newStringValueC = 0, newClosureValueC = 0,
     newEnvValueC = 0, newListValueC = 0, newBuiltinFunC = 0;
@@ -18,10 +20,10 @@ Value *newNoneValue() {
   if (res) {
     return res;
   } else {
-    res = MALLOC(Value);
+    res = allocValue();
     res->type = NONE_VALUE_TYPE;
     res->data = 0;
-    res->mark = 0;
+    res->mark = STATIC;
     return res;
   }
 }
@@ -29,71 +31,66 @@ Value *newNoneValue() {
 Value *newIntValue(long x) {
   gc();
   newIntValueC++;
-  Value *res = MALLOC(Value);
+  Value *res = allocValue();
   res->type = INT_VALUE_TYPE;
   res->data = (void *)x;
-  res->mark = 0;
-  listPush(values, res);
+  res->mark = UNMARKED;
   return res;
 }
 
 Value *newStringValue(char *s) {
   gc();
   newStringValueC++;
-  Value *res = MALLOC(Value);
+  Value *res = allocValue();
   res->type = STRING_VALUE_TYPE;
   res->data = (void *)s;
-  res->mark = 0;
-  listPush(values, res);
+  res->mark = UNMARKED;
   return res;
 }
 
 Value *newListValue(List *list) {
   gc();
   newListValueC++;
-  Value *res = MALLOC(Value);
+  Value *res = allocValue();
   res->type = LIST_VALUE_TYPE;
   res->data = list;
-  res->mark = 0;
-  listPush(values, res);
+  res->mark = UNMARKED;
   return res;
 }
 
 Value *newClosureValue(Node *t, Value *e) {
   gc();
   newClosureValueC++;
-  Value *res = MALLOC(Value);
+  Value *res = allocValue();
   res->type = CLOSURE_VALUE_TYPE;
   res->data = newClosure(t, e);
-  res->mark = 0;
-  listPush(values, res);
+  res->mark = UNMARKED;
   return res;
 }
 
 Value *newBuiltinFun(BuiltinFun f) {
   gc();
   newBuiltinFunC++;
-  Value *res = MALLOC(Value);
+  Value *res = allocValue();
   res->type = BUILTIN_FUN_VALUE_TYPE;
   res->data = f;
-  res->mark = 0;
-  listPush(values, res);
+  res->mark = UNMARKED;
   return res;
 }
 
 Value *newEnvValue(Env *e) {
   gc();
   newEnvValueC++;
-  Value *res = MALLOC(Value);
+  Value *res = allocValue();
   res->type = ENV_VALUE_TYPE;
   res->data = e;
-  res->mark = 0;
-  listPush(values, res);
+  res->mark = UNMARKED;
   envPutLocal(e, getIntId("this"), res);
   return res;
 }
 
 void freeValue(Value *v) {
+  printf("freeing %s@%p\n", valueToString(v), v);
   switch (v->type) {
     case CLOSURE_VALUE_TYPE:
       freeClosure((Closure *)v->data);
@@ -124,7 +121,6 @@ void freeValue(Value *v) {
       error("unkonwn value type passed to freeValue: %d\n", v->type);
   }
   v->type = NONE_VALUE_TYPE;
-  tlFree(v);
 }
 
 static int getStringLength(char *format, ...) {
@@ -190,7 +186,16 @@ static int valueToStringInternal(Value *v, char *s, int n) {
       return mySnprintf(s, n, "%s", v->data);
     }
     case ENV_VALUE_TYPE: {
-      return mySnprintf(s, n, "env %p", v->data);
+      List* keys = envGetAllIds(v->data);
+      int len = 0;
+      len += mySnprintf(s, n, "env { ");
+      int keyN = listSize(keys);
+      for (i = 0; i < keyN; i++) {
+        long key = (long) listGet(keys, i);
+        len += mySnprintf(s + len, n - len, "%s->%p ", getStrId(key), envGet(v->data, key));
+      }
+      len += mySnprintf(s + len, n - len, "}");
+      return len;
     }
     default:
       error("cannot print unknown value type: %d at %p\n", v->type, v);
@@ -340,3 +345,14 @@ int valueCmp(Value *v1, Value *v2) {
       error("cannot compare unknown type: %d\n", v1->type);
   }
 }
+
+long getIntFromValue(Value* intValue) {
+  assert(intValue->type == INT_VALUE_TYPE);
+  return (long) intValue->data;
+}
+
+BuiltinFun getBuiltinFunFromValue(Value* v) {
+  assert(v->type = BUILTIN_FUN_VALUE_TYPE);
+  return v->data;
+}
+

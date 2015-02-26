@@ -6,17 +6,20 @@
 #include "util.h"
 #include "core.h"
 #include "opStack.h"
+#include "mem.h"
 
 extern List *values, *gcHistory;
 
 static void mark() {
+  printf("start marking\n");
   Value *v;
   List *q = newList();
   opStackAppendValuesTo(q);
   while (listSize(q)) {
     v = listPop(q);
-    if (v->mark) continue;
-    v->mark = 1;
+    if (v->mark != UNMARKED) continue;
+    printf("marking %s @%p\n", valueToString(v), v);
+    v->mark = MARKED;
     switch (v->type) {
       case CLOSURE_VALUE_TYPE: {
         Closure *c = v->data;
@@ -47,6 +50,7 @@ static void mark() {
     }
   }
   freeList(q);
+  printf("finish marking\n");
 }
 
 static void pushGCHistory(int before, int after) {
@@ -66,25 +70,18 @@ void clearGCHistory() {
 
 void forceGC() {
   int i, n;
-  int before = listSize(values);
-  List *values2 = newList();
+  int before = getInMemoryValueCount();
+  printf("gc start\n\n");
+  dumpValueMemory();
   mark();
-  n = listSize(values);
-  for (i = 0; i < n; i++) {
-    Value *v = listGet(values, i);
-    if (v->mark) {
-      v->mark = 0;
-      listPush(values2, v);
-    } else {
-      freeValue(v);
-    }
-  }
-  freeList(values);
-  values = values2;
-  int after = listSize(values);
+  freeUnmarkedValues();
+  consolidateMarkedValues();
+  int after = getInMemoryValueCount();
   if (shouldDumpGCHistory) {
     pushGCHistory(before, after);
   }
+  dumpValueMemory();
+  printf("gc done\n\n");
 }
 
 extern int memoryUsage, memoryLimit, gcTestMode;

@@ -196,3 +196,17 @@ void freeStringHashTable(HashTable *t) {
   }
   freeHashTable(t);
 }
+
+List* hashTableGetAllKeys(HashTable *t) {
+  List* q = newList();
+  int i;
+  for (i = 0; i < t->cap; i++) {
+    LinkedList *l = t->a[i], *nl;
+    while (l) {
+      nl = l->next;
+      listPush(q, l->key);
+      l = nl;
+    }
+  }
+  return q;
+}

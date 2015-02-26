@@ -67,4 +67,7 @@ EvalResult *evalImport(Value *ev, Node *p);
 EvalResult *evalModuleAccess(Value *ev, Node *p);
 EvalResult *evalError(Value *ev, Node *p);
 
+void initEval();
+void cleanupEval();
+
 #endif

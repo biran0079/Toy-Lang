@@ -10,7 +10,7 @@ lex.yy.c: tl.l tl.tab.c
 	bison -d $<
 
 CORE_OBJS = ast.o builtinFun.o closure.o compile.o core.o dumpGCHistory.o env.o eval.o \
-	gc.o hashTable.o list.o toDot.o util.o value.o idMap.o opStack.o
+	gc.o hashTable.o list.o toDot.o util.o value.o idMap.o opStack.o mem.o
 
 PARSER_OBJs = tokenizer.o parser.o 
 

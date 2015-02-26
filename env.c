@@ -51,3 +51,7 @@ void envPut(Env *e, long key, Value *value) {
 void envPutLocal(Env *e, long key, Value *value) {
   hashTablePut(e->t, (void *)key, value);
 }
+
+List* envGetAllIds(Env* e) {
+  return hashTableGetAllKeys(e->t);
+}

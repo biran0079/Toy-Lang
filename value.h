@@ -14,10 +14,16 @@ enum ValueType {
   NONE_VALUE_TYPE,
 };
 
+typedef enum Mark {
+  UNMARKED = 1,
+  MARKED = 2,
+  STATIC = 4,
+} Mark;
+
 struct Value {
   ValueType type;
+  Mark mark;
   void *data;
-  char mark;
 };
 
 Value *newIntValue(long x);
@@ -39,5 +45,7 @@ Value *valueDiv(Value *v1, Value *v2);
 Value *valueMod(Value *v1, Value *v2);
 Value *valueAddEq(Env *e, Node *v1, Node *v2);
 int valueCmp(Value *v1, Value *v2);
+
+long getIntFromValue(Value* intValue);
 
 #endif

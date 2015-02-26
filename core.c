@@ -1,4 +1,5 @@
 #include "ast.h"
+#include "mem.h"
 #include "core.h"
 #include "env.h"
 #include "builtinFun.h"
@@ -6,11 +7,11 @@
 #include "hashTable.h"
 #include "value.h"
 #include "util.h"
+#include "eval.h"
 #include "idMap.h"
 #include "opStack.h"
 
 List *parseTrees;
-List *values;  // all values created
 Value *globalEnv;
 int memoryLimit = 200000000;
 List *path;  // where import loads from
@@ -39,6 +40,8 @@ void listCreatedObjectsCount() {
 }
 
 void init(int argc, char **args) {
+  initEval();
+  initValuesBlock();
   initIdMap();
   initOpStack();
   path = newList();
@@ -46,7 +49,6 @@ void init(int argc, char **args) {
   listPush(path, catStr(tlDir, "lib/"));
   tlFree(tlDir);
   parseTrees = newList();
-  values = newList();
   gcHistory = newList();
 
   listPush(path, copyStr("./"));
@@ -56,11 +58,12 @@ void init(int argc, char **args) {
 }
 
 void cleanup() {
+  cleanupEval();
   cleanupIdMap();
   forceGC();
   assert(globalEnv == opStackPop());  // clean up global env
   cleanupOpStack();
-  freeList(values);
+  cleanupValuesBlock();
   int i, n = listSize(parseTrees);
   for (i = 0; i < n; i++) freeNode(listGet(parseTrees, i));
   n = listSize(path);
@@ -68,7 +71,6 @@ void cleanup() {
   freeList(path);
   freeList(parseTrees);
   if (!shouldDumpGCHistory) clearGCHistory();
-  tlFree(newNoneValue());
 }
 
 FILE *openFromPath(char *s, char *mode) {

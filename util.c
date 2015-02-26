@@ -1,19 +1,26 @@
 #include "util.h"
 #include "list.h"
 
+static int CANARY = 123456789;
 int memoryUsage = 0;
 
-typedef struct MemBlock { long size; } MemBlock;
+typedef struct MemBlock {
+  long size; 
+  long canary;
+} MemBlock;
 
 void *tlMalloc(int size) {
   memoryUsage += size;
   MemBlock *m = malloc(size + sizeof(MemBlock));
+  m->canary = CANARY;
   m->size = size;
   return m + 1;
 }
 
 void *tlRealloc(void *t, int size) {
   MemBlock *m = (MemBlock *)t - 1;
+  if (m->canary != CANARY)
+    error("canary dead in tlRealloc");
   memoryUsage += size - m->size;
   m = (MemBlock *)realloc(m, size + sizeof(MemBlock));
   m->size = size;
@@ -22,6 +29,8 @@ void *tlRealloc(void *t, int size) {
 
 void tlFree(void *t) {
   MemBlock *m = (MemBlock *)t - 1;
+  if (m->canary != CANARY)
+    error("canary dead in tlFree");
   memoryUsage -= m->size;
   memset(m, 0, m->size + sizeof(MemBlock));
   free(m);

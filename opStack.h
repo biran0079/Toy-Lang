@@ -1,6 +1,7 @@
 #ifndef _OP_STACK_H_
 #define _OP_STACK_H_
 
+#include "hashTable.h"
 #include "value.h"
 #include "list.h"
 
@@ -24,4 +25,6 @@ void opStackRestore();
 void opStackAppendValuesTo(List *);
 
 void showOpStack();
+
+void opStackUpdateAddr(HashTable* addrMap);
 #endif

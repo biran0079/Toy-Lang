@@ -14,6 +14,16 @@
 
 extern List *parseTrees;
 extern Value *globalEnv;
+List* pointersInEvalStack;
+
+void initEval() {
+  pointersInEvalStack = newList();
+}
+
+void cleanupEval() {
+  assert(listSize(pointersInEvalStack) == 0);
+  freeList(pointersInEvalStack);
+}
 
 EvalResult *newEvalResult(EvalResultType t, Value *v) {
   newEvalResultC++;
@@ -65,6 +75,14 @@ EvalResult *evalStmts(Value *ev, Node *p) {
   return 0;
 }
 
+static void pushPointerInEvalStack(Value** p) {
+  listPush(pointersInEvalStack, p);
+}
+
+static void popPointersInEvalStack(Value** p) {
+  assert(p == listPop(popPointersInEvalStack));
+}
+
 EvalResult *evalCall(Value *ev, Node *p) {
   int i, n;
   Node *args = chld(p, 1);
@@ -85,26 +103,32 @@ EvalResult *evalCall(Value *ev, Node *p) {
     return er;
   }
   while (1) {
-    Value *closureValue = opStackPeek(0);
-    if (closureValue->type == BUILTIN_FUN_VALUE_TYPE) {
-      BuiltinFun f = closureValue->data;
+    if (opStackPeek(0)->type == BUILTIN_FUN_VALUE_TYPE) {
+      BuiltinFun f = opStackPeek(0)->data;
       opStackPop();  // pop closure
       f(n);
       // always success and result is in stack
       return 0;
     }
     // regular function call
-    Closure *c = closureValue->data;
+    Closure *c = opStackPeek(0)->data;
     Node *f = c->f;
     Env *e2 = newEnv(c->e);
     Node *ids = chld(f, 1);
     if (chldNum(ids) != n)
-      error("%s parameter number incorrect\n", valueToString(closureValue));
+      error("%s parameter number incorrect\n", valueToString(opStackPeek(0)));
+
+
     for (i = 0; i < n; i++)
       envPutLocal(e2, (long)chld(ids, i)->data, opStackPeek(i + 1));
+
     Value *ev2 = newEnvValue(e2);
+    pushPointerInEvalStack(&v2);
+
     opStackPopNPush(n + 1, ev2);
     EvalResult *er = eval(ev2, chld(f, 2));
+    popPointersInEvalStack(&v2);
+
     if (er) {
       switch (er->type) {
         case EXCEPTION_RESULT: {
@@ -154,8 +178,7 @@ EvalResult *evalInt(Value *ev, Node *p) {
 
 EvalResult *evalList(Value *ev, Node *p) {
   List *vs = newList();
-  Value *res = newListValue(vs);
-  opStackPush(res);
+  opStackPush(newListValue(vs));
   int i, n = chldNum(p);
   for (i = 0; i < n; i++) {
     EvalResult *er = eval(ev, chld(p, i));
@@ -190,8 +213,7 @@ EvalResult *evalAdd(Value *ev, Node *p) {
     opStackPop();
     return er;
   }
-  Value *res = valueAdd(opStackPeek(0), opStackPeek(1));
-  opStackPopNPush(2, res);
+  opStackPopNPush(2, valueAdd(opStackPeek(0), opStackPeek(1)));
   return 0;
 }
 
@@ -207,8 +229,7 @@ EvalResult *evalSub(Value *ev, Node *p) {
     opStackPop();
     return er;
   }
-  Value *res = valueSub(opStackPeek(0), opStackPeek(1));
-  opStackPopNPush(2, res);
+  opStackPopNPush(2, valueSub(opStackPeek(0), opStackPeek(1)));
   return 0;
 }
 
@@ -224,8 +245,7 @@ EvalResult *evalMul(Value *ev, Node *p) {
     opStackPop();
     return er;
   }
-  Value *res = valueMul(opStackPeek(0), opStackPeek(1));
-  opStackPopNPush(2, res);
+  opStackPopNPush(2, valueMul(opStackPeek(0), opStackPeek(1)));
   return 0;
 }
 
@@ -241,8 +261,7 @@ EvalResult *evalDiv(Value *ev, Node *p) {
     opStackPop();
     return er;
   }
-  Value *res = valueDiv(opStackPeek(0), opStackPeek(1));
-  opStackPopNPush(2, res);
+  opStackPopNPush(2, valueDiv(opStackPeek(0), opStackPeek(1)));
   return 0;
 }
 
@@ -258,8 +277,7 @@ EvalResult *evalMod(Value *ev, Node *p) {
     opStackPop();
     return er;
   }
-  Value *res = valueMod(opStackPeek(0), opStackPeek(1));
-  opStackPopNPush(2, res);
+  opStackPopNPush(2, valueMod(opStackPeek(0), opStackPeek(1)));
   return 0;
 }
 
@@ -275,8 +293,7 @@ EvalResult *evalGT(Value *ev, Node *p) {
     opStackPop();
     return er;
   }
-  Value *res = newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) > 0);
-  opStackPopNPush(2, res);
+  opStackPopNPush(2, newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) > 0));
   return 0;
 }
 
@@ -292,8 +309,7 @@ EvalResult *evalLT(Value *ev, Node *p) {
     opStackPop();
     return er;
   }
-  Value *res = newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) < 0);
-  opStackPopNPush(2, res);
+  opStackPopNPush(2, newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) < 0));
   return 0;
 }
 
@@ -309,8 +325,7 @@ EvalResult *evalGE(Value *ev, Node *p) {
     opStackPop();
     return er;
   }
-  Value *res = newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) >= 0);
-  opStackPopNPush(2, res);
+  opStackPopNPush(2, newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) >= 0));
   return 0;
 }
 
@@ -326,8 +341,7 @@ EvalResult *evalLE(Value *ev, Node *p) {
     opStackPop();
     return er;
   }
-  Value *res = newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) <= 0);
-  opStackPopNPush(2, res);
+  opStackPopNPush(2, newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) <= 0));
   return 0;
 }
 
@@ -343,8 +357,7 @@ EvalResult *evalEQ(Value *ev, Node *p) {
     opStackPop();
     return er;
   }
-  Value *res = newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) == 0);
-  opStackPopNPush(2, res);
+  opStackPopNPush(2, newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) == 0));
   return 0;
 }
 
@@ -360,8 +373,7 @@ EvalResult *evalNE(Value *ev, Node *p) {
     opStackPop();
     return er;
   }
-  Value *res = newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) != 0);
-  opStackPopNPush(2, res);
+  opStackPopNPush(2, newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) != 0));
   return 0;
 }
 
@@ -382,8 +394,7 @@ EvalResult *evalAnd(Value *ev, Node *p) {
     opStackPop();
     return er;
   }
-  Value *res = opStackPeek(0)->data ? newIntValue(1) : newIntValue(0);
-  opStackPopNPush(2, res);
+  opStackPopNPush(2, opStackPeek(0)->data ? newIntValue(1) : newIntValue(0));
   return 0;
 }
 
@@ -404,8 +415,7 @@ EvalResult *evalOr(Value *ev, Node *p) {
     opStackPop();
     return er;
   }
-  Value *res = opStackPeek(0)->data ? newIntValue(1) : newIntValue(0);
-  opStackPopNPush(2, res);
+  opStackPopNPush(2, opStackPeek(0)->data ? newIntValue(1) : newIntValue(0));
   return 0;
 }
 
@@ -415,16 +425,19 @@ EvalResult *evalNot(Value *ev, Node *p) {
     assert(er->type == EXCEPTION_RESULT);
     return er;
   }
-  Value *res = newIntValue(!(opStackPeek(0)->data));
-  opStackPopNPush(1, res);
+  opStackPopNPush(1, newIntValue(!(opStackPeek(0)->data)));
   return 0;
 }
 
 EvalResult *evalFun(Value *ev, Node *p) {
   Env *e = ev->data;
   Value *res = newClosureValue(p, ev);
+  pushPointerInEvalStack(&res);
+
   envPut(e, (long)chld(p, 0)->data, res);
   opStackPush(res);
+
+  popPointersInEvalStack(&res);
   return 0;
 }
 
@@ -470,37 +483,31 @@ EvalResult *evalListAccess(Value *ev, Node *p) {
     opStackPop();
     return er;
   }
-  Value *v = opStackPeek(0);
-  Value *idxValue = opStackPeek(1);
-  if (idxValue->type != INT_VALUE_TYPE) error("list index must be int\n");
-  long idx = (long)idxValue->data;
-  Value *res;
-  switch (v->type) {
+  long idx = getIntFromValue(opStackPeek(1));
+  switch (opStackPeek(0)->type) {
     case LIST_VALUE_TYPE: {
-      List *l = (List *)v->data;
-      res = listGet(l, idx);
+      List *l = (List *)opStackPeek(0)->data;
+      opStackPopNPush(2, listGet(l, idx));
       break;
     }
     case STRING_VALUE_TYPE: {
-      char *s = (char *)v->data;
+      char *s = (char *)opStackPeek(0)->data;
       char *ss = (char *)tlMalloc(2);
       ss[0] = s[idx];
       ss[1] = 0;
-      res = newStringValue(ss);
+      opStackPopNPush(2, newStringValue(ss));
       break;
     }
     default:
-      error("list access does not support value type %s\n", valueToString(v));
+      error("list access does not support value type %s\n", valueToString(opStackPeek(0)));
   }
-  opStackPopNPush(2, res);
   return 0;
 }
 
 EvalResult *evalTailRecursion(Value *ev, Node *p) {
   int i, n;
   List *l = newList();
-  Value *lv = newListValue(l);
-  opStackPush(lv);  // protect from gc
+  opStackPush(newListValue(l));  // protect from gc
   Node *args = chld(p, 1);
   n = chldNum(args);
   for (i = n - 1; i >= 0; i--) {
@@ -532,17 +539,15 @@ EvalResult *evalAssign(Value *ev, Node *p) {
         assert(er->type == EXCEPTION_RESULT);
         return er;
       }
-      Value *lv = opStackPeek(0);
-      assert(lv->type == LIST_VALUE_TYPE);
-      List *l = lv->data;
+      assert(opStackPeek(0)->type == LIST_VALUE_TYPE);
+      List *l = opStackPeek(0)->data;
       er = eval(ev, chld(left, 1));
       if (er) {
         assert(er->type == EXCEPTION_RESULT);
         opStackPopTo(beforeStackSize);
         return er;
       }
-      Value *idx = opStackPeek(0);
-      assert(idx->type == INT_VALUE_TYPE);
+      long idx = getIntFromValue(opStackPeek(0));
       er = eval(ev, chld(p, 1));
       if (er) {
         assert(er->type == EXCEPTION_RESULT);
@@ -550,7 +555,7 @@ EvalResult *evalAssign(Value *ev, Node *p) {
         return er;
       }
       Value *newValue = opStackPeek(0);
-      listSet(l, (long)idx->data, newValue);
+      listSet(l, idx, newValue);
       opStackPopToPush(beforeStackSize, newValue);
       return 0;
     }
@@ -608,10 +613,9 @@ EvalResult *evalAddEq(Value *ev, Node *p) {
         opStackPopTo(beforeStackSize);
         return er;
       }
-      Value *idx = opStackPeek(0);
-      assert(idx->type == INT_VALUE_TYPE);
+      long idx = getIntFromValue(opStackPeek(0));
 
-      Value *e1 = listGet(l, (long)idx->data);
+      Value *e1 = listGet(l, idx);
 
       er = eval(ev, chld(p, 1));
       if (er) {
@@ -625,7 +629,7 @@ EvalResult *evalAddEq(Value *ev, Node *p) {
         case INT_VALUE_TYPE:
         case STRING_VALUE_TYPE:
           res = valueAdd(e1, e2);
-          listSet(l, (long)idx->data, res);
+          listSet(l, idx, res);
           break;
         case LIST_VALUE_TYPE:
           if (e2->type == LIST_VALUE_TYPE) {
