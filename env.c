@@ -2,6 +2,7 @@
 #include "ast.h"
 #include "value.h"
 #include "util.h"
+#include "eval.h"
 
 int newEnvC = 0, freeEnvC = 0;
 
@@ -84,7 +85,7 @@ void envPopExceptionStates(Env *e) {
   if (ex->finally) {
     Value *e = ex->finally->ev;
     Node *p = ex->finally->p;
-    p->eval(e, p);
+    eval(e, p);
   }
   freeException(ex);
 }
