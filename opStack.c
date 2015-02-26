@@ -56,6 +56,14 @@ Value* opStackPeek(int i) {
   return listGet(opStack, listSize(opStack) - 1 - i);
 }
 
+int opStackSize() {
+  return listSize(opStack);
+}
+
+void opStackPopTo(int n) {
+  listPopTo(opStack, n);
+}
+
 void showOpStack() {
   int i, n = listSize(opStack);
   printf("[\n");

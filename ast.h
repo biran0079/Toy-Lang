@@ -53,7 +53,7 @@ enum NodeType {
 };
 
 #ifndef USE_LEGACY_EVAL
-typedef void (*EvalFunc)(Value *, Node *);
+typedef EvalResult* (*EvalFunc)(Value *, Node *);
 #else
 typedef Value *(*EvalFunc)(Value *, Node *);
 #endif

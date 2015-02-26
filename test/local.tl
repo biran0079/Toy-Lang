@@ -13,5 +13,9 @@ fun f(n){
 l = f(0);
 g1 = l[0];
 g2 = l[1];
-print(g1(),g2(),g2(),g1(),g2());
+print(g1());
+print(g2());
+print(g2());
+print(g1());
+print(g2());
 

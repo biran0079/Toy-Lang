@@ -102,7 +102,9 @@ int main(int argc, char **argv) {
     printAst(listGet(parseTrees, 0));
   } else {
     Node *tree = listGet(parseTrees, 0);
-    tree->eval(globalEnv, tree);
+    if (0 == eval(globalEnv, tree)) {
+      opStackPop();
+    }
   }
   cleanup();
   if (shouldDumpGCHistory) {

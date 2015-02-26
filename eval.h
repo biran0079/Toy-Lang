@@ -4,53 +4,67 @@
 #include "value.h"
 #include "builtinFun.h"
 
-void throwValue(Env *e, Value *v);
-void pushRootValue(Value *v);
-
 #ifndef USE_LEGACY_EVAL
-void eval(Value* ev, Node *p);
-void evalStmts(Value *e, Node *p);
-void evalExpList(Value *ev, Node *p);
-void evalNone(Value *ev, Node *p);
-void evalList(Value *ev, Node *p);
-void evalListAccess(Value *ev, Node *p);
-void evalTailRecursion(Value *ev, Node *p);
-void evalCall(Value *ev, Node *p);
-void evalReturn(Value *ev, Node *p);
-void evalId(Value *ev, Node *p);
-void evalInt(Value *ev, Node *p);
-void evalString(Value *ev, Node *p);
-void evalAssign(Value *ev, Node *p);
-void evalAddEq(Value *ev, Node *p);
-void evalAdd(Value *ev, Node *p);
-void evalSub(Value *ev, Node *p);
-void evalMul(Value *ev, Node *p);
-void evalDiv(Value *ev, Node *p);
-void evalMod(Value *ev, Node *p);
-void evalIf(Value *ev, Node *p);
-void evalFor(Value *ev, Node *p);
-void evalForEach(Value *ev, Node *p);
-void evalWhile(Value *ev, Node *p);
-void evalContinue(Value *ev, Node *p);
-void evalBreak(Value *ev, Node *p);
-void evalGT(Value *ev, Node *p);
-void evalLT(Value *ev, Node *p);
-void evalGE(Value *ev, Node *p);
-void evalLE(Value *ev, Node *p);
-void evalEQ(Value *ev, Node *p);
-void evalNE(Value *ev, Node *p);
-void evalAnd(Value *ev, Node *p);
-void evalOr(Value *ev, Node *p);
-void evalNot(Value *ev, Node *p);
-void evalFun(Value *ev, Node *p);
-void evalTime(Value *ev, Node *p);
-void evalTry(Value *ev, Node *p);
-void evalThrow(Value *ev, Node *p);
-void evalAddAdd(Value *ev, Node *p);
-void evalLocal(Value *ev, Node *p);
-void evalImport(Value *ev, Node *p);
-void evalModuleAccess(Value *ev, Node *p);
-void evalError(Value *ev, Node *p);
+typedef enum EvalResultType {
+  CONTINUE_RESULT,
+  BREAK_RESULT,
+  EXCEPTION_RESULT,
+  RETURN_RESULT,
+  TAIL_RECURSION_RESULT,
+} EvalResultType;
+
+typedef struct EvalResult {
+  EvalResultType type;
+  Value* value;
+} EvalResult;
+
+EvalResult* newEvalResult(EvalResultType t, Value* v);
+
+void freeEvalResult(EvalResult* er);
+
+EvalResult* eval(Value* ev, Node *p);
+EvalResult* evalStmts(Value *e, Node *p);
+EvalResult* evalExpList(Value *ev, Node *p);
+EvalResult* evalNone(Value *ev, Node *p);
+EvalResult* evalList(Value *ev, Node *p);
+EvalResult* evalListAccess(Value *ev, Node *p);
+EvalResult* evalTailRecursion(Value *ev, Node *p);
+EvalResult* evalCall(Value *ev, Node *p);
+EvalResult* evalReturn(Value *ev, Node *p);
+EvalResult* evalId(Value *ev, Node *p);
+EvalResult* evalInt(Value *ev, Node *p);
+EvalResult* evalString(Value *ev, Node *p);
+EvalResult* evalAssign(Value *ev, Node *p);
+EvalResult* evalAddEq(Value *ev, Node *p);
+EvalResult* evalAdd(Value *ev, Node *p);
+EvalResult* evalSub(Value *ev, Node *p);
+EvalResult* evalMul(Value *ev, Node *p);
+EvalResult* evalDiv(Value *ev, Node *p);
+EvalResult* evalMod(Value *ev, Node *p);
+EvalResult* evalIf(Value *ev, Node *p);
+EvalResult* evalFor(Value *ev, Node *p);
+EvalResult* evalForEach(Value *ev, Node *p);
+EvalResult* evalWhile(Value *ev, Node *p);
+EvalResult* evalContinue(Value *ev, Node *p);
+EvalResult* evalBreak(Value *ev, Node *p);
+EvalResult* evalGT(Value *ev, Node *p);
+EvalResult* evalLT(Value *ev, Node *p);
+EvalResult* evalGE(Value *ev, Node *p);
+EvalResult* evalLE(Value *ev, Node *p);
+EvalResult* evalEQ(Value *ev, Node *p);
+EvalResult* evalNE(Value *ev, Node *p);
+EvalResult* evalAnd(Value *ev, Node *p);
+EvalResult* evalOr(Value *ev, Node *p);
+EvalResult* evalNot(Value *ev, Node *p);
+EvalResult* evalFun(Value *ev, Node *p);
+EvalResult* evalTime(Value *ev, Node *p);
+EvalResult* evalTry(Value *ev, Node *p);
+EvalResult* evalThrow(Value *ev, Node *p);
+EvalResult* evalAddAdd(Value *ev, Node *p);
+EvalResult* evalLocal(Value *ev, Node *p);
+EvalResult* evalImport(Value *ev, Node *p);
+EvalResult* evalModuleAccess(Value *ev, Node *p);
+EvalResult* evalError(Value *ev, Node *p);
 #else 
 Value* eval(Value* ev, Node *p);
 Value *evalStmts(Value *e, Node *p);
@@ -95,6 +109,9 @@ Value *evalLocal(Value *ev, Node *p);
 Value *evalImport(Value *ev, Node *p);
 Value *evalModuleAccess(Value *ev, Node *p);
 Value *evalError(Value *ev, Node *p);
+void throwValue(Env *e, Value *v);
+void pushRootValue(Value *v);
+
 #endif
 
 #endif
