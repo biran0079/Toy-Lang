@@ -241,7 +241,7 @@ Value *valueSub(Value *v1, Value *v2) {
 Value *valueMul(Value *v1, Value *v2) {
   if (v1->type != INT_VALUE_TYPE || v2->type != INT_VALUE_TYPE)
     error("* operator only works for int");
-  return newIntValue((long)v1->data * (long)v2->data);
+  return newIntValue((unsigned long)v1->data * (unsigned long)v2->data);
 }
 
 Value *valueDiv(Value *v1, Value *v2) {

@@ -4,8 +4,8 @@
 
 int newHashTableC = 0, freeHashTableC = 0;
 
-static unsigned int stringHash(char *s) {
-  int h = 0;
+static unsigned int stringHash(unsigned char *s) {
+  unsigned int h = 0;
   while (*s) {
     h *= 127;
     h += *s;

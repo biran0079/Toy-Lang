@@ -3,7 +3,7 @@
 
 int memoryUsage = 0;
 
-typedef struct MemBlock { int size; } MemBlock;
+typedef struct MemBlock { long size; } MemBlock;
 
 void *tlMalloc(int size) {
   memoryUsage += size;

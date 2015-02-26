@@ -1,4 +1,5 @@
-CFLAGS = 
+CFLAGS = -O3
+      
 
 all: tl
 
