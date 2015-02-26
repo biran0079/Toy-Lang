@@ -166,7 +166,6 @@ EvalResult *evalCall(Value *ev, Node *p) {
 EvalResult *evalId(Value *ev, Node *p) {
   Env *e = ev->data;
   Value *res = envGet(e, (long)p->data);
-  if (!res) res = newNoneValue();
   opStackPush(res);
   return 0;
 }
