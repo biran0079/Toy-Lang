@@ -10,7 +10,6 @@ typedef struct Env Env;
 typedef enum ValueType ValueType;
 typedef enum NodeType NodeType;
 typedef void (*ValueFunc)(Value *);
-typedef Value *(*BuiltinFun)(List *l);
 
 void init(int argc, char **argv);
 void cleanup();

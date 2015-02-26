@@ -1,6 +1,7 @@
 #include "opStack.h"
 #include "util.h"
 #include "list.h"
+#include "value.h"
 
 static List *opStack;
 static List *opStackState;
@@ -22,6 +23,14 @@ void opStackPush(Value *v) {
   listPush(opStack, v);
 }
 
+void opStackPopN(int n) {
+  int newSize = listSize(opStack) - n;
+  if (newSize < 0) {
+    error("cannot pop empty op stack");
+  }
+  listPopTo(opStack, newSize);
+}
+
 Value *opStackPop() {
   if (listSize(opStack) == 0) {
     error("cannot pop empty op stack");
@@ -36,4 +45,22 @@ void opStackRestore() {
     error("cannot restore without save\n");
   }
   listPopTo(opStack, (int)listPop(opStackState));
+}
+
+void opStackAppendValuesTo(List* l) {
+  int i, n = listSize(opStack);
+  for (i = 0; i < n; i++) listPush(l, listGet(opStack, i)); 
+}
+
+Value* opStackPeek(int i) {
+  return listGet(opStack, listSize(opStack) - 1 - i);
+}
+
+void showOpStack() {
+  int i, n = listSize(opStack);
+  printf("[\n");
+  for (i = 0; i < n; i++) {
+    printf("%s\n", valueToString(opStackPeek(i)));
+  }
+  printf("]\n");
 }

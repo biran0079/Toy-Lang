@@ -85,7 +85,7 @@ void envPopExceptionStates(Env *e) {
   if (ex->finally) {
     Value *e = ex->finally->ev;
     Node *p = ex->finally->p;
-    eval(e, p);
+    p->eval(e, p);
   }
   freeException(ex);
 }

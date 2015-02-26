@@ -6,6 +6,7 @@
 #include "closure.h"
 #include "util.h"
 #include "core.h"
+#include "opStack.h"
 
 extern List *values, *rootValues, *gcHistory;
 
@@ -16,6 +17,7 @@ static void mark() {
   for (i = 0; i < n; i++) {
     listPush(q, listGet(rootValues, i));
   }
+  opStackAppendValuesTo(q);
   while (listSize(q)) {
     v = listPop(q);
     if (v->mark) continue;

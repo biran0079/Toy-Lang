@@ -13,146 +13,253 @@
 #include "tokenizer.h"
 #include "opStack.h"
 
+extern List *rootValues, *parseTrees;
+void pushRootValue(Value *v) { listPush(rootValues, v); }
+
 #ifndef USE_LEGACY_EVAL
 
-Value *evalStmts(Value *e, Node *p) {
+void eval(Value *ev, Node *p) {
+  p->eval(ev, p);
+}
+
+void evalStmts(Value *ev, Node *p) {
+  opStackSave();
   List *l = (List *)p->data;
   int i;
   for (i = 0; i < listSize(l); i++) {
     Node *t = listGet(l, i);
     t->eval(ev, t);
   }
+  opStackRestore();
 }
-Value *evalExpList(Value *ev, Node *p) {
+
+void evalCall(Value *ev, Node *p) {
+  int i, n, initSize = listSize(rootValues);
+  Env *e = ev->data;
+  eval(ev, chld(p, 0));
+  Value *closureValue = opStackPeek(0);
+  Node *args = chld(p, 1);
+  n = chldNum(args);
+  for (i = n-1; i>=0; i--) {
+    eval(ev, chld(args, i));
+  }
+  if (closureValue->type == BUILTIN_FUN_VALUE_TYPE) {
+    BuiltinFun f = closureValue->data;
+    f(n);
+  }
+}
+
+void evalId(Value *ev, Node *p) {
+  Env *e = ev->data;
+  Value *res = envGet(e, (long)p->data);
+  if (!res) res = newNoneValue();
+  opStackPush(res);
+}
+
+void evalInt(Value *ev, Node *p) {
+  opStackPush(newIntValue((long)p->data));
+}
+
+void evalList(Value *ev, Node *p) {
+  int initSize = listSize(rootValues);
+  List *vs = newList();
+  Value *res = newListValue(vs);
+  opStackPush(res);
+  int i, n = chldNum(p);
+  for (i = 0; i < n; i++) {
+    eval(ev, chld(p, i));
+    listPush(vs, opStackPeek(0));
+  }
+  opStackPopN(n);
+}
+
+void evalString(Value *ev, Node *p) {
+  opStackPush(newStringValue(copyStr(p->data)));
+}
+
+void evalNone(Value *ev, Node *p) {
+  opStackPush(newNoneValue());
+}
+
+void evalAdd(Value *ev, Node *p) {
+  eval(ev, chld(p, 1));
+  eval(ev, chld(p, 0));
+  Value *res = valueAdd(opStackPeek(0), opStackPeek(1));
+  opStackPopN(2);
+  opStackPush(res);
+}
+
+void evalSub(Value *ev, Node *p) {
+  eval(ev, chld(p, 1));
+  eval(ev, chld(p, 0));
+  Value *res = valueSub(opStackPeek(0), opStackPeek(1));
+  opStackPopN(2);
+  opStackPush(res);
+}
+
+void evalMul(Value *ev, Node *p) {
+  eval(ev, chld(p, 1));
+  eval(ev, chld(p, 0));
+  Value *res = valueMul(opStackPeek(0), opStackPeek(1));
+  opStackPopN(2);
+  opStackPush(res);
+}
+
+void evalDiv(Value *ev, Node *p) {
+  eval(ev, chld(p, 1));
+  eval(ev, chld(p, 0));
+  Value *res = valueDiv(opStackPeek(0), opStackPeek(1));
+  opStackPopN(2);
+  opStackPush(res);
+}
+
+void evalMod(Value *ev, Node *p) {
+  eval(ev, chld(p, 1));
+  eval(ev, chld(p, 0));
+  Value *res = valueMod(opStackPeek(0), opStackPeek(1));
+  opStackPopN(2);
+  opStackPush(res);
+}
+
+void evalGT(Value *ev, Node *p) {
+  eval(ev, chld(p, 1));
+  eval(ev, chld(p, 0));
+  Value* res = newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) > 0);
+  opStackPopN(2);
+  opStackPush(res);
+}
+
+void evalLT(Value *ev, Node *p) {
+  eval(ev, chld(p, 1));
+  eval(ev, chld(p, 0));
+  Value* res = newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) < 0);
+  opStackPopN(2);
+  opStackPush(res);
+}
+
+void evalGE(Value *ev, Node *p) {
+  eval(ev, chld(p, 1));
+  eval(ev, chld(p, 0));
+  Value* res = newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) >= 0);
+  opStackPopN(2);
+  opStackPush(res);
+}
+
+void evalLE(Value *ev, Node *p) {
+  eval(ev, chld(p, 1));
+  eval(ev, chld(p, 0));
+  Value* res = newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) <= 0);
+  opStackPopN(2);
+  opStackPush(res);
+}
+
+void evalEQ(Value *ev, Node *p) {
+  eval(ev, chld(p, 1));
+  eval(ev, chld(p, 0));
+  Value* res = newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) == 0);
+  opStackPopN(2);
+  opStackPush(res);
+}
+void evalNE(Value *ev, Node *p) {
+  eval(ev, chld(p, 1));
+  eval(ev, chld(p, 0));
+  Value* res = newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) != 0);
+  opStackPopN(2);
+  opStackPush(res);
+}
+
+void evalAnd(Value *ev, Node *p) {
+  eval(ev, chld(p, 1));
+  eval(ev, chld(p, 0));
+  Value* res = newIntValue(opStackPeek(0)->data && opStackPeek(1)->data);
+  opStackPopN(2);
+  opStackPush(res);
+}
+
+void evalOr(Value *ev, Node *p) {
+  eval(ev, chld(p, 1));
+  eval(ev, chld(p, 0));
+  Value* res = newIntValue(opStackPeek(0)->data || opStackPeek(1)->data);
+  opStackPopN(2);
+  opStackPush(res);
+}
+
+void evalNot(Value *ev, Node *p) {
+  eval(ev, chld(p, 0));
+  Value* res = newIntValue((long) opStackPeek(0)->data);
+  opStackPopN(1);
+  opStackPush(res);
+}
+
+void evalError(Value *ev, Node *p) {
+  error("cannot eval unknown node type %d\n", p->type);
+}
+
+void evalExpList(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalNone(Value *ev, Node *p) {
+
+void evalListAccess(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalList(Value *ev, Node *p) {
+void evalTailRecursion(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalListAccess(Value *ev, Node *p) {
+void evalReturn(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalTailRecursion(Value *ev, Node *p) {
+void evalAssign(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalCall(Value *ev, Node *p) {
+void evalAddEq(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalReturn(Value *ev, Node *p) {
+void evalIf(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalId(Value *ev, Node *p) {
+void evalFor(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalInt(Value *ev, Node *p) {
+void evalForEach(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalString(Value *ev, Node *p) {
+void evalWhile(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalAssign(Value *ev, Node *p) {
+void evalContinue(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalAddEq(Value *ev, Node *p) {
+void evalBreak(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalAdd(Value *ev, Node *p) {
+void evalFun(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalSub(Value *ev, Node *p) {
+void evalTime(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalMul(Value *ev, Node *p) {
+void evalTry(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalDiv(Value *ev, Node *p) {
+void evalThrow(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalMod(Value *ev, Node *p) {
+void evalAddAdd(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalIf(Value *ev, Node *p) {
+void evalLocal(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalFor(Value *ev, Node *p) {
+void evalImport(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-Value *evalForEach(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalWhile(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalContinue(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalBreak(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalGT(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalLT(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalGE(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalLE(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalEQ(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalNE(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalAnd(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalOr(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalNot(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalFun(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalTime(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalTry(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalThrow(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalAddAdd(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalLocal(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalImport(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalModuleAccess(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-Value *evalError(Value *ev, Node *p) {
+void evalModuleAccess(Value *ev, Node *p) {
   error("nor implemented\n");
 }
 
 #else
-extern List *rootValues, *parseTrees;
 extern JmpMsg __jmpMsg__;
 extern Value *globalEnv;
-
-void pushRootValue(Value *v) { listPush(rootValues, v); }
 
 static void popRootValueTo(int size) {
   if (size > rootValues->size) error("size larger than rootValues->size\n");

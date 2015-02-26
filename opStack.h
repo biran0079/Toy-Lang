@@ -9,8 +9,13 @@ void initOpStack();
 
 void opStackPush(Value *);
 Value *opStackPop();
+void opStackPopN(int n);
+Value* opStackPeek(int);
 
 void opStackSave();
 void opStackRestore();
 
+void opStackAppendValuesTo(List* l);
+
+void showOpStack();
 #endif

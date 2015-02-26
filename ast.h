@@ -52,7 +52,11 @@ enum NodeType {
   __DUMMY_TYPE,  // Used for parsing. Not part of language.
 };
 
+#ifndef USE_LEGACY_EVAL
+typedef void (*EvalFunc)(Value *, Node *);
+#else
 typedef Value *(*EvalFunc)(Value *, Node *);
+#endif
 
 struct Node {
   NodeType type;
