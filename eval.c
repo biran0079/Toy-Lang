@@ -12,6 +12,141 @@
 #include "parser.h"
 #include "tokenizer.h"
 
+#ifndef USE_LEGACY_EVAL
+
+Value *evalStmts(Value *e, Node *p) {
+  List *l = (List *)p->data;
+  int i;
+  for (i = 0; i < listSize(l); i++) {
+    Node *t = listGet(l, i);
+    t->eval(ev, t);
+  }
+}
+Value *evalExpList(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalNone(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalList(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalListAccess(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalTailRecursion(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalCall(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalReturn(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalId(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalInt(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalString(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalAssign(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalAddEq(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalAdd(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalSub(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalMul(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalDiv(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalMod(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalIf(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalFor(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalForEach(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalWhile(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalContinue(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalBreak(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalGT(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalLT(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalGE(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalLE(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalEQ(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalNE(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalAnd(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalOr(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalNot(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalFun(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalTime(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalTry(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalThrow(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalAddAdd(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalLocal(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalImport(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalModuleAccess(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+Value *evalError(Value *ev, Node *p) {
+  error("nor implemented\n");
+}
+
+#else
 extern List *rootValues, *parseTrees;
 extern JmpMsg __jmpMsg__;
 extern Value *globalEnv;
@@ -683,3 +818,4 @@ void throwValue(Env *e, Value *v) {
     }
   }
 }
+#endif
