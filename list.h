@@ -22,4 +22,6 @@ void listPopTo(List *lst, int size);
 typedef int (*Comparator)();
 void listSort(List *lst, Comparator cmp);
 
+void increaseSizeTo(List *lst, int size);
+
 #endif

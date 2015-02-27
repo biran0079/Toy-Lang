@@ -80,11 +80,11 @@ void opStackPopNPush(int n, Value *v) {
   opStackPopToPush(listSize(opStack) - n, v);
 }
 
-void opStackUpdateAddr(HashTable* addrMap) {
+void opStackUpdateAddr(HashTable *addrMap) {
   int i, n = opStackSize();
   for (i = 0; i < n; i++) {
-    void* oldAddr = listGet(opStack, i);
-    void* newAddr = hashTableGet(addrMap, oldAddr);
+    void *oldAddr = listGet(opStack, i);
+    void *newAddr = hashTableGet(addrMap, oldAddr);
     assert(newAddr);
     listSet(opStack, i, newAddr);
   }

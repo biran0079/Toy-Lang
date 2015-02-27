@@ -12,7 +12,6 @@ static ValuesBlock* head;
 static int initSize = 1024;
 extern int memoryUsage, memoryLimit;
 
-
 static ValuesBlock* newValuesBlock(int size) {
   if (size > MAX_BLOCK_SIZE) {
     size = MAX_BLOCK_SIZE;
@@ -36,9 +35,7 @@ static void freeValuesBlock(ValuesBlock* b) {
   tlFree(b);
 }
 
-void initValuesBlock() {
-  head = newValuesBlock(initSize);
-}
+void initValuesBlock() { head = newValuesBlock(initSize); }
 
 void cleanupValuesBlock() {
   ValuesBlock* cur = head;
@@ -53,7 +50,7 @@ Value* allocValue() {
   ValuesBlock* cur = head;
   while (1) {
     if (cur->top < cur->capacity) {
-      Value* res = cur->a + cur->top; 
+      Value* res = cur->a + cur->top;
       cur->top++;
       return res;
     }
@@ -69,16 +66,14 @@ typedef struct Iterator {
   int i;
 } Iterator;
 
-static Iterator* newIterator(ValuesBlock *b, int i) {
+static Iterator* newIterator(ValuesBlock* b, int i) {
   Iterator* res = MALLOC(Iterator);
   res->b = b;
   res->i = i;
   return res;
 }
 
-static void freeIterator(Iterator* b) {
-  tlFree(b);
-}
+static void freeIterator(Iterator* b) { tlFree(b); }
 
 static Value* readNext(Iterator* it, Mark mark) {
   while (1) {
@@ -110,7 +105,7 @@ static void writeAndUnmark(Iterator* it, Value* v, HashTable* addrMap) {
   }
   assert(it->i < it->b->top);
   hashTablePut(addrMap, v, it->b->a + it->i);
-#ifdef DEBUG_GC 
+#ifdef DEBUG_GC
   printf("mapping %p -> %p\n", v, it->b->a + it->i);
 #endif
   it->b->a[(it->i)++] = *v;
@@ -122,7 +117,7 @@ static void freeAllBlocksAfter(Iterator* it) {
   ValuesBlock* next = b->next;
   b->next = 0;
   ValuesBlock* cur = next;
-  while(cur) {
+  while (cur) {
     next = cur->next;
     freeValuesBlock(cur);
     cur = next;
@@ -134,43 +129,45 @@ static void updateValuePointers(HashTable* addrMap) {
 
   Iterator* from = newIterator(head, 0);
   Value* v;
-  Value *oldAddr, *newAddr;
+  Value* oldAddr, *newAddr;
   while ((v = readNext(from, -1))) {
-#ifdef DEBUG_GC 
+#ifdef DEBUG_GC
     printf("updating %s @ %p\n", valueToString(v), v);
 #endif
     switch (v->type) {
       case CLOSURE_VALUE_TYPE: {
-        Closure *c = v->data;
-        newAddr =hashTableGet(addrMap, c->e);
+        Closure* c = v->data;
+        newAddr = hashTableGet(addrMap, c->e);
         c->e = newAddr;
         break;
       }
       case ENV_VALUE_TYPE: {
-        Env *e = getEnvFromValue(v);
+        Env* e = getEnvFromValue(v);
         List* keys = hashTableGetAllKeys(e->t);
         int i, n = listSize(keys);
         for (i = 0; i < n; i++) {
           void* key = listGet(keys, i);
           oldAddr = hashTableGet(e->t, key);
-          newAddr =  hashTableGet(addrMap, oldAddr);
+          newAddr = hashTableGet(addrMap, oldAddr);
           assert(newAddr);
           hashTablePut(e->t, key, newAddr);
         }
         freeList(keys);
         newAddr = hashTableGet(addrMap, e->parent);
         assert(newAddr);
-        assert(newAddr->type == ENV_VALUE_TYPE || newAddr->type == NONE_VALUE_TYPE);
+        assert(newAddr->type == ENV_VALUE_TYPE ||
+               newAddr->type == NONE_VALUE_TYPE);
         e->parent = newAddr;
 
         newAddr = hashTableGet(addrMap, e->envValue);
         assert(newAddr);
-        assert(newAddr->type == ENV_VALUE_TYPE || newAddr->type == NONE_VALUE_TYPE);
+        assert(newAddr->type == ENV_VALUE_TYPE ||
+               newAddr->type == NONE_VALUE_TYPE);
         e->envValue = newAddr;
         break;
       }
       case LIST_VALUE_TYPE: {
-        List *l = v->data;
+        List* l = v->data;
         int i, n = listSize(l);
         for (i = 0; i < n; i++) {
           oldAddr = listGet(l, i);
@@ -209,7 +206,7 @@ void consolidateMarkedValues() {
 
 void freeUnmarkedValues() {
   Iterator* it = newIterator(head, 0);
-  Value *v;
+  Value* v;
   while ((v = readNext(it, UNMARKED))) {
     freeValue(v);
   }
@@ -220,8 +217,8 @@ int getInMemoryValueCount() {
   ValuesBlock* b = head;
   int res = 0;
   while (b) {
-    res+=b->top;
-    b=b->next;
+    res += b->top;
+    b = b->next;
   }
   return res;
 }
@@ -229,7 +226,7 @@ int getInMemoryValueCount() {
 void dumpValueMemory() {
   Iterator* it = newIterator(head, 0);
   printf("Value memory:\n");
-  Value *v;
+  Value* v;
   while ((v = readNext(it, -1))) {
     printf("    %s @ %p\n", valueToString(v), v);
   }

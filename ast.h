@@ -73,7 +73,7 @@ Value *nodeToListValue(Node *p);
 
 void printAst(Node *ast);
 
-long getIdFromNode(Node* node);
+long getIdFromNode(Node *node);
 
 Node *postProcessAst(Node *p);
 

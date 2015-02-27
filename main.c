@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
   parse(tokens);
   freeTokenList(tokens);
 #endif
-  Node* tree = listLast(parseTrees);
+  Node *tree = listLast(parseTrees);
   if (toDot) {
     char *s = catStr(src, ".dot");
     FILE *f = fopen(s, "w");

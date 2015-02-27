@@ -9,7 +9,6 @@ typedef struct Closure Closure;
 typedef struct Env Env;
 typedef enum ValueType ValueType;
 typedef enum NodeType NodeType;
-typedef void (*ValueFunc)(Value *);
 
 void init(int argc, char **argv);
 void cleanup();

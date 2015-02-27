@@ -34,8 +34,10 @@ void freeEvalResult(EvalResult *er) {
  * 2. no value will be pushed to op stack if eval returns non-zero
  * 3. all eval call's return value must be checked
  * 4. anything in op stack will not be GCed
- * 5. each opStackSave must be paired by exactly on opStackRestore before returning
- * 6. any usage of Value* type in eval call shuold be pushed to pointersInEvalStack to survive GC
+ * 5. each opStackSave must be paired by exactly on opStackRestore before
+ * returning
+ * 6. any usage of Value* type in eval call shuold be pushed to
+ * pointersInEvalStack to survive GC
  * 7. no GC in env operations and op-stack operations
  */
 EvalResult *eval(Env *ev, Node *p) {
@@ -50,7 +52,6 @@ EvalResult *eval(Env *ev, Node *p) {
   }
   return er;
 }
-
 
 EvalResult *evalStmts(Env *ev, Node *p) {
   List *l = (List *)p->data;
@@ -108,7 +109,6 @@ EvalResult *evalCall(Env *ev, Node *p) {
       envPutLocal(e2, (long)chld(ids, i)->data, opStackPeek(i + 1));
 
     opStackPopNPush(n + 1, e2->envValue);
-
 
     EvalResult *er = eval(getEnvFromValue(opStackPeek(0)), chld(f, 2));
 
@@ -305,7 +305,8 @@ EvalResult *evalGE(Env *ev, Node *p) {
     opStackPop();
     return er;
   }
-  opStackPopNPush(2, newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) >= 0));
+  opStackPopNPush(2,
+                  newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) >= 0));
   return 0;
 }
 
@@ -321,7 +322,8 @@ EvalResult *evalLE(Env *ev, Node *p) {
     opStackPop();
     return er;
   }
-  opStackPopNPush(2, newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) <= 0));
+  opStackPopNPush(2,
+                  newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) <= 0));
   return 0;
 }
 
@@ -337,7 +339,8 @@ EvalResult *evalEQ(Env *ev, Node *p) {
     opStackPop();
     return er;
   }
-  opStackPopNPush(2, newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) == 0));
+  opStackPopNPush(2,
+                  newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) == 0));
   return 0;
 }
 
@@ -353,7 +356,8 @@ EvalResult *evalNE(Env *ev, Node *p) {
     opStackPop();
     return er;
   }
-  opStackPopNPush(2, newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) != 0));
+  opStackPopNPush(2,
+                  newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) != 0));
   return 0;
 }
 
@@ -473,7 +477,8 @@ EvalResult *evalListAccess(Env *ev, Node *p) {
       break;
     }
     default:
-      error("list access does not support value type %s\n", valueToString(opStackPeek(0)));
+      error("list access does not support value type %s\n",
+            valueToString(opStackPeek(0)));
   }
   return 0;
 }
@@ -546,7 +551,7 @@ EvalResult *evalAssign(Env *ev, Node *p) {
       EvalResult *er = eval(ev, t);
       if (er) return er;
       int n = chldNum(left);
-      Env* curEnv = ev;
+      Env *curEnv = ev;
       for (i = 0; i < n - 1; i++) {
         long id = (long)chld(left, i)->data;
         curEnv = getEnvFromValue(envGet(curEnv, id));
@@ -557,7 +562,7 @@ EvalResult *evalAssign(Env *ev, Node *p) {
     default:
       error("left hand side of = must be a left value\n");
   }
-  return 0; // never reach here
+  return 0;  // never reach here
 }
 
 EvalResult *evalAddEq(Env *ev, Node *p) {
@@ -861,10 +866,10 @@ EvalResult *evalImport(Env *ev, Node *p) {
   EvalResult *er = eval(getEnvFromValue(opStackPeek(0)), listLast(parseTrees));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
-    opStackPop(); // pop env
+    opStackPop();  // pop env
     return er;
   }
-  opStackPop(); // discard dummy eval result
+  opStackPop();  // discard dummy eval result
   envPut(ev, (long)id->data, opStackPeek(0));
   return 0;
 }
@@ -873,7 +878,7 @@ EvalResult *evalModuleAccess(Env *ev, Node *p) {
   int i, n = chldNum(p);
   for (i = 0; i < n; i++) {
     long id = getIdFromNode(chld(p, i));
-    if (i != n-1) {
+    if (i != n - 1) {
       ev = getEnvFromValue(envGet(ev, id));
     } else {
       opStackPush(envGet(ev, id));
@@ -881,4 +886,3 @@ EvalResult *evalModuleAccess(Env *ev, Node *p) {
   }
   return 0;
 }
-

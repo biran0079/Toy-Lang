@@ -26,5 +26,5 @@ void opStackAppendValuesTo(List *);
 
 void showOpStack();
 
-void opStackUpdateAddr(HashTable* addrMap);
+void opStackUpdateAddr(HashTable *addrMap);
 #endif

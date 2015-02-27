@@ -6,7 +6,7 @@
 
 int newEnvC = 0, freeEnvC = 0;
 
-Env *newEnv(Value *parentEnv, Value* envValue) {
+Env *newEnv(Value *parentEnv, Value *envValue) {
   newEnvC++;
   Env *res = MALLOC(Env);
   res->t = newIntHashTable();
@@ -35,23 +35,21 @@ Value *envGet(Env *e, long key) {
   return newNoneValue();
 }
 
-Value* envPut(Env *e, long key, Value *value) {
+Value *envPut(Env *e, long key, Value *value) {
   Env *e2 = e;
   while (1) {
     if (hashTableGet(e2->t, (void *)key)) {
-      return (Value*) hashTablePut(e2->t, (void *)key, (void *)value);
+      return (Value *)hashTablePut(e2->t, (void *)key, (void *)value);
     } else {
       if (e2->parent->type == NONE_VALUE_TYPE) break;
       e2 = e2->parent->data;
     }
   }
-  return (Value*) hashTablePut(e->t, (void *)key, (void *)value);
+  return (Value *)hashTablePut(e->t, (void *)key, (void *)value);
 }
 
-Value* envPutLocal(Env *e, long key, Value *value) {
-  return (Value*) hashTablePut(e->t, (void *)key, value);
+Value *envPutLocal(Env *e, long key, Value *value) {
+  return (Value *)hashTablePut(e->t, (void *)key, value);
 }
 
-List* envGetAllIds(Env* e) {
-  return hashTableGetAllKeys(e->t);
-}
+List *envGetAllIds(Env *e) { return hashTableGetAllKeys(e->t); }

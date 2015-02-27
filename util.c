@@ -7,7 +7,7 @@ static int CANARY = 123456789;
 int memoryUsage = 0;
 
 typedef struct MemBlock {
-  long size; 
+  long size;
 #ifdef CANARY_TEST
   long canary;
 #endif
@@ -26,8 +26,7 @@ void *tlMalloc(int size) {
 void *tlRealloc(void *t, int size) {
   MemBlock *m = (MemBlock *)t - 1;
 #ifdef CANARY_TEST
-  if (m->canary != CANARY)
-    error("canary dead in tlRealloc\n");
+  if (m->canary != CANARY) error("canary dead in tlRealloc\n");
 #endif
   memoryUsage += size - m->size;
   m = (MemBlock *)realloc(m, size + sizeof(MemBlock));
@@ -38,8 +37,7 @@ void *tlRealloc(void *t, int size) {
 void tlFree(void *t) {
   MemBlock *m = (MemBlock *)t - 1;
 #ifdef CANARY_TEST
-  if (m->canary != CANARY)
-    error("canary dead in tlFree\n");
+  if (m->canary != CANARY) error("canary dead in tlFree\n");
 #endif
   memoryUsage -= m->size;
   memset(m, 0, m->size + sizeof(MemBlock));

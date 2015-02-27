@@ -21,17 +21,16 @@ typedef struct HashTable {
   EqualsFunc eq;
 } HashTable;
 
-HashTable *newStringHashTable();
-HashTable *newIntHashTable();
 HashTable *newHashTable(HashFunc h, EqualsFunc eq);
 void freeHashTable(HashTable *t);
-void* hashTablePut(HashTable *t, void *key, void *value);
+void *hashTablePut(HashTable *t, void *key, void *value);
 void *hashTableGet(HashTable *t, void *key);
 void *hashTableRemove(HashTable *t, void *key);
-HashTable *hashTableCopy(HashTable *t);
 void hashTableClear(HashTable *t);
-void hashTableApplyAllValue(HashTable *t, ValueFunc f);
-void hashTableAddAllToList(HashTable *t, List *q);
+void hashTableAddAllValuesToList(HashTable *t, List *q);
+
+HashTable *newStringHashTable();
+HashTable *newIntHashTable();
 void freeStringHashTable(HashTable *t);
-List* hashTableGetAllKeys(HashTable *t);
+List *hashTableGetAllKeys(HashTable *t);
 #endif

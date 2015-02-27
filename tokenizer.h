@@ -62,5 +62,5 @@ List *tokenize(char *s);
 
 char *tokenTypeToStr(Token_t type);
 
-void freeTokenList(List* l);
+void freeTokenList(List *l);
 #endif

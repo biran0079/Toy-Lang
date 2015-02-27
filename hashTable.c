@@ -20,8 +20,6 @@ static unsigned int intHash(long n) { return (unsigned int)n; }
 
 static int intEqual(long a, long b) { return a == b; }
 
-static int INIT_CAPACITY = 8;
-
 extern int newHashTableC, freeHashTableC;
 
 HashTable *newStringHashTable() {
@@ -30,10 +28,12 @@ HashTable *newStringHashTable() {
 
 HashTable *newIntHashTable() { return newHashTable(intHash, intEqual); }
 
+#define HASH_TABLE_INIT_CAP 8
+
 HashTable *newHashTable(HashFunc h, EqualsFunc eq) {
   newHashTableC++;
   HashTable *res = MALLOC(HashTable);
-  res->cap = INIT_CAPACITY;
+  res->cap = HASH_TABLE_INIT_CAP;
   res->size = 0;
   res->a = (LinkedList **)tlMalloc(res->cap * sizeof(LinkedList *));
   res->h = h;
@@ -113,11 +113,11 @@ void *hashTableRemove(HashTable *t, void *key) {
   return res;
 }
 
-void* hashTablePut(HashTable *t, void *key, void *value) {
+void *hashTablePut(HashTable *t, void *key, void *value) {
   if (t->size > t->cap) rehash(t);
   LinkedList *l = hashTableGetInternal(t, key);
   if (l) {
-    void* oldValue = l->value;
+    void *oldValue = l->value;
     l->value = value;
     return oldValue;
   } else {
@@ -137,19 +137,6 @@ void *hashTableGet(HashTable *t, void *key) {
   return l ? l->value : 0;
 }
 
-HashTable *hashTableCopy(HashTable *t) {
-  HashTable *res = newHashTable(t->h, t->eq);
-  int i;
-  for (i = 0; i < t->cap; i++) {
-    LinkedList *l = t->a[i];
-    while (l) {
-      hashTablePut(res, l->key, l->value);
-      l = l->next;
-    }
-  }
-  return res;
-}
-
 void hashTableClear(HashTable *t) {
   int i;
   for (i = 0; i < t->cap; i++) {
@@ -164,19 +151,7 @@ void hashTableClear(HashTable *t) {
   t->size = 0;
 }
 
-void hashTableApplyAllValue(HashTable *t, ValueFunc f) {
-  int i;
-  for (i = 0; i < t->cap; i++) {
-    LinkedList *l = t->a[i], *nl;
-    while (l) {
-      nl = l->next;
-      f(l->value);
-      l = nl;
-    }
-  }
-}
-
-void hashTableAddAllToList(HashTable *t, List *q) {
+void hashTableAddAllValuesToList(HashTable *t, List *q) {
   int i;
   for (i = 0; i < t->cap; i++) {
     LinkedList *l = t->a[i], *nl;
@@ -200,8 +175,8 @@ void freeStringHashTable(HashTable *t) {
   freeHashTable(t);
 }
 
-List* hashTableGetAllKeys(HashTable *t) {
-  List* q = newList();
+List *hashTableGetAllKeys(HashTable *t) {
+  List *q = newList();
   int i;
   for (i = 0; i < t->cap; i++) {
     LinkedList *l = t->a[i], *nl;

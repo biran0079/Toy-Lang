@@ -80,7 +80,7 @@ Value *newBuiltinFun(BuiltinFun f) {
 
 Value *newEnvValue(Env *parent) {
   gc();
-  Value* pv = parent ? parent->envValue : newNoneValue();
+  Value *pv = parent ? parent->envValue : newNoneValue();
   newEnvValueC++;
   Value *res = allocValue();
   res->type = ENV_VALUE_TYPE;
@@ -189,13 +189,14 @@ static int valueToStringInternal(Value *v, char *s, int n) {
       return mySnprintf(s, n, "%s", v->data);
     }
     case ENV_VALUE_TYPE: {
-      List* keys = envGetAllIds(v->data);
+      List *keys = envGetAllIds(v->data);
       int len = 0;
       len += mySnprintf(s, n, "env parent->%p { ", getEnvFromValue(v)->parent);
       int keyN = listSize(keys);
       for (i = 0; i < keyN; i++) {
-        long key = (long) listGet(keys, i);
-        len += mySnprintf(s + len, n - len, "%s->%p ", getStrId(key), envGet(v->data, key));
+        long key = (long)listGet(keys, i);
+        len += mySnprintf(s + len, n - len, "%s->%p ", getStrId(key),
+                          envGet(v->data, key));
       }
       len += mySnprintf(s + len, n - len, "}");
       freeList(keys);
@@ -350,17 +351,17 @@ int valueCmp(Value *v1, Value *v2) {
   }
 }
 
-long getIntFromValue(Value* intValue) {
+long getIntFromValue(Value *intValue) {
   assert(intValue->type == INT_VALUE_TYPE);
-  return (long) intValue->data;
+  return (long)intValue->data;
 }
 
-Env* getEnvFromValue(Value* v) {
+Env *getEnvFromValue(Value *v) {
   assert(v->type == ENV_VALUE_TYPE);
-  return (Env*) v->data;
+  return (Env *)v->data;
 }
 
-List* getListFromValue(Value* v) {
+List *getListFromValue(Value *v) {
   assert(v->type == LIST_VALUE_TYPE);
-  return (List*) v->data;
+  return (List *)v->data;
 }

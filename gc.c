@@ -29,7 +29,7 @@ static void mark() {
       }
       case ENV_VALUE_TYPE: {
         Env *e = v->data;
-        hashTableAddAllToList(e->t, q);
+        hashTableAddAllValuesToList(e->t, q);
         listPush(q, e->parent);
         break;
       }

@@ -239,9 +239,9 @@ void printAst(Node *ast) {
   printf("%s\n", valueToString(nodeToListValue(ast)));
 }
 
-long getIdFromNode(Node* node) {
+long getIdFromNode(Node *node) {
   assert(node->type == ID_TYPE);
-  return (long) node->data;
+  return (long)node->data;
 }
 
 Node *postProcessAst(Node *p) {
@@ -379,10 +379,9 @@ Node *postProcessAst(Node *p) {
     case ID_TYPE:
       break;  // leaves
     default: {
-               int n = chldNum(p), i;
-               for (i = 0; i < n; i++) postProcessAst(chld(p, i));
-             }
+      int n = chldNum(p), i;
+      for (i = 0; i < n; i++) postProcessAst(chld(p, i));
+    }
   }
   return p;
 }
-

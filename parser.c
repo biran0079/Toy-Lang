@@ -6,12 +6,12 @@
 
 extern List *parseTrees;
 
-static Node* predMatch(Node** p, Node* res) {
+static Node *predMatch(Node **p, Node *res) {
   if (*p) freeNode(*p);
   return *p = res;
 }
 
-void maybeFree(Node* p) {
+void maybeFree(Node *p) {
   if (p) freeNode(p);
 }
 
@@ -70,7 +70,7 @@ static Node *tokenToNode(Token *token) {
   }
 }
 
-static Token* matchT(List* t, int* ip, Token_t type) {
+static Token *matchT(List *t, int *ip, Token_t type) {
   if (listSize(t) <= *ip) return 0;
   Token *token = (Token *)listGet(t, *ip);
   if (token->type == type) {
@@ -81,11 +81,11 @@ static Token* matchT(List* t, int* ip, Token_t type) {
 }
 
 static Node *matchM(List *t, int *ip, Token_t type) {
-  Token* token = matchT(t, ip, type);
+  Token *token = matchT(t, ip, type);
   return token ? tokenToNode(token) : 0;
 }
 
-static Node* tokenMatch(Node** p, List* t, int *ip, Token_t type) {
+static Node *tokenMatch(Node **p, List *t, int *ip, Token_t type) {
   if (*p) freeNode(*p);
   return *p = matchM(t, ip, type);
 }
@@ -113,8 +113,8 @@ Node *stmt(List *t, int *ip) {
     return newNode2(THROW_TYPE, 1, n1);
   } else if ((*ip = i0), M(RETURN_T) && PM(n1, expr) && M(SEMICOLON_T)) {
     return newNode2(RETURN_TYPE, 1, n1);
-  } else if ((*ip = i0), M2(IF_T, OP_B_T) && PM(n1, expr) && M(CLO_B_T) &&
-                             PM(n2, block)) {
+  } else if ((*ip = i0),
+             M2(IF_T, OP_B_T) && PM(n1, expr) && M(CLO_B_T) && PM(n2, block)) {
     int i1 = *ip;
     if (M(ELSE_T) && PM(n3, block)) {
       return newNode2(IF_TYPE, 3, n1, n2, n3);
@@ -122,21 +122,19 @@ Node *stmt(List *t, int *ip) {
       *ip = i1;
       return newNode2(IF_TYPE, 2, n1, n2);
     }
-  } else if ((*ip = i0), M2(WHILE_T, OP_B_T) && PM(n1, expr) &&
-                             M(CLO_B_T) && PM(n2, block)) {
+  } else if ((*ip = i0), M2(WHILE_T, OP_B_T) && PM(n1, expr) && M(CLO_B_T) &&
+                             PM(n2, block)) {
     return newNode2(WHILE_TYPE, 2, n1, n2);
   } else if ((*ip = i0), M2(FOR_T, OP_B_T) && TM(n1, ID_T) && M(COLON_T) &&
-                             PM(n2, expr) && M(CLO_B_T) &&
-                             PM(n3, block)) {
+                             PM(n2, expr) && M(CLO_B_T) && PM(n3, block)) {
     return newNode2(FOREACH_TYPE, 3, n1, n2, n3);
   } else if ((*ip = i0), M(FUN_T) && TM(n1, ID_T) && M(OP_B_T) &&
                              PM(n2, idList) && M(CLO_B_T) && M(OP_CB_T) &&
                              PM(n3, stmts) && M(CLO_CB_T)) {
     markTailRecursions(n3);
     return newNode2(FUN_TYPE, 3, n1, n2, n3);
-  } else if ((*ip = i0), M(TRY_T) && PM(n1, block) && M(CATCH_T) &&
-                             M(OP_B_T) && TM(n2, ID_T) && M(CLO_B_T) &&
-                             PM(n3, block)) {
+  } else if ((*ip = i0), M(TRY_T) && PM(n1, block) && M(CATCH_T) && M(OP_B_T) &&
+                             TM(n2, ID_T) && M(CLO_B_T) && PM(n3, block)) {
     int i1 = *ip;
     if (M(FINALLY_T) && PM(n4, block)) {
       return newNode2(TRY_TYPE, 4, n1, n2, n3, n4);
@@ -146,8 +144,8 @@ Node *stmt(List *t, int *ip) {
     }
   } else if ((*ip = i0), M2(FOR_T, OP_B_T) && PM(n1, expList) &&
                              M(SEMICOLON_T) && PM(n2, expList) &&
-                             M(SEMICOLON_T) && PM(n3, expList) &&
-                             M(CLO_B_T) && PM(n4, block)) {
+                             M(SEMICOLON_T) && PM(n3, expList) && M(CLO_B_T) &&
+                             PM(n4, block)) {
     return newNode2(FOR_TYPE, 4, n1, n2, n3, n4);
   }
   maybeFree(n1);

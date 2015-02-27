@@ -8,12 +8,14 @@ static void resize(List *lst, int cap) {
 
 int newListC = 0, freeListC = 0;
 
+#define INIT_LIST_CAP 1
+
 List *newList() {
   newListC++;
   List *res = MALLOC(List);
   res->size = 0;
-  res->cap = 1;
-  res->arr = MALLOC(void *);
+  res->cap = INIT_LIST_CAP;
+  res->arr = tlMalloc(res->cap * sizeof(void *));
   return res;
 }
 
@@ -98,5 +100,15 @@ void listSort(List *lst, Comparator cmp) {
 void listPopTo(List *lst, int size) {
   if (lst->size < size)
     error("size passed to listPopTo is less than list size\n");
+  lst->size = size;
+}
+
+void increaseSizeTo(List *lst, int size) {
+  int cap = lst->cap;
+  if (cap < size) {
+    while (cap < size) cap *= 2;
+    resize(lst, cap);
+  }
+  memset(lst->arr + lst->size, 0, size - lst->size);
   lst->size = size;
 }

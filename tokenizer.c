@@ -110,11 +110,9 @@ Token *newToken(Token_t type, void *data) {
   return res;
 }
 
-static void freeToken(Token* t) {
-  tlFree(t);
-}
+static void freeToken(Token *t) { tlFree(t); }
 
-void freeTokenList(List* l) {
+void freeTokenList(List *l) {
   int i, n = listSize(l);
   for (i = 0; i < n; i++) {
     freeToken(listGet(l, i));
