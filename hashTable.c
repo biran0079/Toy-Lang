@@ -151,18 +151,6 @@ void hashTableClear(HashTable *t) {
   t->size = 0;
 }
 
-void hashTableAddAllValuesToList(HashTable *t, List *q) {
-  int i;
-  for (i = 0; i < t->cap; i++) {
-    LinkedList *l = t->a[i], *nl;
-    while (l) {
-      nl = l->next;
-      listPush(q, l->value);
-      l = nl;
-    }
-  }
-}
-
 void freeStringHashTable(HashTable *t) {
   int i;
   for (i = 0; i < t->cap; i++) {

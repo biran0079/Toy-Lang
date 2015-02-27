@@ -146,7 +146,7 @@ static void updateValuePointers(HashTable* addrMap) {
         List* keys = envGetAllIds(e);
         int i, n = listSize(keys);
         for (i = 0; i < n; i++) {
-          long key = (long) listGet(keys, i);
+          long key = (long)listGet(keys, i);
           oldAddr = envGetLocal(e, key);
           newAddr = hashTableGet(addrMap, oldAddr);
           assert(newAddr);

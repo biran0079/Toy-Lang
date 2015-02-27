@@ -60,9 +60,9 @@ void *listLast(List *lst) {
   return lst->arr[lst->size - 1];
 }
 
-void* listSet(List *lst, int idx, void *v) {
+void *listSet(List *lst, int idx, void *v) {
   assert(idx < lst->size && idx >= 0);
-  void* oldValue = lst->arr[idx];
+  void *oldValue = lst->arr[idx];
   lst->arr[idx] = v;
   return oldValue;
 }
@@ -112,6 +112,6 @@ void increaseSizeTo(List *lst, int size) {
     while (cap < size) cap *= 2;
     resize(lst, cap);
   }
-  memset(lst->arr + lst->size, 0, sizeof(void*) * (size - lst->size));
+  memset(lst->arr + lst->size, 0, sizeof(void *) * (size - lst->size));
   lst->size = size;
 }

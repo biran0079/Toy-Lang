@@ -50,29 +50,28 @@ Value *envPut(Env *e, long key, Value *value) {
 
 Value *envPutLocal(Env *e, long key, Value *value) {
   increaseSizeTo(e->l, key + 1);
-  return (Value*) listSet(e->l, key, value);
+  return (Value *)listSet(e->l, key, value);
 }
 
-
-Value* envGetLocal(Env* e, long key) {
+Value *envGetLocal(Env *e, long key) {
   return e->l->size > key ? listGet(e->l, key) : 0;
 }
 
 List *envGetAllIds(Env *e) {
-  List* res = newList();
+  List *res = newList();
   long i, n = listSize(e->l);
   for (i = 0; i < n; i++) {
     if (listGet(e->l, i)) {
-      listPush(res, (void*) i);
+      listPush(res, (void *)i);
     }
   }
   return res;
 }
 
-void envAddAllValuesToList(Env* e, List* q) {
+void envAddAllValuesToList(Env *e, List *q) {
   int i, n = listSize(e->l);
   for (i = 0; i < n; i++) {
-    Value* v = listGet(e->l, i);
+    Value *v = listGet(e->l, i);
     if (v) listPush(q, v);
   }
 }
