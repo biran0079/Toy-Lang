@@ -18,6 +18,7 @@ void *listSet(List *lst, int i, void *v);
 List *listCopy(List *lst);
 void listClear(List *lst);
 void listPopTo(List *lst, int size);
+void listSwap(List *lst, int i, int j);
 
 typedef int (*Comparator)();
 void listSort(List *lst, Comparator cmp);

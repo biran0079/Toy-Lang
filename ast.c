@@ -61,7 +61,6 @@ void markTailRecursions(Node *t) {
 
 Value *nodeToListValue(Node *p) {
   Value *res = newListValue(newList());
-  opStackPush(res);
   listValuePush(res, newStringValue(copyStr(nodeTypeToString(p->type))));
   switch (p->type) {
     case INT_TYPE:
@@ -119,8 +118,6 @@ Value *nodeToListValue(Node *p) {
     default:
       error("unknown node type in nodeToListValue");
   }
-  assert(res == opStackPeek(0));
-  opStackPop();
   return res;
 }
 
@@ -236,7 +233,10 @@ void freeNode(Node *t) {
 }
 
 void printAst(Node *ast) {
-  printf("%s\n", valueToString(nodeToListValue(ast)));
+  Value* v = nodeToListValue(ast);
+  ref(v);
+  printf("%s\n", valueToString(v));
+  deref(v);
 }
 
 long getIdFromNode(Node *node) {

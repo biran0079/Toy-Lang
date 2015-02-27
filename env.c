@@ -10,7 +10,7 @@ Env *newEnv(Value *parentEnv, Value *envValue) {
   newEnvC++;
   Env *res = MALLOC(Env);
   res->l = newList();
-  res->parent = parentEnv;
+  res->parent = ref(parentEnv);
   res->envValue = envValue;
   return res;
 }
@@ -26,6 +26,7 @@ static void derefAllValues(Env* e) {
 void freeEnv(Env *e) {
   if (!e) error("NONE passed to freeEnv\n");
   freeEnvC++;
+  deref(e->parent);
   derefAllValues(e);
   freeList(e->l);
   e->l = 0;

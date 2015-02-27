@@ -50,9 +50,10 @@ void freeUnmarkedValues() {
     Value* v = listGet(allValues, i);
     if (v->mark == MARKED) {
       assert(v->type != FREED_TYPE);
+      v->mark = UNMARKED;
       listPush(newAllValues, v);
     } else if (v->type != FREED_TYPE && v->mark == UNMARKED) {
-      tlFree(v);
+      freeValue(v);
     } 
   }
   freeList(allValues);

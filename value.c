@@ -141,6 +141,7 @@ void freeValue(Value *v) {
   }
   v->type = FREED_TYPE;
   listPush(deadValues, v);
+  tlFree(v);
 }
 
 static int getStringLength(char *format, ...) {
@@ -219,6 +220,8 @@ static int valueToStringInternal(Value *v, char *s, int n) {
       freeList(keys);
       return len;
     }
+    case FREED_TYPE:
+      return mySnprintf(s, n, "<FREED @ %p>", v);
     default:
       error("cannot print unknown value type: %d at %p\n", v->type, v);
   }
@@ -381,11 +384,6 @@ Env *getEnvFromValue(Value *v) {
   return (Env *)v->data;
 }
 
-Value* ref(Value* v) {
-  v->ref++;
-  return v;
-}
-
 void listValuePush(Value* lv, Value* v) {
   assert(lv->type == LIST_VALUE_TYPE);
   listPush(lv->data, ref(v));
@@ -414,9 +412,23 @@ void listValueExtend(Value* lv1, Value* lv2) {
 }
 
 void deref(Value* v) {
+#ifdef DEBUG_GC
+  printf("deref %s @ %p\n", valueToString(v), v);
+#endif
   int ref = --(v->ref); 
   assert(ref >= 0);
-  if(!ref) {
+  if(!ref && v->type != FREED_TYPE) {
     freeValue(v);
   }
+}
+
+Value* ref(Value* v) {
+#ifdef DEBUG_GC
+  printf("ref %s @ %p\n", valueToString(v), v);
+#endif
+  if (v->type == FREED_TYPE) {
+    error("refering freed object\n");
+  }
+  v->ref++;
+  return v;
 }

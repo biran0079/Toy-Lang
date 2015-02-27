@@ -9,6 +9,7 @@ Closure *newClosure(Node *f, Value *e) {
   Closure *res = MALLOC(Closure);
   res->f = f;
   res->e = e;
+  ref(e);
   return res;
 }
 

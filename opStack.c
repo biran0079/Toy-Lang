@@ -64,17 +64,15 @@ void showOpStack() {
 }
 
 void opStackPopToPush(int n, Value *v) {
-  ref(v);
-  opStackPopTo(n);
   opStackPush(v);
-  deref(v);
+  listSwap(opStack, n, opStackSize() - 1);
+  opStackPopTo(n + 1);
 }
 
 void opStackPopNPush(int n, Value *v) {
-  ref(v);
-  opStackPopN(n);
   opStackPush(v);
-  deref(v);
+  listSwap(opStack, opStackSize() - n - 1, opStackSize() - 1);
+  opStackPopN(n);
 }
 
 void opStackUpdateAddr(HashTable *addrMap) {

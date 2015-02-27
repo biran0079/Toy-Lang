@@ -120,10 +120,10 @@ EvalResult *evalCall(Env *ev, Node *p) {
         }
         case TAIL_RECURSION_RESULT: {
           opStackPopTo(beforeStackSize);
-          Value *l = er->value;
-          n = listSize(l);
+          Value *lv = er->value;
+          n = listValueSize(lv);
           for (i = 0; i < n; i++) {
-            opStackPush(listGet(l, i));
+            opStackPush(listValueGet(lv, i));
           }
           n--;  // one of the args is closure
           freeEvalResult(er);
@@ -428,8 +428,9 @@ EvalResult *evalError(Env *ev, Node *p) {
 EvalResult *evalIf(Env *ev, Node *p) {
   EvalResult *er = eval(ev, chld(p, 0));
   if (er) return er;
-  if (opStackPeek(0)->data) {
-    opStackPop();
+  void* cond = opStackPeek(0)->data;
+  opStackPop();
+  if (cond) {
     er = eval(ev, chld(p, 1));
     if (er) return er;
     return 0;
@@ -466,8 +467,7 @@ EvalResult *evalListAccess(Env *ev, Node *p) {
   long idx = getIntFromValue(opStackPeek(1));
   switch (opStackPeek(0)->type) {
     case LIST_VALUE_TYPE: {
-      List *l = (List *)opStackPeek(0)->data;
-      opStackPopNPush(2, listGet(l, idx));
+      opStackPopNPush(2, listValueGet(opStackPeek(0), idx));
       break;
     }
     case STRING_VALUE_TYPE: {
@@ -662,11 +662,9 @@ EvalResult *evalFor(Env *ev, Node *p) {
   while (1) {
     er = eval(ev, chld(p, 1));
     if (er) return er;
-    if (!(opStackPeek(0)->data)) {
-      opStackPop();
-      break;
-    }
+    void* cond = opStackPeek(0)->data;
     opStackPop();
+    if (!cond)  break;
     er = eval(ev, chld(p, 3));
     if (er) {
       if (CONTINUE_RESULT == er->type) {
@@ -724,11 +722,11 @@ EvalResult *evalWhile(Env *ev, Node *p) {
   while (1) {
     EvalResult *er = eval(ev, chld(p, 0));
     if (er) return er;
-    if (!(opStackPeek(0)->data)) {
-      opStackPop();
+    void* cond = opStackPeek(0)->data;
+    opStackPop();
+    if (!cond) {
       break;
     }
-    opStackPop();
     er = eval(ev, chld(p, 1));
     if (er) {
       if (CONTINUE_RESULT == er->type) {
@@ -823,7 +821,9 @@ EvalResult *evalAddAdd(Env *ev, Node *p) {
     case ID_TYPE: {
       long id = (long)left->data;
       long newValue = getIntFromValue(envGet(ev, id)) + 1;
-      opStackPopToPush(beforeStackSize, envPut(ev, id, newIntValue(newValue)));
+      Value* oldValue = envGet(ev, id);
+      opStackPopToPush(beforeStackSize, oldValue);
+      envPut(ev, id, newIntValue(newValue));
       return 0;
     }
     case LIST_ACCESS_TYPE: {
