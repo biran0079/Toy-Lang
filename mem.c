@@ -194,7 +194,7 @@ void consolidateMarkedValues() {
   Iterator* to = newIterator(head, 0);
   HashTable* addrMap = newIntHashTable();
   Value* v;
-  while ((v = readNext(from, MARKED | STATIC))) {
+  while ((v = readNext(from, MARKED))) {
     writeAndUnmark(to, v, addrMap);
   }
   freeAllBlocksAfter(to);

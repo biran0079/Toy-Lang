@@ -17,7 +17,6 @@ enum ValueType {
 typedef enum Mark {
   UNMARKED = 1,
   MARKED = 2,
-  STATIC = 4,
 } Mark;
 
 struct Value {
