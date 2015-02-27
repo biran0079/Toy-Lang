@@ -13,6 +13,8 @@
 #include "tokenizer.h"
 #include "opStack.h"
 
+#include <assert.h>
+
 extern List *rootValues, *parseTrees;
 void pushRootValue(Value *v) { listPush(rootValues, v); }
 
@@ -23,29 +25,68 @@ void eval(Value *ev, Node *p) {
 }
 
 void evalStmts(Value *ev, Node *p) {
-  opStackSave();
   List *l = (List *)p->data;
   int i;
   for (i = 0; i < listSize(l); i++) {
     Node *t = listGet(l, i);
     t->eval(ev, t);
   }
-  opStackRestore();
 }
 
 void evalCall(Value *ev, Node *p) {
-  int i, n, initSize = listSize(rootValues);
-  Env *e = ev->data;
-  eval(ev, chld(p, 0));
-  Value *closureValue = opStackPeek(0);
+  int i, n;
   Node *args = chld(p, 1);
   n = chldNum(args);
   for (i = n-1; i>=0; i--) {
     eval(ev, chld(args, i));
   }
-  if (closureValue->type == BUILTIN_FUN_VALUE_TYPE) {
-    BuiltinFun f = closureValue->data;
-    f(n);
+  eval(ev, chld(p, 0));
+  while (1) {
+    Value *closureValue = opStackPeek(0);
+    if (!closureValue) error("fun value is none in function application\n");
+    if (closureValue->type == BUILTIN_FUN_VALUE_TYPE) {
+      BuiltinFun f = closureValue->data;
+      opStackPop(); // poping built in function closure
+      f(n);
+      return;
+    }
+    // regular function call
+    Closure *c = closureValue->data;
+    Node *f = c->f;
+    Env *e2 = newEnv(c->e);
+    assert(opStackPop()->type == CLOSURE_VALUE_TYPE); // pop closure value
+    Node *ids = chld(f, 1);
+    if (chldNum(ids) != n) error("%s parameter number incorrect\n", valueToString(closureValue));
+    for (i = 0; i < n; i++) {
+      envPutLocal(e2, (long)chld(ids, i)->data, opStackPeek(i));
+    }
+    int ret = tlSetjmp();
+    if (0 == ret) {
+      Value* ev2 = newEnvValue(e2);
+      opStackPopN(n);
+      opStackPush(ev2);
+      eval(ev2, chld(f, 2));
+      // if reach here, no return statement is called, so none is returned
+      // return manually
+      tlLongjmp(RETURN_MSG_TYPE, newNoneValue());
+    } else if (__jmpMsg__.type == RETURN_MSG_TYPE) {
+      // return is called. evalReturn is responsible for cleaning up env2
+      opStackPush((Value *) __jmpMsg__.data);
+      __jmpMsg__.data = 0;
+      return;
+    } else if (__jmpMsg__.type == TAIL_CALL_MSG_TYPE) {
+      // tail recursion call. evalTailRecursion is responsible for cleaning up env2
+      List* args = (List*) __jmpMsg__.data;
+      n = listSize(args);
+      for (i = 0; i < n; i++) {
+        opStackPush(listGet(args, i));
+      }
+      __jmpMsg__.data = 0;
+      continue;
+    } else {
+      // propagate everything out
+      tlPropagateJmp();
+    }
   }
 }
 
@@ -191,20 +232,79 @@ void evalNot(Value *ev, Node *p) {
   opStackPush(res);
 }
 
+void evalFun(Value *ev, Node *p) {
+  Env *e = ev->data;
+  Value *res = newClosureValue(p, ev);
+  envPut(e, (long)chld(p, 0)->data, res);
+  opStackPush(res);
+}
+
 void evalError(Value *ev, Node *p) {
   error("cannot eval unknown node type %d\n", p->type);
 }
 
+void evalIf(Value *ev, Node *p) {
+  eval(ev, chld(p, 0));
+  if (opStackPop()->data) {
+    eval(ev, chld(p, 1));
+  } else if (chldNum(p) == 3) {
+    eval(ev, chld(p, 2));
+  }
+}
+
 void evalExpList(Value *ev, Node *p) {
-  error("nor implemented\n");
+  int i, n = chldNum(p);
+  for (i = 0; i < n; i++) {
+    if (i) opStackPop();
+    eval(ev, chld(p, i));
+  }
 }
 
 void evalListAccess(Value *ev, Node *p) {
-  error("nor implemented\n");
+  eval(ev, chld(p, 1));
+  eval(ev, chld(p, 0));
+  Value *v = opStackPeek(0);
+  Value *idxValue = opStackPeek(1);
+  if (idxValue->type != INT_VALUE_TYPE) error("list index must be int\n");
+  long idx = (long)idxValue->data;
+  Value *res;
+  switch (v->type) {
+    case LIST_VALUE_TYPE: {
+      List *l = (List *)v->data;
+      res = listGet(l, idx);
+      break;
+    }
+    case STRING_VALUE_TYPE: {
+      char *s = (char *)v->data;
+      char *ss = (char *)tlMalloc(2);
+      ss[0] = s[idx];
+      ss[1] = 0;
+      res = newStringValue(ss);
+      break;
+    }
+    default:
+      error("list access does not support value type %s\n", valueToString(v));
+  }
+  opStackPopN(2);
+  opStackPush(res);
 }
+
 void evalTailRecursion(Value *ev, Node *p) {
-  error("nor implemented\n");
+  int i, n;
+  List* l = newList();
+  Value* lv = newListValue(l);
+  opStackPush(lv); // will be cleaned up on long jump
+  Node *args = chld(p, 1);
+  n = chldNum(args);
+  for (i = n-1; i>=0; i--) {
+    eval(ev, chld(args, i));
+    listPush(l, opStackPop());
+  }
+  eval(ev, chld(p, 0));
+  listPush(l, opStackPop());
+  tlLongjmp(TAIL_CALL_MSG_TYPE, lv);
 }
+
 void evalReturn(Value *ev, Node *p) {
   error("nor implemented\n");
 }
@@ -214,10 +314,7 @@ void evalAssign(Value *ev, Node *p) {
 void evalAddEq(Value *ev, Node *p) {
   error("nor implemented\n");
 }
-void evalIf(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-void evalFor(Value *ev, Node *p) {
+void evalFor(Value *ev, Node* p) {
   error("nor implemented\n");
 }
 void evalForEach(Value *ev, Node *p) {
@@ -230,9 +327,6 @@ void evalContinue(Value *ev, Node *p) {
   error("nor implemented\n");
 }
 void evalBreak(Value *ev, Node *p) {
-  error("nor implemented\n");
-}
-void evalFun(Value *ev, Node *p) {
   error("nor implemented\n");
 }
 void evalTime(Value *ev, Node *p) {
@@ -267,9 +361,7 @@ static void popRootValueTo(int size) {
 }
 
 Value* eval(Value* ev, Node *p) {
-  opStackSave();
   Value* res = eval(ev, p);
-  opStackRestore();
   opStackPush(res);
   return res;
 }
@@ -388,12 +480,12 @@ Value *evalCall(Value *ev, Node *p) {
   int i, initSize = listSize(rootValues);
   Env *e = ev->data;
   Value *closureValue = evalAndPushRoot(ev, chld(p, 0));
+  if (!closureValue) error("fun value is none in function application\n");
   if (closureValue->type == BUILTIN_FUN_VALUE_TYPE) {
     Value *res = evalBuiltinFun(ev, chld(p, 1), closureValue->data);
     popRootValueTo(initSize);
     return res;
   }
-  if (!closureValue) error("fun value is none in function application\n");
   Closure *c = closureValue->data;
   Node *f = c->f, *args = chld(p, 1);
   Env *e2 = newEnv(c->e);

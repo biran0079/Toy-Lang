@@ -17,6 +17,21 @@ typedef struct JmpMsg {
   Value *data;
 } JmpMsg;
 
+extern JmpMsg __jmpMsg__;
+
+#ifndef USE_LEGACY_EVAL
+typedef struct BufBox {
+  jmp_buf buf;
+} BufBox;
+
+void initTljump();
+void cleanupTlJump();
+int tlSetjmp();
+void tlLongjmp(JmpMsgType type, Value *data);
+void tlPropagateJmp();
+void tlPopJumpBuf();
+#else
 void tlLongjmp(jmp_buf buf, JmpMsgType type, Value *data);
+#endif
 
 #endif

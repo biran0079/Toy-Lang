@@ -18,6 +18,9 @@ static void mark() {
     listPush(q, listGet(rootValues, i));
   }
   opStackAppendValuesTo(q);
+  if (__jmpMsg__.data) {
+    listPush(q, __jmpMsg__.data);
+  }
   while (listSize(q)) {
     v = listPop(q);
     if (v->mark) continue;

@@ -1,4 +1,5 @@
 CFLAGS = -g
+CC=clang
 
 all: tl
 

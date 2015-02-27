@@ -28,7 +28,7 @@ void builtinLen(int n) {
     default:
       error("len() cannot apply on value type %d\n", l->type);
   }
-  opStackPopN(n+1);
+  opStackPopN(n);
   opStackPush(res);
 }
 
@@ -39,7 +39,7 @@ void builtinOrd(int n) {
     error("ord() can only apply to string with length 1, got %s\n",
           valueToString(v));
   Value* res = newIntValue(*((char *)v->data));
-  opStackPopN(n+1);
+  opStackPopN(n);
   opStackPush(res);
 }
 
@@ -48,7 +48,7 @@ void builtinSort(int n) {
   Value *v = opStackPeek(0);
   if (v->type != LIST_VALUE_TYPE) error("sort only applys on list\n");
   listSort(v->data, valueCmp);
-  opStackPopN(n+1);
+  opStackPopN(n);
   opStackPush(newNoneValue());
 }
 
@@ -56,7 +56,7 @@ void builtinStr(int n) {
   CHECK_ARG_NUM(1, str());
   Value *v = opStackPeek(0);
   Value *res = newStringValue(valueToString(v));
-  opStackPopN(n+1);
+  opStackPopN(n);
   opStackPush(res);
 }
 
@@ -68,7 +68,7 @@ void builtinChr(int n) {
   s[0] = (long)v->data;
   s[1] = 0;
   Value* res = newStringValue(s);
-  opStackPopN(1);
+  opStackPopN(n);
   opStackPush(res);
 }
 
@@ -82,13 +82,13 @@ void builtinPrint(int n) {
   }
   printf("\n");
   Value* res = newNoneValue();
-   opStackPopN(n+1);
+  opStackPopN(n);
   opStackPush(res);
 }
 
 void builtinRand(int n) { 
   CHECK_ARG_NUM(0, rand());
-  opStackPopN(n+1);
+  opStackPopN(n);
   opStackPush(newIntValue(rand()));
 }
 
@@ -110,7 +110,7 @@ void builtinParse(int n) {
   if (!parse(tokenize(code))) error("failed to parse %s\n", code);
 #endif
   Value* res = nodeToListValue(listLast(parseTrees));
-  opStackPopN(n+1);
+  opStackPopN(n);
   opStackPush(res);
 }
 
@@ -123,7 +123,7 @@ void builtinRead(int n) {
   char *s = readFileWithPath((char *)v->data);
   Value* res = newNoneValue();;
   if (s) res = newStringValue(s);
-  opStackPopN(n+1);
+  opStackPopN(n);
   opStackPush(res);
 }
 
@@ -141,7 +141,7 @@ void builtinSysargs(int n) {
   CHECK_ARG_NUM(0, sysargs());
   List *lst = newList();
   Value *res = newListValue(lst);
-  opStackPopN(n+1);
+  opStackPopN(n);
   opStackPush(res);
   int i;
   for (i = 0; i < sysArgc; i++) {

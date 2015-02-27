@@ -23,6 +23,7 @@ void *tlRealloc(void *t, int size) {
 void tlFree(void *t) {
   MemBlock *m = (MemBlock *)t - 1;
   memoryUsage -= m->size;
+  memset(m, 0, m->size + sizeof(MemBlock));
   free(m);
 }
 

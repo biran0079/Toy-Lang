@@ -44,7 +44,7 @@ void opStackRestore() {
   if (listSize(opStackState) == 0) {
     error("cannot restore without save\n");
   }
-  listPopTo(opStack, (int)listPop(opStackState));
+  listPopTo(opStack, (long)listPop(opStackState));
 }
 
 void opStackAppendValuesTo(List* l) {

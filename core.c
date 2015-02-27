@@ -14,7 +14,6 @@ List *parseTrees;
 List *values;      // all values created
 List *rootValues;  // all values should be treated as root when gc
 Value *globalEnv;
-JmpMsg __jmpMsg__;
 int memoryLimit = 200000000;
 List *path;  // where import loads from
 
@@ -43,6 +42,7 @@ void listCreatedObjectsCount() {
 void init(int argc, char **args) {
   initIdMap();
   initOpStack();
+  initTljump();
   path = newList();
   char *tlDir = getFolder(args[0]);
   listPush(path, catStr(tlDir, "lib/"));
@@ -61,6 +61,7 @@ void init(int argc, char **args) {
 void cleanup() {
   cleanupIdMap();
   cleanupOpStack();
+  cleanupTlJump();
   listClear(rootValues);
   forceGC();
   freeList(rootValues);
