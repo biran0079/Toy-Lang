@@ -13,8 +13,6 @@ int newIntValueC = 0, newStringValueC = 0, newClosureValueC = 0,
 int freeIntValueC = 0, freeStringValueC = 0, freeClosureValueC = 0,
     freeEnvValueC = 0, freeListValueC = 0, freeBuiltinFunC = 0;
 
-List *values;
-
 Value *newNoneValue() {
   static Value *res = 0;
   if (res) {
