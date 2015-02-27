@@ -7,15 +7,13 @@ static List *opStack;
 
 void initOpStack() {
   opStack = newList();
-  opStackState = newList();
 }
 
 void cleanupOpStack() {
-  if (listSize(opStack) || listSize(opStackState)) {
+  if (listSize(opStack)) {
     error("cannot clean up op stack when it is not empty");
   }
   freeList(opStack);
-  freeList(opStackState);
 }
 
 void opStackPush(Value *v) {
