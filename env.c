@@ -15,9 +15,18 @@ Env *newEnv(Value *parentEnv, Value *envValue) {
   return res;
 }
 
+static void derefAllValues() {
+  int i, n = listSize(e->l);
+  for (i = 0; i < n; i++) {
+    Value *v = listGet(e->l, i);
+    if (v) deref(v);
+  }
+}
+
 void freeEnv(Env *e) {
   if (!e) error("NONE passed to freeEnv\n");
   freeEnvC++;
+  derefAllValues();
   freeList(e->l);
   e->l = 0;
   tlFree(e);
@@ -49,8 +58,13 @@ Value *envPut(Env *e, long key, Value *value) {
 }
 
 Value *envPutLocal(Env *e, long key, Value *value) {
+  ref(value);
   increaseSizeTo(e->l, key + 1);
-  return (Value *)listSet(e->l, key, value);
+  Value* oldValue = (Value *)listSet(e->l, key, value);
+  if (oldValue) {
+    deref(oldValue);
+  }
+  return oldValue;
 }
 
 Value *envGetLocal(Env *e, long key) {
@@ -75,3 +89,4 @@ void envAddAllValuesToList(Env *e, List *q) {
     if (v) listPush(q, v);
   }
 }
+

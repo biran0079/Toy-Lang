@@ -20,12 +20,13 @@ EvalResult *newEvalResult(EvalResultType t, Value *v) {
   EvalResult *res = MALLOC(EvalResult);
   res->type = t;
   res->value = v;
+  if (v) ref(v);
   return res;
 }
 
 void freeEvalResult(EvalResult *er) {
   freeEvalResultC++;
-  tlFree(er);
+  if (er->v) deref(er->v);
 }
 
 /**
@@ -34,11 +35,9 @@ void freeEvalResult(EvalResult *er) {
  * 2. no value will be pushed to op stack if eval returns non-zero
  * 3. all eval call's return value must be checked
  * 4. anything in op stack will not be GCed
- * 5. each opStackSave must be paired by exactly on opStackRestore before
- * returning
- * 6. any usage of Value* type in eval call shuold be pushed to
+ * 5. any usage of Value* type in eval call shuold be pushed to
  * pointersInEvalStack to survive GC
- * 7. no GC in env operations and op-stack operations
+ * 6. no GC in env operations and op-stack operations
  */
 EvalResult *eval(Env *ev, Node *p) {
   int beforeStackSize = opStackSize();
@@ -120,7 +119,7 @@ EvalResult *evalCall(Env *ev, Node *p) {
         }
         case TAIL_RECURSION_RESULT: {
           opStackPopTo(beforeStackSize);
-          List *l = (List *)er->value->data;
+          Value *l = (List *)er->value;
           n = listSize(l);
           for (i = 0; i < n; i++) {
             opStackPush(listGet(l, i));
@@ -157,8 +156,8 @@ EvalResult *evalInt(Env *ev, Node *p) {
 }
 
 EvalResult *evalList(Env *ev, Node *p) {
-  List *vs = newList();
-  opStackPush(newListValue(vs));
+  Value* lv = newListValue(newList());
+  opStackPush(lv);
   int i, n = chldNum(p);
   for (i = 0; i < n; i++) {
     EvalResult *er = eval(ev, chld(p, i));
@@ -166,7 +165,7 @@ EvalResult *evalList(Env *ev, Node *p) {
       assert(er->type == EXCEPTION_RESULT);
       return er;
     }
-    listPush(vs, opStackPop());
+    listValuePush(lv, opStackPeek(0));
   }
   return 0;
 }
@@ -485,14 +484,15 @@ EvalResult *evalListAccess(Env *ev, Node *p) {
 
 EvalResult *evalTailRecursion(Env *ev, Node *p) {
   int i, n;
-  List *l = newList();
-  opStackPush(newListValue(l));  // protect from gc
+  Value* lv = newListValue(newList()); 
+  opStackPush(lv);
   Node *args = chld(p, 1);
   n = chldNum(args);
   for (i = n - 1; i >= 0; i--) {
     EvalResult *er = eval(ev, chld(args, i));
     if (er) return er;
-    listPush(l, opStackPop());
+    listValuePush(lv, opStackPeek(0));
+    opStackPop();
   }
   EvalResult *er = eval(ev, chld(p, 0));
   if (er) return er;
@@ -518,7 +518,7 @@ EvalResult *evalAssign(Env *ev, Node *p) {
         return er;
       }
       assert(opStackPeek(0)->type == LIST_VALUE_TYPE);
-      List *l = opStackPeek(0)->data;
+      Value *lv = opStackPeek(0);
       er = eval(ev, chld(left, 1));
       if (er) {
         assert(er->type == EXCEPTION_RESULT);
@@ -533,7 +533,7 @@ EvalResult *evalAssign(Env *ev, Node *p) {
         return er;
       }
       opStackPopToPush(beforeStackSize, opStackPeek(0));
-      listSet(l, idx, opStackPeek(0));
+      listValueSet(lv, idx, opStackPeek(0));
       return 0;
     }
     case ID_TYPE: {
@@ -576,7 +576,7 @@ EvalResult *evalAddEq(Env *ev, Node *p) {
         assert(er->type == EXCEPTION_RESULT);
         return er;
       }
-      List *l = getListFromValue(opStackPeek(0));
+      Value *lv = opStackPeek(0);
 
       er = eval(ev, chld(left, 1));
       if (er) {
@@ -592,21 +592,19 @@ EvalResult *evalAddEq(Env *ev, Node *p) {
         opStackPopTo(beforeStackSize);
         return er;
       }
-      Value *e1 = listGet(l, idx);
+      Value *e1 = listValueGet(lv, idx);
       Value *e2 = opStackPeek(0);
       switch (e1->type) {
         case INT_VALUE_TYPE:
         case STRING_VALUE_TYPE:
           opStackPopToPush(beforeStackSize, valueAdd(e1, e2));
-          listSet(l, idx, opStackPeek(0));
+          listValueSet(lv, idx, opStackPeek(0));
           break;
         case LIST_VALUE_TYPE:
           if (e2->type == LIST_VALUE_TYPE) {
-            List *l = (List *)e2->data;
-            for (i = 0; i < listSize(l); i++)
-              listPush((List *)e1->data, listGet(l, i));
+            listValueExtend(e1, e2);
           } else {
-            listPush((List *)e1->data, e2);
+            listValuePush(e1, e2);
           }
           opStackPopToPush(beforeStackSize, e1);
           break;
@@ -632,11 +630,9 @@ EvalResult *evalAddEq(Env *ev, Node *p) {
           break;
         case LIST_VALUE_TYPE:
           if (e2->type == LIST_VALUE_TYPE) {
-            List *l = (List *)e2->data;
-            for (i = 0; i < listSize(l); i++)
-              listPush((List *)e1->data, listGet(l, i));
+            listValueExtend(e1, e2);
           } else {
-            listPush((List *)e1->data, e2);
+            listValuePush(e1, e2);
           }
           opStackPopToPush(beforeStackSize, e1);
           break;
@@ -688,10 +684,10 @@ EvalResult *evalForEach(Env *ev, Node *p) {
   Node *id = chld(p, 0);
   EvalResult *er = eval(ev, chld(p, 1));
   if (er) return er;
-  List *l = getListFromValue(opStackPeek(0));
-  int len = listSize(l);
+  Value *lv = opStackPeek(0);
+  int len = listValueSize(lv);
   for (i = 0; i < len; i++) {
-    envPut(ev, (long)id->data, listGet(l, i));
+    envPut(ev, (long)id->data, listValueGet(lv, i));
     er = eval(ev, chld(p, 2));
     if (er) {
       if (CONTINUE_RESULT == er->type) {
@@ -819,16 +815,16 @@ EvalResult *evalAddAdd(Env *ev, Node *p) {
         opStackPopTo(beforeStackSize);
         return er;
       }
-      List *l = getListFromValue(opStackPeek(0));
+      Value *lv = opStackPeek(0);
       er = eval(ev, chld(left, 1));
       if (er) {
         opStackPopTo(beforeStackSize);
         return er;
       }
       long idxv = getIntFromValue(opStackPeek(0));
-      opStackPopToPush(beforeStackSize, listGet(l, idxv));
+      opStackPopToPush(beforeStackSize, listValueGet(lv, idxv));
       long resultV = getIntFromValue(opStackPeek(0)) + 1;
-      listSet(l, idxv, newIntValue(resultV));
+      listValueSize(lv, idxv, newIntValue(resultV));
       return 0;
     }
     default:

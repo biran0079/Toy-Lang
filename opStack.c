@@ -4,7 +4,6 @@
 #include "value.h"
 
 static List *opStack;
-static List *opStackState;
 
 void initOpStack() {
   opStack = newList();
@@ -19,35 +18,29 @@ void cleanupOpStack() {
   freeList(opStackState);
 }
 
-void opStackPush(Value *v) { listPush(opStack, v); }
-
-void opStackPopN(int n) {
-  int newSize = listSize(opStack) - n;
-  if (newSize < 0) {
-    error("cannot pop empty op stack");
-  }
-  listPopTo(opStack, newSize);
+void opStackPush(Value *v) {
+  listPush(opStack, ref(v));
 }
 
-Value *opStackPop() {
+void opStackPopN(int n) {
+  int i;
+  for (i = 0; i < n; i++) {
+    opStackPop();
+  }
+}
+
+void opStackPop() {
   if (listSize(opStack) == 0) {
     error("cannot pop empty op stack");
   }
-  return listPop(opStack);
-}
-
-void opStackSave() { listPush(opStackState, (void *)(long) listSize(opStack)); }
-
-void opStackRestore() {
-  if (listSize(opStackState) == 0) {
-    error("cannot restore without save\n");
-  }
-  listPopTo(opStack, (long)listPop(opStackState));
+  deref(listPop(opStack));
 }
 
 void opStackAppendValuesTo(List *l) {
   int i, n = listSize(opStack);
-  for (i = 0; i < n; i++) listPush(l, listGet(opStack, i));
+  for (i = 0; i < n; i++) {
+    listPush(l, listGet(opStack, i));
+  }
 }
 
 Value *opStackPeek(int i) {
@@ -56,7 +49,12 @@ Value *opStackPeek(int i) {
 
 int opStackSize() { return listSize(opStack); }
 
-void opStackPopTo(int n) { listPopTo(opStack, n); }
+void opStackPopTo(int n) {
+  assert(opStackSize() >= n);
+  while (opStackSize() > n) {
+    opStackPop();
+  }
+}
 
 void showOpStack() {
   int i, n = listSize(opStack);
@@ -68,16 +66,17 @@ void showOpStack() {
 }
 
 void opStackPopToPush(int n, Value *v) {
-  if (n == listSize(opStack)) {
-    opStackPush(v);
-  } else {
-    listSet(opStack, n, v);
-    listPopTo(opStack, n + 1);
-  }
+  ref(v);
+  opStackPopTo(v);
+  opStackPush(v);
+  deref(v);
 }
 
 void opStackPopNPush(int n, Value *v) {
-  opStackPopToPush(listSize(opStack) - n, v);
+  ref(v);
+  opStackPopN(n);
+  opStackPush(v);
+  deref(v);
 }
 
 void opStackUpdateAddr(HashTable *addrMap) {

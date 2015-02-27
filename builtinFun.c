@@ -138,13 +138,11 @@ char **sysArgv;
 
 void builtinSysargs(int n) {
   CHECK_ARG_NUM(0, sysargs());
-  List *lst = newList();
-  Value *res = newListValue(lst);
-  opStackPopN(n);
-  opStackPush(res);
+  Value *res = newListValue(newList());
+  opStackPopNPush(n, res);
   int i;
   for (i = 0; i < sysArgc; i++) {
-    listPush(lst, newStringValue(copyStr(sysArgv[i])));
+    listValuePush(res, newStringValue(copyStr(sysArgv[i])));
   }
 }
 

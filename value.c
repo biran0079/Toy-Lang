@@ -13,7 +13,7 @@ int newIntValueC = 0, newStringValueC = 0, newClosureValueC = 0,
 int freeIntValueC = 0, freeStringValueC = 0, freeClosureValueC = 0,
     freeEnvValueC = 0, freeListValueC = 0, freeBuiltinFunC = 0;
 
-extern List *values;
+List *values;
 
 Value *newNoneValue() {
   static Value *res = 0;
@@ -23,6 +23,7 @@ Value *newNoneValue() {
     res = allocValue();
     res->type = NONE_VALUE_TYPE;
     res->data = 0;
+    res->ref = 0;
     res->mark = STATIC;
     return res;
   }
@@ -34,6 +35,7 @@ Value *newIntValue(long x) {
   Value *res = allocValue();
   res->type = INT_VALUE_TYPE;
   res->data = (void *)x;
+    res->ref = 0;
   res->mark = UNMARKED;
   return res;
 }
@@ -44,6 +46,7 @@ Value *newStringValue(char *s) {
   Value *res = allocValue();
   res->type = STRING_VALUE_TYPE;
   res->data = (void *)s;
+    res->ref = 0;
   res->mark = UNMARKED;
   return res;
 }
@@ -54,7 +57,12 @@ Value *newListValue(List *list) {
   Value *res = allocValue();
   res->type = LIST_VALUE_TYPE;
   res->data = list;
+    res->ref = 0;
   res->mark = UNMARKED;
+  int i, n = listSize(list);
+  for ( i = 0; i < n;i++) {
+    ref(listGet(list, i));
+  }
   return res;
 }
 
@@ -64,6 +72,7 @@ Value *newClosureValue(Node *t, Env *e) {
   Value *res = allocValue();
   res->type = CLOSURE_VALUE_TYPE;
   res->data = newClosure(t, e->envValue);
+    res->ref = 0;
   res->mark = UNMARKED;
   return res;
 }
@@ -74,6 +83,7 @@ Value *newBuiltinFun(BuiltinFun f) {
   Value *res = allocValue();
   res->type = BUILTIN_FUN_VALUE_TYPE;
   res->data = f;
+    res->ref = 0;
   res->mark = UNMARKED;
   return res;
 }
@@ -86,6 +96,7 @@ Value *newEnvValue(Env *parent) {
   res->type = ENV_VALUE_TYPE;
   res->data = newEnv(pv, res);
   res->mark = UNMARKED;
+    res->ref = 0;
   envPutLocal(res->data, getIntId("this"), res);
   return res;
 }
@@ -94,6 +105,7 @@ void freeValue(Value *v) {
 #ifdef DEBUG_GC
   printf("freeing %s @ %p\n", valueToString(v), v);
 #endif
+  int i, n;
   switch (v->type) {
     case CLOSURE_VALUE_TYPE:
       freeClosure((Closure *)v->data);
@@ -104,7 +116,10 @@ void freeValue(Value *v) {
       freeEnvValueC++;
       break;
     case LIST_VALUE_TYPE:
-      freeList((List *)v->data);
+      List* l = (List *)v->data;
+      n = listSize(l);
+      for (i = 0; i < n; i++) deref(listGet(l, i));
+      freeList(l);
       freeListValueC++;
       break;
     case STRING_VALUE_TYPE:
@@ -361,7 +376,42 @@ Env *getEnvFromValue(Value *v) {
   return (Env *)v->data;
 }
 
-List *getListFromValue(Value *v) {
-  assert(v->type == LIST_VALUE_TYPE);
-  return (List *)v->data;
+Value* ref(Value* v) {
+  v->ref++;
+  return v;
+}
+
+void listValuePush(Value* lv, Value* v) {
+  assert(lv->type == LIST_VALUE_TYPE);
+  listPush(lv->data, ref(v));
+}
+
+void listValueSet(Value* lv, int i, Value* v) {
+  assert(lv->type == LIST_VALUE_TYPE);
+  deref(listSet(lv->data, i, ref(v)));
+}
+
+void listValueGet(Value* lv, int i) {
+  assert(lv->type == LIST_VALUE_TYPE);
+  return listGet(l->data, i);
+}
+
+int listValueSize(Value* lv) {
+  assert(lv->type == LIST_VALUE_TYPE);
+  return listSize(lv->data);
+}
+
+void listValueExtend(Value* lv1, Value* lv2) {
+  int i, n = listValueSize(lv2);
+  for (int i = 0; i < n; i++) {
+    listValuePush(lv1, listValueGet(lv2, i));
+  }
+}
+
+void deref(Value* v) {
+  int ref = --(v->ref); 
+  assert(ref >= 0);
+  if(!ref) {
+    freeValue(v);
+  }
 }

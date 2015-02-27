@@ -15,6 +15,7 @@ void freeClosure(Closure *c) {
   if (!c) error("NONE passed to freeClosure\n");
   freeClosureC++;
   c->f = 0;
+  deref(e);
   c->e = 0;
   tlFree(c);
 }

@@ -60,19 +60,18 @@ void markTailRecursions(Node *t) {
 }
 
 Value *nodeToListValue(Node *p) {
-  List *l = newList();
-  Value *res = newListValue(l);
+  Value *res = newListValue(newList());
   opStackPush(res);
-  listPush(l, newStringValue(copyStr(nodeTypeToString(p->type))));
+  listValuePush(res, newStringValue(copyStr(nodeTypeToString(p->type))));
   switch (p->type) {
     case INT_TYPE:
-      listPush(l, newIntValue((long)p->data));
+      listValuePush(res, newIntValue((long)p->data));
       break;
     case ID_TYPE:
-      listPush(l, newStringValue(copyStr(getStrId((long)p->data))));
+      listValuePush(res, newStringValue(copyStr(getStrId((long)p->data))));
       break;
     case STRING_TYPE:
-      listPush(l, newStringValue(copyStr((char *)p->data)));
+      listValuePush(res, newStringValue(copyStr((char *)p->data)));
       break;
     case STMTS_TYPE:
     case ASSIGN_TYPE:
@@ -114,7 +113,7 @@ Value *nodeToListValue(Node *p) {
     case IMPORT_TYPE:
     case MODULE_ACCESS_TYPE: {
       int i, n = chldNum(p);
-      for (i = 0; i < n; i++) listPush(l, nodeToListValue(chld(p, i)));
+      for (i = 0; i < n; i++) listValuePush(res, nodeToListValue(chld(p, i)));
       break;
     }
     default:

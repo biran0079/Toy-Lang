@@ -24,6 +24,7 @@ struct Value {
   ValueType type;
   Mark mark;
   void *data;
+  int ref;
 };
 
 Value *newIntValue(long x);
@@ -50,6 +51,12 @@ int valueCmp(Value *v1, Value *v2);
 
 long getIntFromValue(Value *intValue);
 Env *getEnvFromValue(Value *v);
-List *getListFromValue(Value *v);
+Value* ref(Value* v);
+void deref(Value** p);
 
+void listValuePush(Value* lv, Value* v);
+void listValueGet(Value* lv, int i);
+void listValueSet(Value* lv, int i, Value* v);
+int listValueSize(Value* lv);
+void listValueExtend(Value* lv1, Value* lv2);
 #endif
