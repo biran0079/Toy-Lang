@@ -50,7 +50,6 @@ enum NodeType {
   LOCAL_TYPE,
   IMPORT_TYPE,
   MODULE_ACCESS_TYPE,
-  __DUMMY_TYPE,  // Used for parsing. Not part of language.
 };
 
 typedef EvalResult *(*EvalFunc)(Env *, Node *);

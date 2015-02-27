@@ -110,6 +110,18 @@ Token *newToken(Token_t type, void *data) {
   return res;
 }
 
+static void freeToken(Token* t) {
+  tlFree(t);
+}
+
+void freeTokenList(List* l) {
+  int i, n = listSize(l);
+  for (i = 0; i < n; i++) {
+    freeToken(listGet(l, i));
+  }
+  freeList(l);
+}
+
 int isDigit(char c) { return c >= '0' && c <= '9'; }
 
 int isLetter(char c) {

@@ -91,6 +91,7 @@ int main(int argc, char **argv) {
   if (!code) error("cannot open input file\n");
   List *tokens = tokenize(code);
   parse(tokens);
+  freeTokenList(tokens);
 #endif
   Node* tree = listLast(parseTrees);
   if (toDot) {

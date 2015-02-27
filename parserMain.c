@@ -13,6 +13,9 @@ int main(int argc, char **args) {
   if (!tree) {
     error("failed to parse file %s\n", src);
   }
+  freeTokenList(tokens);
   printAst(tree);
+  cleanup();
+  listCreatedObjectsCount();
   return 0;
 }

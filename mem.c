@@ -17,6 +17,9 @@ static ValuesBlock* newValuesBlock(int size) {
   if (size > MAX_BLOCK_SIZE) {
     size = MAX_BLOCK_SIZE;
   }
+#ifdef DEBUG_GC
+  fprintf(stderr, "alloc %d\n", size);
+#endif
   ValuesBlock* res = MALLOC(ValuesBlock);
   res->a = tlMalloc(size * sizeof(Value));
   res->capacity = size;
@@ -26,6 +29,9 @@ static ValuesBlock* newValuesBlock(int size) {
 }
 
 static void freeValuesBlock(ValuesBlock* b) {
+#ifdef DEBUG_GC
+  fprintf(stderr, "free %d\n", b->capacity);
+#endif
   tlFree(b->a);
   tlFree(b);
 }
@@ -113,11 +119,13 @@ static void writeAndUnmark(Iterator* it, Value* v, HashTable* addrMap) {
 static void freeAllBlocksAfter(Iterator* it) {
   ValuesBlock* b = it->b;
   b->top = it->i;
-  while(b) {
-    ValuesBlock* next = b->next;
-    b->next = 0;
-    if(next) freeValuesBlock(next);
-    b = next;
+  ValuesBlock* next = b->next;
+  b->next = 0;
+  ValuesBlock* cur = next;
+  while(cur) {
+    next = cur->next;
+    freeValuesBlock(cur);
+    cur = next;
   }
 }
 

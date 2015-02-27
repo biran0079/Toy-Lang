@@ -5,8 +5,6 @@
 #include "tokenizer.h"
 
 Node *parse(List *tokens);
-Node *post_process(Node *tree);
-Node *match(List *t, int *ip, Token_t type);
 
 Node *stmts(List *t, int *ip);
 Node *stmt(List *t, int *ip);
