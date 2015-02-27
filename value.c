@@ -137,6 +137,7 @@ void freeValue(Value *v) {
       error("unkonwn value type passed to freeValue: %d\n", v->type);
   }
   v->type = NONE_VALUE_TYPE;
+  listPush(deadValues, v);
 }
 
 static int getStringLength(char *format, ...) {

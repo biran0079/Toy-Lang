@@ -3,6 +3,8 @@
 
 #include "value.h"
 
+extern List *liveValues, *deadValues;
+
 typedef struct ValuesBlock ValuesBlock;
 struct ValuesBlock {
   Value* a;
