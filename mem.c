@@ -123,7 +123,6 @@ static void freeAllBlocksAfter(Iterator* it) {
 
 static void updateValuePointers(HashTable* addrMap) {
   opStackUpdateAddr(addrMap);
-  inStackPointerUpdateAddr(addrMap);
 
   Iterator* from = newIterator(head, 0);
   Value* v;
@@ -140,7 +139,7 @@ static void updateValuePointers(HashTable* addrMap) {
         break;
       }
       case ENV_VALUE_TYPE: {
-        Env *e = v->data;
+        Env *e = getEnvFromValue(v);
         List* keys = hashTableGetAllKeys(e->t);
         int i, n = listSize(keys);
         for (i = 0; i < n; i++) {
@@ -155,6 +154,11 @@ static void updateValuePointers(HashTable* addrMap) {
         assert(newAddr);
         assert(newAddr->type == ENV_VALUE_TYPE || newAddr->type == NONE_VALUE_TYPE);
         e->parent = newAddr;
+
+        newAddr = hashTableGet(addrMap, e->envValue);
+        assert(newAddr);
+        assert(newAddr->type == ENV_VALUE_TYPE || newAddr->type == NONE_VALUE_TYPE);
+        e->envValue = newAddr;
         break;
       }
       case LIST_VALUE_TYPE: {

@@ -15,7 +15,7 @@
 extern List *parseTrees;
 extern List *values;
 extern List *path;
-extern Value *globalEnv;
+extern Env *globalEnv;
 extern int memoryLimit;
 extern int shouldDumpGCHistory, gcTestMode;
 extern int sysArgc;

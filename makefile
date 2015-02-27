@@ -28,7 +28,7 @@ tl: $(CORE_OBJS) $(PARSER_OBJs) $(TL_MAIN_OBJ)
 # clear before building yytl
 yytl: CFLAGS = -DYYDEBUG=0 -g -DUSE_YY_PARSER
 yytl: CC = gcc
-yytl: clear $(CORE_OBJS) $(TL_MAIN_OBJ) $(YY_PARSER_OBJS)
+yytl: $(CORE_OBJS) $(TL_MAIN_OBJ) $(YY_PARSER_OBJS)
 	$(CC) $(CFLAGS) $(CORE_OBJS) $(TL_MAIN_OBJ) $(YY_PARSER_OBJS) -o tl
 
 parser: $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_MAIN_OBJ)

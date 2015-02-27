@@ -58,12 +58,12 @@ Value *newListValue(List *list) {
   return res;
 }
 
-Value *newClosureValue(Node *t, Value **e) {
+Value *newClosureValue(Node *t, Env *e) {
   gc();
   newClosureValueC++;
   Value *res = allocValue();
   res->type = CLOSURE_VALUE_TYPE;
-  res->data = newClosure(t, *e);
+  res->data = newClosure(t, e->envValue);
   res->mark = UNMARKED;
   return res;
 }
@@ -78,12 +78,13 @@ Value *newBuiltinFun(BuiltinFun f) {
   return res;
 }
 
-Value *newEnvValue(Value **parent) {
+Value *newEnvValue(Env *parent) {
   gc();
+  Value* pv = parent ? parent->envValue : newNoneValue();
   newEnvValueC++;
   Value *res = allocValue();
   res->type = ENV_VALUE_TYPE;
-  res->data = newEnv(*parent);
+  res->data = newEnv(pv, res);
   res->mark = UNMARKED;
   envPutLocal(res->data, getIntId("this"), res);
   return res;

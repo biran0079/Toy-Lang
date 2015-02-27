@@ -6,11 +6,12 @@
 
 int newEnvC = 0, freeEnvC = 0;
 
-Env *newEnv(Value *parentEnv) {
+Env *newEnv(Value *parentEnv, Value* envValue) {
   newEnvC++;
   Env *res = MALLOC(Env);
   res->t = newIntHashTable();
   res->parent = parentEnv;
+  res->envValue = envValue;
   return res;
 }
 

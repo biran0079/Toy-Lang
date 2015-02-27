@@ -12,7 +12,7 @@
 #include "opStack.h"
 
 List* parseTrees; // make sure no tree is deleted during evaluation by keeping track of all parse trees
-Value *globalEnv;
+Env *globalEnv;
 int memoryLimit = 512 * 1024 * 1024;
 List *path;  // where import loads from
 int isInitialized = 0;
@@ -45,13 +45,10 @@ void init(int argc, char **args) {
   initIdMap();
   initOpStack();
 
-  Value* none = newNoneValue(); // initialize singleton none value
   // global env depends on value block (none value), id map (default 'this' field)
-  globalEnv = newEnvValue(&none);
-  opStackPush(globalEnv);
-  registerBuiltinFunctions(globalEnv->data);
-
-  initEval(); // depends on global env ()
+  globalEnv = getEnvFromValue(newEnvValue(0));
+  opStackPush(globalEnv->envValue);
+  registerBuiltinFunctions(globalEnv);
 
   path = newList();
   char *tlDir = getFolder(args[0]);
@@ -66,8 +63,7 @@ void init(int argc, char **args) {
 
 void cleanup() {
   forceGC();
-  cleanupEval();
-  assert(globalEnv == opStackPop());  // clean up global env
+  assert(globalEnv->envValue == opStackPop());  // clean up global env
   cleanupOpStack();
   cleanupValuesBlock();
   cleanupIdMap();
