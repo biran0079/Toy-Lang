@@ -8,7 +8,7 @@
 #include "opStack.h"
 #include "mem.h"
 
-extern List *values, *gcHistory;
+extern List *gcHistory;
 
 static void mark() {
   Value *v;
