@@ -143,14 +143,14 @@ static void updateValuePointers(HashTable* addrMap) {
       }
       case ENV_VALUE_TYPE: {
         Env* e = getEnvFromValue(v);
-        List* keys = hashTableGetAllKeys(e->t);
+        List* keys = envGetAllIds(e);
         int i, n = listSize(keys);
         for (i = 0; i < n; i++) {
-          void* key = listGet(keys, i);
-          oldAddr = hashTableGet(e->t, key);
+          long key = (long) listGet(keys, i);
+          oldAddr = envGetLocal(e, key);
           newAddr = hashTableGet(addrMap, oldAddr);
           assert(newAddr);
-          hashTablePut(e->t, key, newAddr);
+          envPutLocal(e, key, newAddr);
         }
         freeList(keys);
         newAddr = hashTableGet(addrMap, e->parent);

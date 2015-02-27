@@ -60,9 +60,11 @@ void *listLast(List *lst) {
   return lst->arr[lst->size - 1];
 }
 
-void listSet(List *lst, int idx, void *v) {
+void* listSet(List *lst, int idx, void *v) {
   assert(idx < lst->size && idx >= 0);
+  void* oldValue = lst->arr[idx];
   lst->arr[idx] = v;
+  return oldValue;
 }
 
 List *listCopy(List *lst) {
@@ -104,11 +106,12 @@ void listPopTo(List *lst, int size) {
 }
 
 void increaseSizeTo(List *lst, int size) {
+  if (size <= lst->size) return;
   int cap = lst->cap;
   if (cap < size) {
     while (cap < size) cap *= 2;
     resize(lst, cap);
   }
-  memset(lst->arr + lst->size, 0, size - lst->size);
+  memset(lst->arr + lst->size, 0, sizeof(void*) * (size - lst->size));
   lst->size = size;
 }

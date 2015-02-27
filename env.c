@@ -9,7 +9,7 @@ int newEnvC = 0, freeEnvC = 0;
 Env *newEnv(Value *parentEnv, Value *envValue) {
   newEnvC++;
   Env *res = MALLOC(Env);
-  res->t = newIntHashTable();
+  res->l = newList();
   res->parent = parentEnv;
   res->envValue = envValue;
   return res;
@@ -18,14 +18,14 @@ Env *newEnv(Value *parentEnv, Value *envValue) {
 void freeEnv(Env *e) {
   if (!e) error("NONE passed to freeEnv\n");
   freeEnvC++;
-  freeHashTable(e->t);
-  e->t = 0;
+  freeList(e->l);
+  e->l = 0;
   tlFree(e);
 }
 
 Value *envGet(Env *e, long key) {
   while (1) {
-    Value *res = (Value *)hashTableGet(e->t, (void *)key);
+    Value *res = envGetLocal(e, key);
     if (res) {
       return res;
     }
@@ -38,18 +38,41 @@ Value *envGet(Env *e, long key) {
 Value *envPut(Env *e, long key, Value *value) {
   Env *e2 = e;
   while (1) {
-    if (hashTableGet(e2->t, (void *)key)) {
-      return (Value *)hashTablePut(e2->t, (void *)key, (void *)value);
+    if (envGetLocal(e2, key)) {
+      return envPutLocal(e2, key, value);
     } else {
       if (e2->parent->type == NONE_VALUE_TYPE) break;
       e2 = e2->parent->data;
     }
   }
-  return (Value *)hashTablePut(e->t, (void *)key, (void *)value);
+  return (Value *)envPutLocal(e, key, value);
 }
 
 Value *envPutLocal(Env *e, long key, Value *value) {
-  return (Value *)hashTablePut(e->t, (void *)key, value);
+  increaseSizeTo(e->l, key + 1);
+  return (Value*) listSet(e->l, key, value);
 }
 
-List *envGetAllIds(Env *e) { return hashTableGetAllKeys(e->t); }
+
+Value* envGetLocal(Env* e, long key) {
+  return e->l->size > key ? listGet(e->l, key) : 0;
+}
+
+List *envGetAllIds(Env *e) {
+  List* res = newList();
+  long i, n = listSize(e->l);
+  for (i = 0; i < n; i++) {
+    if (listGet(e->l, i)) {
+      listPush(res, (void*) i);
+    }
+  }
+  return res;
+}
+
+void envAddAllValuesToList(Env* e, List* q) {
+  int i, n = listSize(e->l);
+  for (i = 0; i < n; i++) {
+    Value* v = listGet(e->l, i);
+    if (v) listPush(q, v);
+  }
+}

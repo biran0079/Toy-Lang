@@ -14,7 +14,7 @@ void listPushFront(List *lst, void *e);
 void listPush(List *lst, void *e);
 void *listPop(List *lst);
 void *listLast(List *lst);
-void listSet(List *lst, int i, void *v);
+void* listSet(List *lst, int i, void *v);
 List *listCopy(List *lst);
 void listClear(List *lst);
 void listPopTo(List *lst, int size);

@@ -3,10 +3,9 @@
 
 #include "core.h"
 #include "list.h"
-#include "hashTable.h"
 
 struct Env {
-  HashTable *t;
+  List* l;
   Value *parent;
   Value *envValue;  // wrapped in value to be managed by GC
 };
@@ -17,5 +16,7 @@ Value *envGet(Env *e, long key);
 Value *envPut(Env *e, long key, Value *value);
 Value *envPutLocal(Env *e, long key, Value *value);
 List *envGetAllIds(Env *e);
+void envAddAllValuesToList(Env* e, List* q);
+Value* envGetLocal(Env* e, long key);
 
 #endif
