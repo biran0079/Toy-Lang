@@ -52,7 +52,7 @@ static void mark() {
       case NONE_VALUE_TYPE:
         break;
       default:
-        error("cannot mark unknown value\n");
+        error("cannot mark unknown value %d\n", v->type);
     }
   }
   freeList(q);

@@ -60,10 +60,10 @@ void init(int argc, char **args) {
 
 void cleanup() {
   cleanupIdMap();
-  cleanupOpStack();
   cleanupTlJump();
   listClear(rootValues);
   forceGC();
+  cleanupOpStack();
   freeList(rootValues);
   freeList(values);
   int i, n = listSize(parseTrees);
