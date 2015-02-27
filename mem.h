@@ -3,7 +3,7 @@
 
 #include "value.h"
 
-extern List *liveValues, *deadValues;
+extern List *allValues, *deadValues;
 
 typedef struct ValuesBlock ValuesBlock;
 struct ValuesBlock {
@@ -17,7 +17,6 @@ void initValuesBlock();
 void cleanupValuesBlock();
 
 Value* allocValue();
-void consolidateMarkedValues();
 void freeUnmarkedValues();
 
 int getInMemoryValueCount();

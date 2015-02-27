@@ -22,7 +22,7 @@ Value *newNoneValue() {
     res->type = NONE_VALUE_TYPE;
     res->data = 0;
     res->ref = 0;
-    res->mark = STATIC;
+    res->mark = UNMARKED;
     return res;
   }
 }
@@ -133,10 +133,12 @@ void freeValue(Value *v) {
       break;
     case NONE_VALUE_TYPE:
       return;  // none is never freed
+    case FREED_TYPE:
+      error("freeing a value twice.\n");
     default:
       error("unkonwn value type passed to freeValue: %d\n", v->type);
   }
-  v->type = NONE_VALUE_TYPE;
+  v->type = FREED_TYPE;
   listPush(deadValues, v);
 }
 

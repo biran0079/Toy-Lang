@@ -119,7 +119,8 @@ Value *nodeToListValue(Node *p) {
     default:
       error("unknown node type in nodeToListValue");
   }
-  assert(res == opStackPop());
+  assert(res == opStackPeek(0));
+  opStackPop();
   return res;
 }
 

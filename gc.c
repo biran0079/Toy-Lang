@@ -78,7 +78,6 @@ void forceGC() {
 #endif
   mark();
   freeUnmarkedValues();
-  consolidateMarkedValues();
   int after = getInMemoryValueCount();
   if (shouldDumpGCHistory) {
     pushGCHistory(before, after);
