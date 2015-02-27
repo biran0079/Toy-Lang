@@ -26,7 +26,8 @@ EvalResult *newEvalResult(EvalResultType t, Value *v) {
 
 void freeEvalResult(EvalResult *er) {
   freeEvalResultC++;
-  if (er->v) deref(er->v);
+  if (er->value) deref(er->value);
+  tlFree(er);
 }
 
 /**
@@ -119,7 +120,7 @@ EvalResult *evalCall(Env *ev, Node *p) {
         }
         case TAIL_RECURSION_RESULT: {
           opStackPopTo(beforeStackSize);
-          Value *l = (List *)er->value;
+          Value *l = er->value;
           n = listSize(l);
           for (i = 0; i < n; i++) {
             opStackPush(listGet(l, i));
@@ -426,7 +427,8 @@ EvalResult *evalError(Env *ev, Node *p) {
 EvalResult *evalIf(Env *ev, Node *p) {
   EvalResult *er = eval(ev, chld(p, 0));
   if (er) return er;
-  if (opStackPop()->data) {
+  if (opStackPeek(0)->data) {
+    opStackPop();
     er = eval(ev, chld(p, 1));
     if (er) return er;
     return 0;
@@ -496,14 +498,19 @@ EvalResult *evalTailRecursion(Env *ev, Node *p) {
   }
   EvalResult *er = eval(ev, chld(p, 0));
   if (er) return er;
-  listPush(l, opStackPop());
-  return newEvalResult(TAIL_RECURSION_RESULT, opStackPop());
+  listValuePush(lv, opStackPeek(0));
+  opStackPop();
+  er = newEvalResult(TAIL_RECURSION_RESULT, opStackPeek(0));
+  opStackPop();
+  return er;
 }
 
 EvalResult *evalReturn(Env *ev, Node *p) {
   EvalResult *er = eval(ev, chld(p, 0));
   if (er) return er;
-  return newEvalResult(RETURN_RESULT, opStackPop());
+  er = newEvalResult(RETURN_RESULT, opStackPeek(0));
+  opStackPop();
+  return er;
 }
 
 EvalResult *evalAssign(Env *ev, Node *p) {
@@ -654,7 +661,11 @@ EvalResult *evalFor(Env *ev, Node *p) {
   while (1) {
     er = eval(ev, chld(p, 1));
     if (er) return er;
-    if (!(opStackPop()->data)) break;
+    if (!(opStackPeek(0)->data)) {
+      opStackPop();
+      break;
+    }
+    opStackPop();
     er = eval(ev, chld(p, 3));
     if (er) {
       if (CONTINUE_RESULT == er->type) {
@@ -712,7 +723,11 @@ EvalResult *evalWhile(Env *ev, Node *p) {
   while (1) {
     EvalResult *er = eval(ev, chld(p, 0));
     if (er) return er;
-    if (!(opStackPop()->data)) break;
+    if (!(opStackPeek(0)->data)) {
+      opStackPop();
+      break;
+    }
+    opStackPop();
     er = eval(ev, chld(p, 1));
     if (er) {
       if (CONTINUE_RESULT == er->type) {
@@ -795,7 +810,9 @@ EvalResult *evalThrow(Env *ev, Node *p) {
     assert(er->type == EXCEPTION_RESULT);
     return er;
   }
-  return newEvalResult(EXCEPTION_RESULT, opStackPop());
+  er = newEvalResult(EXCEPTION_RESULT, opStackPeek(0));
+  opStackPop();
+  return er;
 }
 
 EvalResult *evalAddAdd(Env *ev, Node *p) {
@@ -824,7 +841,7 @@ EvalResult *evalAddAdd(Env *ev, Node *p) {
       long idxv = getIntFromValue(opStackPeek(0));
       opStackPopToPush(beforeStackSize, listValueGet(lv, idxv));
       long resultV = getIntFromValue(opStackPeek(0)) + 1;
-      listValueSize(lv, idxv, newIntValue(resultV));
+      listValueSet(lv, idxv, newIntValue(resultV));
       return 0;
     }
     default:

@@ -58,7 +58,6 @@ void init(int argc, char **args) {
   initIdMap();
   initOpStack();
 
-  ref(newNoneValue());
   // global env depends on value block (none value), id map (default 'this'
   // field)
   globalEnv = getEnvFromValue(newEnvValue(0));
@@ -80,7 +79,6 @@ void init(int argc, char **args) {
 void cleanup() {
   assert(globalEnv->envValue == opStackPeek(0));  // make sure global env get GCed
   opStackPop();
-  deref(newNode());
 
   forceGC();
   cleanupOpStack();

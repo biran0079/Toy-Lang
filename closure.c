@@ -1,5 +1,6 @@
 #include "closure.h"
 #include "util.h"
+#include "value.h"
 
 int newClosureC = 0, freeClosureC = 0;
 
@@ -15,7 +16,7 @@ void freeClosure(Closure *c) {
   if (!c) error("NONE passed to freeClosure\n");
   freeClosureC++;
   c->f = 0;
-  deref(e);
+  deref(c->e);
   c->e = 0;
   tlFree(c);
 }

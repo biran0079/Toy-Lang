@@ -114,10 +114,11 @@ void freeValue(Value *v) {
       freeEnvValueC++;
       break;
     case LIST_VALUE_TYPE:
-      List* l = (List *)v->data;
-      n = listSize(l);
-      for (i = 0; i < n; i++) deref(listGet(l, i));
-      freeList(l);
+      n = listValueSize(v);
+      for (i = 0; i < n; i++) {
+        deref(listValueGet(v, i));
+      }
+      freeList(v->data);
       freeListValueC++;
       break;
     case STRING_VALUE_TYPE:
@@ -221,6 +222,7 @@ static int valueToStringInternal(Value *v, char *s, int n) {
     default:
       error("cannot print unknown value type: %d at %p\n", v->type, v);
   }
+  return 0;
 }
 
 char *valueToString(Value *v) {
@@ -256,6 +258,7 @@ int valueEquals(Value *v1, Value *v2) {
     default:
       error("unknown value type passed to valueEquals: %d\n", v1->type);
   }
+  return 0;
 }
 
 Value *valueSub(Value *v1, Value *v2) {
@@ -365,6 +368,7 @@ int valueCmp(Value *v1, Value *v2) {
     default:
       error("cannot compare unknown type: %d\n", v1->type);
   }
+  return 0;
 }
 
 long getIntFromValue(Value *intValue) {
@@ -392,9 +396,9 @@ void listValueSet(Value* lv, int i, Value* v) {
   deref(listSet(lv->data, i, ref(v)));
 }
 
-void listValueGet(Value* lv, int i) {
+Value* listValueGet(Value* lv, int i) {
   assert(lv->type == LIST_VALUE_TYPE);
-  return listGet(l->data, i);
+  return listGet(lv->data, i);
 }
 
 int listValueSize(Value* lv) {

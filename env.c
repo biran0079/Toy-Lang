@@ -15,7 +15,7 @@ Env *newEnv(Value *parentEnv, Value *envValue) {
   return res;
 }
 
-static void derefAllValues() {
+static void derefAllValues(Env* e) {
   int i, n = listSize(e->l);
   for (i = 0; i < n; i++) {
     Value *v = listGet(e->l, i);
@@ -26,7 +26,7 @@ static void derefAllValues() {
 void freeEnv(Env *e) {
   if (!e) error("NONE passed to freeEnv\n");
   freeEnvC++;
-  derefAllValues();
+  derefAllValues(e);
   freeList(e->l);
   e->l = 0;
   tlFree(e);
