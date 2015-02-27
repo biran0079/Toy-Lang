@@ -92,17 +92,17 @@ int main(int argc, char **argv) {
   List *tokens = tokenize(code);
   parse(tokens);
 #endif
+  Node* tree = listLast(parseTrees);
   if (toDot) {
     char *s = catStr(src, ".dot");
     FILE *f = fopen(s, "w");
     if (!f) error("failed to open %s\n", s);
-    nodeToDot(f, listGet(parseTrees, 0));
+    nodeToDot(f, tree);
     fclose(f);
     tlFree(s);
   } else if (printParseTree) {
-    printAst(listGet(parseTrees, 0));
+    printAst(tree);
   } else {
-    Node *tree = listGet(parseTrees, 0);
     if (0 == eval(globalEnv, tree)) {
       opStackPop();  // pop eval result
     }

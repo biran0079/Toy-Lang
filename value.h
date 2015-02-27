@@ -28,8 +28,9 @@ struct Value {
 
 Value *newIntValue(long x);
 Value *newListValue(List *lst);  // pass in a list of values
-Value *newClosureValue(Node *t, Value *e);
-Value *newEnvValue(Env *e);
+// need to pass pointer of value pointer to make sure the value is up to date after gc 
+Value *newClosureValue(Node *t, Value **e); 
+Value *newEnvValue(Value **parent);
 Value *newStringValue(char *s);
 Value *newNoneValue();
 Value *newBuiltinFun(BuiltinFun f);
@@ -47,5 +48,7 @@ Value *valueAddEq(Env *e, Node *v1, Node *v2);
 int valueCmp(Value *v1, Value *v2);
 
 long getIntFromValue(Value* intValue);
+Env* getEnvFromValue(Value* v);
+List* getListFromValue(Value* v);
 
 #endif

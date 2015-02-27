@@ -11,10 +11,11 @@
 #include "idMap.h"
 #include "opStack.h"
 
-List *parseTrees;
+List* parseTrees; // make sure no tree is deleted during evaluation by keeping track of all parse trees
 Value *globalEnv;
-int memoryLimit = 200000000;
+int memoryLimit = 512 * 1024 * 1024;
 List *path;  // where import loads from
+int isInitialized = 0;
 
 int shouldDumpGCHistory = 0;
 int gcTestMode = 0;
@@ -40,10 +41,18 @@ void listCreatedObjectsCount() {
 }
 
 void init(int argc, char **args) {
-  initEval();
   initValuesBlock();
   initIdMap();
   initOpStack();
+
+  Value* none = newNoneValue(); // initialize singleton none value
+  // global env depends on value block (none value), id map (default 'this' field)
+  globalEnv = newEnvValue(&none);
+  opStackPush(globalEnv);
+  registerBuiltinFunctions(globalEnv->data);
+
+  initEval(); // depends on global env ()
+
   path = newList();
   char *tlDir = getFolder(args[0]);
   listPush(path, catStr(tlDir, "lib/"));
@@ -52,25 +61,26 @@ void init(int argc, char **args) {
   gcHistory = newList();
 
   listPush(path, copyStr("./"));
-  globalEnv = newEnvValue(newEnv(newNoneValue()));
-  opStackPush(globalEnv);
-  registerBuiltinFunctions(globalEnv->data);
+  isInitialized = 1;
 }
 
 void cleanup() {
-  cleanupEval();
-  cleanupIdMap();
   forceGC();
+  cleanupEval();
   assert(globalEnv == opStackPop());  // clean up global env
   cleanupOpStack();
   cleanupValuesBlock();
+  cleanupIdMap();
   int i, n = listSize(parseTrees);
-  for (i = 0; i < n; i++) freeNode(listGet(parseTrees, i));
+  for (i = 0; i < n; i++) {
+    freeNode(listGet(parseTrees, i));
+  }
   n = listSize(path);
   for (i = 0; i < n; i++) tlFree(listGet(path, i));
   freeList(path);
-  freeList(parseTrees);
   if (!shouldDumpGCHistory) clearGCHistory();
+
+  isInitialized = 0;
 }
 
 FILE *openFromPath(char *s, char *mode) {

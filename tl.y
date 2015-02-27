@@ -30,7 +30,7 @@ extern List* parseTrees;
 %%
 prog: 
   stmts {
-    listPush(parseTrees, $1);
+    listPush(parseTrees, postProcessAst($1));
   }
   ;
 

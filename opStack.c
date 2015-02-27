@@ -62,7 +62,7 @@ void showOpStack() {
   int i, n = listSize(opStack);
   printf("[\n");
   for (i = 0; i < n; i++) {
-    printf("%s\n", valueToString(opStackPeek(i)));
+    printf("%s @ %p\n", valueToString(opStackPeek(i)), opStackPeek(i));
   }
   printf("]\n");
 }

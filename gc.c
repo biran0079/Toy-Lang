@@ -11,14 +11,15 @@
 extern List *values, *gcHistory;
 
 static void mark() {
-  printf("start marking\n");
   Value *v;
   List *q = newList();
   opStackAppendValuesTo(q);
   while (listSize(q)) {
     v = listPop(q);
     if (v->mark != UNMARKED) continue;
+#ifdef DEBUG_GC
     printf("marking %s @%p\n", valueToString(v), v);
+#endif
     v->mark = MARKED;
     switch (v->type) {
       case CLOSURE_VALUE_TYPE: {
@@ -50,7 +51,6 @@ static void mark() {
     }
   }
   freeList(q);
-  printf("finish marking\n");
 }
 
 static void pushGCHistory(int before, int after) {
@@ -71,8 +71,11 @@ void clearGCHistory() {
 void forceGC() {
   int i, n;
   int before = getInMemoryValueCount();
+#ifdef DEBUG_GC
   printf("gc start\n\n");
+  showOpStack();
   dumpValueMemory();
+#endif
   mark();
   freeUnmarkedValues();
   consolidateMarkedValues();
@@ -80,18 +83,21 @@ void forceGC() {
   if (shouldDumpGCHistory) {
     pushGCHistory(before, after);
   }
+#ifdef DEBUG_GC
   dumpValueMemory();
+  showOpStack();
   printf("gc done\n\n");
+#endif
 }
 
 extern int memoryUsage, memoryLimit, gcTestMode;
 
 void gc() {
-  if (gcTestMode) {
+  if (isInitialized && gcTestMode) {
     forceGC();
     return;
   }
-  if (memoryUsage >= memoryLimit) {
+  if (isInitialized && memoryUsage >= memoryLimit) {
     forceGC();
     if (memoryUsage >= memoryLimit) {
       listCreatedObjectsCount();

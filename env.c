@@ -34,22 +34,21 @@ Value *envGet(Env *e, long key) {
   return newNoneValue();
 }
 
-void envPut(Env *e, long key, Value *value) {
+Value* envPut(Env *e, long key, Value *value) {
   Env *e2 = e;
   while (1) {
     if (hashTableGet(e2->t, (void *)key)) {
-      hashTablePut(e2->t, (void *)key, (void *)value);
-      return;
+      return (Value*) hashTablePut(e2->t, (void *)key, (void *)value);
     } else {
       if (e2->parent->type == NONE_VALUE_TYPE) break;
       e2 = e2->parent->data;
     }
   }
-  hashTablePut(e->t, (void *)key, (void *)value);
+  return (Value*) hashTablePut(e->t, (void *)key, (void *)value);
 }
 
-void envPutLocal(Env *e, long key, Value *value) {
-  hashTablePut(e->t, (void *)key, value);
+Value* envPutLocal(Env *e, long key, Value *value) {
+  return (Value*) hashTablePut(e->t, (void *)key, value);
 }
 
 List* envGetAllIds(Env* e) {

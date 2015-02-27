@@ -27,6 +27,7 @@ extern int freeIntValueC, freeStringValueC, freeClosureValueC, freeEnvValueC,
 extern int newClosureC, freeClosureC;
 extern int newEnvC, freeEnvC;
 extern int memoryUsage;
+extern int isInitialized;
 
 #define YYSTYPE Node *
 

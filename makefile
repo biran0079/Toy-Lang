@@ -26,9 +26,10 @@ tl: $(CORE_OBJS) $(PARSER_OBJs) $(TL_MAIN_OBJ)
 	$(CC) $(CFLAGS) $(CORE_OBJS) $(PARSER_OBJs) $(TL_MAIN_OBJ) -o tl
 
 # clear before building yytl
-yytl: CFLAGS = -DYYDEBUG=0 -g -DUSE_YY_PARSER 
+yytl: CFLAGS = -DYYDEBUG=0 -g -DUSE_YY_PARSER
+yytl: CC = gcc
 yytl: clear $(CORE_OBJS) $(TL_MAIN_OBJ) $(YY_PARSER_OBJS)
-	$(CC) $(CFLAGS) $(CORE_OBJS) $(TL_MAIN_OBJ) $(YY_PARSER_OBJS) -o yytl
+	$(CC) $(CFLAGS) $(CORE_OBJS) $(TL_MAIN_OBJ) $(YY_PARSER_OBJS) -o tl
 
 parser: $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_MAIN_OBJ)
 	$(CC) $(CFLAGS) $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_MAIN_OBJ) -o parser
@@ -66,3 +67,6 @@ draw: tl
 
 format:
 	clang-format -i --style=Google *.c *.h
+
+debug: CFLAGS = -DDEBUG_GC -g
+debug: all

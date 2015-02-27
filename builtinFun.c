@@ -8,7 +8,6 @@
 #include "util.h"
 #include "opStack.h"
 
-extern Value *globalEnv;
 extern List *parseTrees;
 
 #define CHECK_ARG_NUM(num, name) \

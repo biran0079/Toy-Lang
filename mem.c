@@ -4,13 +4,19 @@
 #include "env.h"
 #include "hashTable.h"
 #include "opStack.h"
+#include "eval.h"
 #include <assert.h>
+#define MAX_BLOCK_SIZE 4 * 1024 * 1024
 
 static ValuesBlock* head;
-static int initSize = 128;
+static int initSize = 1024;
+extern int memoryUsage, memoryLimit;
 
 
 static ValuesBlock* newValuesBlock(int size) {
+  if (size > MAX_BLOCK_SIZE) {
+    size = MAX_BLOCK_SIZE;
+  }
   ValuesBlock* res = MALLOC(ValuesBlock);
   res->a = tlMalloc(size * sizeof(Value));
   res->capacity = size;
@@ -98,6 +104,9 @@ static void writeAndUnmark(Iterator* it, Value* v, HashTable* addrMap) {
   }
   assert(it->i < it->b->top);
   hashTablePut(addrMap, v, it->b->a + it->i);
+#ifdef DEBUG_GC 
+  printf("mapping %p -> %p\n", v, it->b->a + it->i);
+#endif
   it->b->a[(it->i)++] = *v;
 }
 
@@ -114,10 +123,15 @@ static void freeAllBlocksAfter(Iterator* it) {
 
 static void updateValuePointers(HashTable* addrMap) {
   opStackUpdateAddr(addrMap);
+  inStackPointerUpdateAddr(addrMap);
+
   Iterator* from = newIterator(head, 0);
   Value* v;
-  void *oldAddr, *newAddr;
+  Value *oldAddr, *newAddr;
   while ((v = readNext(from, -1))) {
+#ifdef DEBUG_GC 
+    printf("updating %s @ %p\n", valueToString(v), v);
+#endif
     switch (v->type) {
       case CLOSURE_VALUE_TYPE: {
         Closure *c = v->data;
@@ -139,6 +153,7 @@ static void updateValuePointers(HashTable* addrMap) {
         freeList(keys);
         newAddr = hashTableGet(addrMap, e->parent);
         assert(newAddr);
+        assert(newAddr->type == ENV_VALUE_TYPE || newAddr->type == NONE_VALUE_TYPE);
         e->parent = newAddr;
         break;
       }
@@ -173,9 +188,9 @@ void consolidateMarkedValues() {
   while ((v = readNext(from, MARKED | STATIC))) {
     writeAndUnmark(to, v, addrMap);
   }
+  freeAllBlocksAfter(to);
   updateValuePointers(addrMap);
   freeHashTable(addrMap);
-  freeAllBlocksAfter(to);
   freeIterator(from);
   freeIterator(to);
 }
@@ -186,6 +201,7 @@ void freeUnmarkedValues() {
   while ((v = readNext(it, UNMARKED))) {
     freeValue(v);
   }
+  freeIterator(it);
 }
 
 int getInMemoryValueCount() {

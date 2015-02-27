@@ -3,6 +3,7 @@
 #include "core.h"
 #include "value.h"
 #include "builtinFun.h"
+#include "hashTable.h"
 
 typedef enum EvalResultType {
   CONTINUE_RESULT,
@@ -69,5 +70,6 @@ EvalResult *evalError(Value *ev, Node *p);
 
 void initEval();
 void cleanupEval();
+void inStackPointerUpdateAddr(HashTable* addrMap);
 
 #endif

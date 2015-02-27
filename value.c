@@ -58,12 +58,12 @@ Value *newListValue(List *list) {
   return res;
 }
 
-Value *newClosureValue(Node *t, Value *e) {
+Value *newClosureValue(Node *t, Value **e) {
   gc();
   newClosureValueC++;
   Value *res = allocValue();
   res->type = CLOSURE_VALUE_TYPE;
-  res->data = newClosure(t, e);
+  res->data = newClosure(t, *e);
   res->mark = UNMARKED;
   return res;
 }
@@ -78,19 +78,21 @@ Value *newBuiltinFun(BuiltinFun f) {
   return res;
 }
 
-Value *newEnvValue(Env *e) {
+Value *newEnvValue(Value **parent) {
   gc();
   newEnvValueC++;
   Value *res = allocValue();
   res->type = ENV_VALUE_TYPE;
-  res->data = e;
+  res->data = newEnv(*parent);
   res->mark = UNMARKED;
-  envPutLocal(e, getIntId("this"), res);
+  envPutLocal(res->data, getIntId("this"), res);
   return res;
 }
 
 void freeValue(Value *v) {
-  printf("freeing %s@%p\n", valueToString(v), v);
+#ifdef DEBUG_GC
+  printf("freeing %s @ %p\n", valueToString(v), v);
+#endif
   switch (v->type) {
     case CLOSURE_VALUE_TYPE:
       freeClosure((Closure *)v->data);
@@ -188,13 +190,14 @@ static int valueToStringInternal(Value *v, char *s, int n) {
     case ENV_VALUE_TYPE: {
       List* keys = envGetAllIds(v->data);
       int len = 0;
-      len += mySnprintf(s, n, "env { ");
+      len += mySnprintf(s, n, "env parent->%p { ", getEnvFromValue(v)->parent);
       int keyN = listSize(keys);
       for (i = 0; i < keyN; i++) {
         long key = (long) listGet(keys, i);
         len += mySnprintf(s + len, n - len, "%s->%p ", getStrId(key), envGet(v->data, key));
       }
       len += mySnprintf(s + len, n - len, "}");
+      freeList(keys);
       return len;
     }
     default:
@@ -351,8 +354,12 @@ long getIntFromValue(Value* intValue) {
   return (long) intValue->data;
 }
 
-BuiltinFun getBuiltinFunFromValue(Value* v) {
-  assert(v->type = BUILTIN_FUN_VALUE_TYPE);
-  return v->data;
+Env* getEnvFromValue(Value* v) {
+  assert(v->type == ENV_VALUE_TYPE);
+  return (Env*) v->data;
 }
 
+List* getListFromValue(Value* v) {
+  assert(v->type == LIST_VALUE_TYPE);
+  return (List*) v->data;
+}

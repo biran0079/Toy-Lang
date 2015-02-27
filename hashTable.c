@@ -113,11 +113,13 @@ void *hashTableRemove(HashTable *t, void *key) {
   return res;
 }
 
-void hashTablePut(HashTable *t, void *key, void *value) {
+void* hashTablePut(HashTable *t, void *key, void *value) {
   if (t->size > t->cap) rehash(t);
   LinkedList *l = hashTableGetInternal(t, key);
   if (l) {
+    void* oldValue = l->value;
     l->value = value;
+    return oldValue;
   } else {
     unsigned int idx = t->h(key) % t->cap;
     l = MALLOC(LinkedList);
@@ -126,6 +128,7 @@ void hashTablePut(HashTable *t, void *key, void *value) {
     l->next = t->a[idx];
     t->a[idx] = l;
     t->size++;
+    return 0;
   }
 }
 

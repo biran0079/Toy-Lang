@@ -6,151 +6,8 @@
 
 extern List *parseTrees;
 
-Node *postProcess(Node *p) {
-  switch (p->type) {
-    case STMTS_TYPE:
-      p->eval = evalStmts;
-      break;
-    case EXP_LIST_TYPE:
-      p->eval = evalExpList;
-      break;
-    case NONE_TYPE:
-      p->eval = evalNone;
-      break;
-    case LIST_TYPE:
-      p->eval = evalList;
-      break;
-    case LIST_ACCESS_TYPE:
-      p->eval = evalListAccess;
-      break;
-    case TAIL_CALL_TYPE:
-      p->eval = evalTailRecursion;
-      break;
-    case CALL_TYPE:
-      p->eval = evalCall;
-      break;
-    case RETURN_TYPE:
-      p->eval = evalReturn;
-      break;
-    case ID_TYPE:
-      p->eval = evalId;
-      break;
-    case INT_TYPE:
-      p->eval = evalInt;
-      break;
-    case STRING_TYPE:
-      p->eval = evalString;
-      break;
-    case ASSIGN_TYPE:
-      p->eval = evalAssign;
-      break;
-    case ADDEQ_TYPE:
-      p->eval = evalAddEq;
-      break;
-    case ADD_TYPE:
-      p->eval = evalAdd;
-      break;
-    case SUB_TYPE:
-      p->eval = evalSub;
-      break;
-    case MUL_TYPE:
-      p->eval = evalMul;
-      break;
-    case DIV_TYPE:
-      p->eval = evalDiv;
-      break;
-    case MOD_TYPE:
-      p->eval = evalMod;
-      break;
-    case IF_TYPE:
-      p->eval = evalIf;
-      break;
-    case FOR_TYPE:
-      p->eval = evalFor;
-      break;
-    case FOREACH_TYPE:
-      p->eval = evalForEach;
-      break;
-    case WHILE_TYPE:
-      p->eval = evalWhile;
-      break;
-    case CONTINUE_TYPE:
-      p->eval = evalContinue;
-      break;
-    case BREAK_TYPE:
-      p->eval = evalBreak;
-      break;
-    case GT_TYPE:
-      p->eval = evalGT;
-      break;
-    case LT_TYPE:
-      p->eval = evalLT;
-      break;
-    case GE_TYPE:
-      p->eval = evalGE;
-      break;
-    case LE_TYPE:
-      p->eval = evalLE;
-      break;
-    case EQ_TYPE:
-      p->eval = evalEQ;
-      break;
-    case NE_TYPE:
-      p->eval = evalNE;
-      break;
-    case AND_TYPE:
-      p->eval = evalAnd;
-      break;
-    case OR_TYPE:
-      p->eval = evalOr;
-      break;
-    case NOT_TYPE:
-      p->eval = evalNot;
-      break;
-    case FUN_TYPE:
-      p->eval = evalFun;
-      break;
-    case TIME_TYPE:
-      p->eval = evalTime;
-      break;
-    case TRY_TYPE:
-      p->eval = evalTry;
-      break;
-    case THROW_TYPE:
-      p->eval = evalThrow;
-      break;
-    case ADDADD_TYPE:
-      p->eval = evalAddAdd;
-      break;
-    case LOCAL_TYPE:
-      p->eval = evalLocal;
-      break;
-    case IMPORT_TYPE:
-      p->eval = evalImport;
-      break;
-    case MODULE_ACCESS_TYPE:
-      p->eval = evalModuleAccess;
-      break;
-    default:
-      p->eval = evalError;
-      break;  // types should never eval id list
-  }
-  switch (p->type) {
-    case INT_TYPE:
-    case STRING_TYPE:
-    case ID_TYPE:
-      break;  // leaves
-    default: {
-      int n = chldNum(p), i;
-      for (i = 0; i < n; i++) postProcess(chld(p, i));
-    }
-  }
-  return p;
-}
-
 Node *parse(List *tokens) {
   int idx = 0;
-  ;
   Node *tree = stmts(tokens, &idx);
   if (idx < listSize(tokens)) {
     int i;
@@ -160,9 +17,11 @@ Node *parse(List *tokens) {
     error("failed to parse the whole program.");
   }
   if (tree) {
+    tree = postProcessAst(tree);
     listPush(parseTrees, tree);
+    return tree;
   }
-  return postProcess(tree);
+  return 0;
 }
 
 Node *stmts(List *t, int *ip) {

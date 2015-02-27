@@ -14,13 +14,37 @@
 
 extern List *parseTrees;
 extern Value *globalEnv;
-List* pointersInEvalStack;
+
+static List* pointersInEvalStack;
+
+void inStackPointerUpdateAddr(HashTable* addrMap) {
+  int i, n = listSize(pointersInEvalStack);
+  for (i = 0; i < n; i++) {
+    Value** p = listGet(pointersInEvalStack, i);
+    Value* newAddr = hashTableGet(addrMap, *p);
+#ifdef DEBUG_GC
+    printf("updating in stack ptr %p -> %p\n", *p, newAddr);
+#endif
+    assert(newAddr);
+    *p = newAddr;
+  }
+}
+
+static void pushPointerInEvalStack(Value** p) {
+  listPush(pointersInEvalStack, p);
+}
+
+static void popPointerInEvalStack(Value** p) {
+  assert(p == listPop(pointersInEvalStack));
+}
 
 void initEval() {
   pointersInEvalStack = newList();
+  pushPointerInEvalStack(&globalEnv);
 }
 
 void cleanupEval() {
+  popPointerInEvalStack(&globalEnv);
   assert(listSize(pointersInEvalStack) == 0);
   freeList(pointersInEvalStack);
 }
@@ -44,8 +68,9 @@ void freeEvalResult(EvalResult *er) {
  * 2. no value will be pushed to op stack if eval returns non-zero
  * 3. all eval call's return value must be checked
  * 4. anything in op stack will not be GCed
- * 5. each opStackSave must be paired by exactly on opStackRestore before
- * returning
+ * 5. each opStackSave must be paired by exactly on opStackRestore before returning
+ * 6. any usage of Value* type in eval call shuold be pushed to pointersInEvalStack to survive GC
+ * 7. no GC in env operations and op-stack operations
  */
 EvalResult *eval(Value *ev, Node *p) {
   int beforeStackSize = opStackSize();
@@ -60,30 +85,27 @@ EvalResult *eval(Value *ev, Node *p) {
   return er;
 }
 
+#define EVAL_HEADER pushPointerInEvalStack(&ev)
+#define EVAL_RETURN(er) do {popPointerInEvalStack(&ev); return er;} while(0)
+
 EvalResult *evalStmts(Value *ev, Node *p) {
+  EVAL_HEADER;
   List *l = (List *)p->data;
   int i;
   for (i = 0; i < listSize(l); i++) {
     EvalResult *er = eval(ev, listGet(l, i));
     if (er) {
-      return er;
+      EVAL_RETURN(er);
     } else {
       opStackPop();
     }
   }
   opStackPush(newNoneValue());
-  return 0;
-}
-
-static void pushPointerInEvalStack(Value** p) {
-  listPush(pointersInEvalStack, p);
-}
-
-static void popPointersInEvalStack(Value** p) {
-  assert(p == listPop(popPointersInEvalStack));
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalCall(Value *ev, Node *p) {
+  EVAL_HEADER;
   int i, n;
   Node *args = chld(p, 1);
   n = chldNum(args);
@@ -93,14 +115,14 @@ EvalResult *evalCall(Value *ev, Node *p) {
     if (er) {
       assert(er->type == EXCEPTION_RESULT);
       opStackPopTo(beforeStackSize);
-      return er;
+      EVAL_RETURN(er);
     }
   }
   EvalResult *er = eval(ev, chld(p, 0));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
     opStackPopTo(beforeStackSize);
-    return er;
+    EVAL_RETURN(er);
   }
   while (1) {
     if (opStackPeek(0)->type == BUILTIN_FUN_VALUE_TYPE) {
@@ -108,32 +130,33 @@ EvalResult *evalCall(Value *ev, Node *p) {
       opStackPop();  // pop closure
       f(n);
       // always success and result is in stack
-      return 0;
+      EVAL_RETURN(0);
     }
     // regular function call
     Closure *c = opStackPeek(0)->data;
     Node *f = c->f;
-    Env *e2 = newEnv(c->e);
+
+    // This is tricky, er->parent is a pointer that GC has no idea how to update
+    Value* ev2 = newEnvValue(&(c->e));
+    Env *e2 = getEnvFromValue(ev2);
+
     Node *ids = chld(f, 1);
     if (chldNum(ids) != n)
       error("%s parameter number incorrect\n", valueToString(opStackPeek(0)));
 
-
     for (i = 0; i < n; i++)
       envPutLocal(e2, (long)chld(ids, i)->data, opStackPeek(i + 1));
 
-    Value *ev2 = newEnvValue(e2);
-    pushPointerInEvalStack(&v2);
-
     opStackPopNPush(n + 1, ev2);
-    EvalResult *er = eval(ev2, chld(f, 2));
-    popPointersInEvalStack(&v2);
+
+
+    EvalResult *er = eval(opStackPeek(0), chld(f, 2));
 
     if (er) {
       switch (er->type) {
         case EXCEPTION_RESULT: {
           opStackPopTo(beforeStackSize);
-          return er;
+          EVAL_RETURN(er);
         }
         case TAIL_RECURSION_RESULT: {
           opStackPopTo(beforeStackSize);
@@ -149,7 +172,7 @@ EvalResult *evalCall(Value *ev, Node *p) {
         case RETURN_RESULT: {
           opStackPopToPush(beforeStackSize, er->value);
           freeEvalResult(er);
-          return 0;
+          EVAL_RETURN(0);
         }
         case CONTINUE_RESULT:
         case BREAK_RESULT:
@@ -158,24 +181,26 @@ EvalResult *evalCall(Value *ev, Node *p) {
     } else {
       // no return called, always return none
       opStackPopToPush(beforeStackSize, newNoneValue());
-      return 0;
+      EVAL_RETURN(0);
     }
   }
 }
 
 EvalResult *evalId(Value *ev, Node *p) {
+  EVAL_HEADER;
   Env *e = ev->data;
-  Value *res = envGet(e, (long)p->data);
-  opStackPush(res);
-  return 0;
+  opStackPush(envGet(e, (long)p->data));
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalInt(Value *ev, Node *p) {
+  EVAL_HEADER;
   opStackPush(newIntValue((long)p->data));
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalList(Value *ev, Node *p) {
+  EVAL_HEADER;
   List *vs = newList();
   opStackPush(newListValue(vs));
   int i, n = chldNum(p);
@@ -183,304 +208,319 @@ EvalResult *evalList(Value *ev, Node *p) {
     EvalResult *er = eval(ev, chld(p, i));
     if (er) {
       assert(er->type == EXCEPTION_RESULT);
-      return er;
+      EVAL_RETURN(er);
     }
     listPush(vs, opStackPop());
   }
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalString(Value *ev, Node *p) {
+  EVAL_HEADER;
   opStackPush(newStringValue(copyStr(p->data)));
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalNone(Value *ev, Node *p) {
+  EVAL_HEADER;
   opStackPush(newNoneValue());
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalAdd(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 1));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
-    return er;
+    EVAL_RETURN(er);
   }
   er = eval(ev, chld(p, 0));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
     opStackPop();
-    return er;
+    EVAL_RETURN(er);
   }
   opStackPopNPush(2, valueAdd(opStackPeek(0), opStackPeek(1)));
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalSub(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 1));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
-    return er;
+    EVAL_RETURN(er);
   }
   er = eval(ev, chld(p, 0));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
     opStackPop();
-    return er;
+    EVAL_RETURN(er);
   }
   opStackPopNPush(2, valueSub(opStackPeek(0), opStackPeek(1)));
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalMul(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 1));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
-    return er;
+    EVAL_RETURN(er);
   }
   er = eval(ev, chld(p, 0));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
     opStackPop();
-    return er;
+    EVAL_RETURN(er);
   }
   opStackPopNPush(2, valueMul(opStackPeek(0), opStackPeek(1)));
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalDiv(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 1));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
-    return er;
+    EVAL_RETURN(er);
   }
   er = eval(ev, chld(p, 0));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
     opStackPop();
-    return er;
+    EVAL_RETURN(er);
   }
   opStackPopNPush(2, valueDiv(opStackPeek(0), opStackPeek(1)));
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalMod(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 1));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
-    return er;
+    EVAL_RETURN(er);
   }
   er = eval(ev, chld(p, 0));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
     opStackPop();
-    return er;
+    EVAL_RETURN(er);
   }
   opStackPopNPush(2, valueMod(opStackPeek(0), opStackPeek(1)));
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalGT(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 1));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
-    return er;
+    EVAL_RETURN(er);
   }
   er = eval(ev, chld(p, 0));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
     opStackPop();
-    return er;
+    EVAL_RETURN(er);
   }
   opStackPopNPush(2, newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) > 0));
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalLT(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 1));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
-    return er;
+    EVAL_RETURN(er);
   }
   er = eval(ev, chld(p, 0));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
     opStackPop();
-    return er;
+    EVAL_RETURN(er);
   }
   opStackPopNPush(2, newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) < 0));
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalGE(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 1));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
-    return er;
+    EVAL_RETURN(er);
   }
   er = eval(ev, chld(p, 0));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
     opStackPop();
-    return er;
+    EVAL_RETURN(er);
   }
   opStackPopNPush(2, newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) >= 0));
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalLE(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 1));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
-    return er;
+    EVAL_RETURN(er);
   }
   er = eval(ev, chld(p, 0));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
     opStackPop();
-    return er;
+    EVAL_RETURN(er);
   }
   opStackPopNPush(2, newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) <= 0));
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalEQ(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 1));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
-    return er;
+    EVAL_RETURN(er);
   }
   er = eval(ev, chld(p, 0));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
     opStackPop();
-    return er;
+    EVAL_RETURN(er);
   }
   opStackPopNPush(2, newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) == 0));
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalNE(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 1));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
-    return er;
+    EVAL_RETURN(er);
   }
   er = eval(ev, chld(p, 0));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
     opStackPop();
-    return er;
+    EVAL_RETURN(er);
   }
   opStackPopNPush(2, newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) != 0));
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalAnd(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 0));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
-    return er;
+    EVAL_RETURN(er);
   }
   if (!(opStackPeek(0)->data)) {
     opStackPop();
     opStackPush(newIntValue(0));
-    return 0;
+    EVAL_RETURN(0);
   }
   er = eval(ev, chld(p, 1));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
     opStackPop();
-    return er;
+    EVAL_RETURN(er);
   }
   opStackPopNPush(2, opStackPeek(0)->data ? newIntValue(1) : newIntValue(0));
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalOr(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 0));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
-    return er;
+    EVAL_RETURN(er);
   }
   if (opStackPeek(0)->data) {
     opStackPop();
     opStackPush(newIntValue(1));
-    return 0;
+    EVAL_RETURN(0);
   }
   er = eval(ev, chld(p, 1));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
     opStackPop();
-    return er;
+    EVAL_RETURN(er);
   }
   opStackPopNPush(2, opStackPeek(0)->data ? newIntValue(1) : newIntValue(0));
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalNot(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 0));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
-    return er;
+    EVAL_RETURN(er);
   }
   opStackPopNPush(1, newIntValue(!(opStackPeek(0)->data)));
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalFun(Value *ev, Node *p) {
-  Env *e = ev->data;
-  Value *res = newClosureValue(p, ev);
-  pushPointerInEvalStack(&res);
-
-  envPut(e, (long)chld(p, 0)->data, res);
-  opStackPush(res);
-
-  popPointersInEvalStack(&res);
-  return 0;
+  EVAL_HEADER;
+  opStackPush(newClosureValue(p, &ev));
+  envPut(getEnvFromValue(ev), (long)chld(p, 0)->data, opStackPeek(0));
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalError(Value *ev, Node *p) {
+  EVAL_HEADER;
   error("cannot eval unknown node type %d\n", p->type);
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalIf(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 0));
-  if (er) return er;
+  if (er) EVAL_RETURN(er);
   if (opStackPop()->data) {
     er = eval(ev, chld(p, 1));
-    if (er) return er;
-    return 0;
+    if (er) EVAL_RETURN(er);
+    EVAL_RETURN(0);
   } else {
     if (chldNum(p) == 3) {
       er = eval(ev, chld(p, 2));
-      if (er) return er;
-      return 0;
+      if (er) EVAL_RETURN(er);
+      EVAL_RETURN(0);
     } else {
       opStackPush(newNoneValue());
-      return 0;
+      EVAL_RETURN(0);
     }
   }
 }
 
 EvalResult *evalExpList(Value *ev, Node *p) {
+  EVAL_HEADER;
   int i, n = chldNum(p);
   for (i = 0; i < n; i++) {
     if (i) opStackPop();
     EvalResult *er = eval(ev, chld(p, i));
-    if (er) return er;
+    if (er) EVAL_RETURN(er);
   }
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalListAccess(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 1));
-  if (er) return er;
+  if (er) EVAL_RETURN(er);
   er = eval(ev, chld(p, 0));
   if (er) {
     opStackPop();
-    return er;
+    EVAL_RETURN(er);
   }
   long idx = getIntFromValue(opStackPeek(1));
   switch (opStackPeek(0)->type) {
@@ -500,10 +540,11 @@ EvalResult *evalListAccess(Value *ev, Node *p) {
     default:
       error("list access does not support value type %s\n", valueToString(opStackPeek(0)));
   }
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalTailRecursion(Value *ev, Node *p) {
+  EVAL_HEADER;
   int i, n;
   List *l = newList();
   opStackPush(newListValue(l));  // protect from gc
@@ -511,22 +552,24 @@ EvalResult *evalTailRecursion(Value *ev, Node *p) {
   n = chldNum(args);
   for (i = n - 1; i >= 0; i--) {
     EvalResult *er = eval(ev, chld(args, i));
-    if (er) return er;
+    if (er) EVAL_RETURN(er);
     listPush(l, opStackPop());
   }
   EvalResult *er = eval(ev, chld(p, 0));
-  if (er) return er;
+  if (er) EVAL_RETURN(er);
   listPush(l, opStackPop());
-  return newEvalResult(TAIL_RECURSION_RESULT, opStackPop());
+  EVAL_RETURN(newEvalResult(TAIL_RECURSION_RESULT, opStackPop()));
 }
 
 EvalResult *evalReturn(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 0));
-  if (er) return er;
-  return newEvalResult(RETURN_RESULT, opStackPop());
+  if (er) EVAL_RETURN(er);
+  EVAL_RETURN(newEvalResult(RETURN_RESULT, opStackPop()));
 }
 
 EvalResult *evalAssign(Value *ev, Node *p) {
+  EVAL_HEADER;
   int beforeStackSize = opStackSize();
   Node *left = chld(p, 0);
   int i;
@@ -536,7 +579,7 @@ EvalResult *evalAssign(Value *ev, Node *p) {
       EvalResult *er = eval(ev, chld(left, 0));
       if (er) {
         assert(er->type == EXCEPTION_RESULT);
-        return er;
+        EVAL_RETURN(er);
       }
       assert(opStackPeek(0)->type == LIST_VALUE_TYPE);
       List *l = opStackPeek(0)->data;
@@ -544,54 +587,50 @@ EvalResult *evalAssign(Value *ev, Node *p) {
       if (er) {
         assert(er->type == EXCEPTION_RESULT);
         opStackPopTo(beforeStackSize);
-        return er;
+        EVAL_RETURN(er);
       }
       long idx = getIntFromValue(opStackPeek(0));
       er = eval(ev, chld(p, 1));
       if (er) {
         assert(er->type == EXCEPTION_RESULT);
         opStackPopTo(beforeStackSize);
-        return er;
+        EVAL_RETURN(er);
       }
-      Value *newValue = opStackPeek(0);
-      listSet(l, idx, newValue);
-      opStackPopToPush(beforeStackSize, newValue);
-      return 0;
+      opStackPopToPush(beforeStackSize, opStackPeek(0));
+      listSet(l, idx, opStackPeek(0));
+      EVAL_RETURN(0);
     }
     case ID_TYPE: {
       EvalResult *er = eval(ev, chld(p, 1));
       if (er) {
         assert(er->type == EXCEPTION_RESULT);
-        return er;
+        EVAL_RETURN(er);
       }
-      Value *newValue = opStackPeek(0);
-      envPut(e, (long)left->data, newValue);
-      opStackPopNPush(1, newValue);
-      return 0;
+      opStackPopNPush(1, opStackPeek(0));
+      envPut(e, (long)left->data, opStackPeek(0));
+      EVAL_RETURN(0);
     }
     case MODULE_ACCESS_TYPE: {
       Node *t = chld(p, 1);
       EvalResult *er = eval(ev, t);
-      if (er) return er;
+      if (er) EVAL_RETURN(er);
       int n = chldNum(left);
-      Value *env = ev;
+      Env* curEnv = e;
       for (i = 0; i < n - 1; i++) {
         long id = (long)chld(left, i)->data;
-        if (env->type != ENV_VALUE_TYPE)
-          error("module access must use env type, %s get\n",
-                valueToString(env));
-        env = envGet(env->data, id);
+        curEnv = getEnvFromValue(envGet(curEnv, id));
       }
-      envPutLocal(env->data, (long)chld(left, i)->data, opStackPeek(0));
-      return 0;
+      envPutLocal(curEnv, (long)chld(left, i)->data, opStackPeek(0));
+      EVAL_RETURN(0);
     }
     default:
       error("left hand side of = must be a left value\n");
   }
-  return 0;  // never reach here;
+  EVAL_RETURN(0); // never reach here
 }
 
 EvalResult *evalAddEq(Value *ev, Node *p) {
+  EVAL_HEADER;
   int beforeStackSize = opStackSize();
   int i;
   Env *e = ev->data;
@@ -601,34 +640,31 @@ EvalResult *evalAddEq(Value *ev, Node *p) {
       EvalResult *er = eval(ev, chld(left, 0));
       if (er) {
         assert(er->type == EXCEPTION_RESULT);
-        return er;
+        EVAL_RETURN(er);
       }
-      Value *lv = opStackPeek(0);
-      List *l = lv->data;
+      List *l = getListFromValue(opStackPeek(0));
 
       er = eval(ev, chld(left, 1));
       if (er) {
         assert(er->type == EXCEPTION_RESULT);
         opStackPopTo(beforeStackSize);
-        return er;
+        EVAL_RETURN(er);
       }
       long idx = getIntFromValue(opStackPeek(0));
-
-      Value *e1 = listGet(l, idx);
 
       er = eval(ev, chld(p, 1));
       if (er) {
         assert(er->type == EXCEPTION_RESULT);
         opStackPopTo(beforeStackSize);
-        return er;
+        EVAL_RETURN(er);
       }
+      Value *e1 = listGet(l, idx);
       Value *e2 = opStackPeek(0);
-      Value *res;
       switch (e1->type) {
         case INT_VALUE_TYPE:
         case STRING_VALUE_TYPE:
-          res = valueAdd(e1, e2);
-          listSet(l, idx, res);
+          opStackPopToPush(beforeStackSize, valueAdd(e1, e2));
+          listSet(l, idx, opStackPeek(0));
           break;
         case LIST_VALUE_TYPE:
           if (e2->type == LIST_VALUE_TYPE) {
@@ -638,29 +674,27 @@ EvalResult *evalAddEq(Value *ev, Node *p) {
           } else {
             listPush((List *)e1->data, e2);
           }
-          res = e1;
+          opStackPopToPush(beforeStackSize, e1);
           break;
         default:
           error("unknown type for operator +=: %d\n", e1->type);
       }
-      opStackPopToPush(beforeStackSize, res);
-      return 0;
+      EVAL_RETURN(0);
     }
     case ID_TYPE: {
       long key = (long)chld(p, 0)->data;
-      Value *e1 = envGet(e, key);
       EvalResult *er = eval(ev, chld(p, 1));
       if (er) {
         assert(er->type == EXCEPTION_RESULT);
-        return er;
+        EVAL_RETURN(er);
       }
+      Value *e1 = envGet(e, key);
       Value *e2 = opStackPeek(0);
-      Value *res;
       switch (e1->type) {
         case INT_VALUE_TYPE:
         case STRING_VALUE_TYPE:
-          res = valueAdd(e1, e2);
-          envPut(e, key, res);
+          opStackPopToPush(beforeStackSize, valueAdd(e1, e2));
+          envPut(e, key, opStackPeek(0));
           break;
         case LIST_VALUE_TYPE:
           if (e2->type == LIST_VALUE_TYPE) {
@@ -670,64 +704,60 @@ EvalResult *evalAddEq(Value *ev, Node *p) {
           } else {
             listPush((List *)e1->data, e2);
           }
-          res = e1;
+          opStackPopToPush(beforeStackSize, e1);
           break;
         default:
           error("unknown type for operator +=\n");
       }
-      envPut(e, key, res);
-      opStackPopToPush(beforeStackSize, res);
-      return 0;
+      EVAL_RETURN(0);
     }
     default:
       error("left hand side of += must be left value\n");
   }
-  return 0;  // never reach here
+  EVAL_RETURN(0);  // never reach here
 }
 
 EvalResult *evalFor(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 0));
-  if (er) return er;
+  if (er) EVAL_RETURN(er);
   opStackPop();
   while (1) {
     er = eval(ev, chld(p, 1));
-    if (er) return er;
+    if (er) EVAL_RETURN(er);
     if (!(opStackPop()->data)) break;
     er = eval(ev, chld(p, 3));
     if (er) {
       if (CONTINUE_RESULT == er->type) {
         freeEvalResult(er);
         er = eval(ev, chld(p, 2));
-        if (er) return er;
+        if (er) EVAL_RETURN(er);
         opStackPop();
         continue;
       } else if (BREAK_RESULT == er->type) {
         freeEvalResult(er);
         break;
       } else {
-        return er;
+        EVAL_RETURN(er);
       }
     }
     opStackPop();
     er = eval(ev, chld(p, 2));
-    if (er) return er;
+    if (er) EVAL_RETURN(er);
     opStackPop();
   }
   opStackPush(newNoneValue());
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalForEach(Value *ev, Node *p) {
+  EVAL_HEADER;
   int i;
   Env *e = ev->data;
   Node *id = chld(p, 0);
   EvalResult *er = eval(ev, chld(p, 1));
-  if (er) return er;
-  Value *lv = opStackPeek(0);
-  if (id->type != ID_TYPE || lv->type != LIST_VALUE_TYPE) {
-    error("param type incorrect for for( : ) statement\n ");
-  }
-  List *l = (List *)lv->data;
+  if (er) EVAL_RETURN(er);
+  List *l = getListFromValue(opStackPeek(0));
   int len = listSize(l);
   for (i = 0; i < len; i++) {
     envPut(e, (long)id->data, listGet(l, i));
@@ -741,20 +771,21 @@ EvalResult *evalForEach(Value *ev, Node *p) {
         break;
       } else {
         opStackPop();
-        return er;
+        EVAL_RETURN(er);
       }
     } else {
       opStackPop();
     }
   }
   opStackPopNPush(1, newNoneValue());
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalWhile(Value *ev, Node *p) {
+  EVAL_HEADER;
   while (1) {
     EvalResult *er = eval(ev, chld(p, 0));
-    if (er) return er;
+    if (er) EVAL_RETURN(er);
     if (!(opStackPop()->data)) break;
     er = eval(ev, chld(p, 1));
     if (er) {
@@ -765,34 +796,37 @@ EvalResult *evalWhile(Value *ev, Node *p) {
         freeEvalResult(er);
         break;
       } else {
-        return er;
+        EVAL_RETURN(er);
       }
     } else {
       opStackPop();
     }
   }
   opStackPush(newNoneValue());
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalContinue(Value *ev, Node *p) {
-  return newEvalResult(CONTINUE_RESULT, 0);
+  EVAL_HEADER;
+  EVAL_RETURN(newEvalResult(CONTINUE_RESULT, 0));
 }
 
 EvalResult *evalBreak(Value *ev, Node *p) {
-  return newEvalResult(BREAK_RESULT, 0);
+  EVAL_HEADER;
+  EVAL_RETURN(newEvalResult(BREAK_RESULT, 0));
 }
 
 EvalResult *evalTime(Value *ev, Node *p) {
   clock_t st = clock();
   Node *t = chld(p, 0);
   EvalResult *er = eval(ev, t);
-  if (er) return er;
+  if (er) EVAL_RETURN(er);
   fprintf(stderr, "time: %lf secs\n", (clock() - st) * 1.0 / CLOCKS_PER_SEC);
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalTry(Value *ev, Node *p) {
+  EVAL_HEADER;
   int beforeStackSize = opStackSize();
   Env *e = ev->data;
   Node *tryBlock = chld(p, 0);
@@ -809,88 +843,80 @@ EvalResult *evalTry(Value *ev, Node *p) {
       if (er3) {
         if (er2) freeEvalResult(er2);
         opStackPopTo(beforeStackSize);
-        return er3;
+        EVAL_RETURN(er3);
       }
       if (er2) {
         opStackPopTo(beforeStackSize);
-        return er2;
+        EVAL_RETURN(er2);
       }
       opStackPopTo(beforeStackSize);
       opStackPush(newNoneValue());
-      return 0;
+      EVAL_RETURN(0);
     }
-    return er;
+    EVAL_RETURN(er);
   }
   if (finallyBlock) {
     er = eval(ev, finallyBlock);
     if (er) {
       opStackPopTo(beforeStackSize);
-      return er;
+      EVAL_RETURN(er);
     }
   }
   opStackPopTo(beforeStackSize);
   opStackPush(newNoneValue());
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalThrow(Value *ev, Node *p) {
+  EVAL_HEADER;
   EvalResult *er = eval(ev, chld(p, 0));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
-    return er;
+    EVAL_RETURN(er);
   }
-  return newEvalResult(EXCEPTION_RESULT, opStackPop());
+  EVAL_RETURN(newEvalResult(EXCEPTION_RESULT, opStackPop()));
 }
 
 EvalResult *evalAddAdd(Value *ev, Node *p) {
+  EVAL_HEADER;
   int beforeStackSize = opStackSize();
   Env *e = ev->data;
   Node *left = chld(p, 0);
   switch (left->type) {
     case ID_TYPE: {
       long id = (long)left->data;
-      Value *i = envGet(e, id);
-      if (i->type != INT_VALUE_TYPE)
-        error("++ can only apply to int\n%s\n",
-              valueToString(nodeToListValue(p)));
-      envPut(e, id, newIntValue((long)i->data + 1));
-      opStackPopToPush(beforeStackSize, i);
-      return 0;
+      long newValue = getIntFromValue(envGet(e, id)) + 1;
+      opStackPopToPush(beforeStackSize, envPut(e, id, newIntValue(newValue)));
+      EVAL_RETURN(0);
     }
     case LIST_ACCESS_TYPE: {
       EvalResult *er = eval(ev, chld(left, 0));
       if (er) {
         assert(er->type == EXCEPTION_RESULT);
         opStackPopTo(beforeStackSize);
-        return er;
+        EVAL_RETURN(er);
       }
-      Value *lv = opStackPeek(0);
-      if (lv->type != LIST_VALUE_TYPE)
-        error("++ only applys to left value\n%s\n",
-              valueToString(nodeToListValue(p)));
-      List *l = (List *)lv->data;
+      List *l = getListFromValue(opStackPeek(0));
       er = eval(ev, chld(left, 1));
       if (er) {
         opStackPopTo(beforeStackSize);
-        return er;
+        EVAL_RETURN(er);
       }
-      Value *idx = opStackPeek(0);
-      if (idx->type != INT_VALUE_TYPE) error("index of list must be int\n");
-      long idxv = (long)idx->data;
-      Value *i = listGet(l, idxv);
-      if (i->type != INT_VALUE_TYPE) error("++ only applys on int\n");
-      listSet(l, idxv, newIntValue((long)i->data + 1));
-      opStackPopToPush(beforeStackSize, i);
-      return 0;
+      long idxv = getIntFromValue(opStackPeek(0));
+      opStackPopToPush(beforeStackSize, listGet(l, idxv));
+      long resultV = getIntFromValue(opStackPeek(0)) + 1;
+      listSet(l, idxv, newIntValue(resultV));
+      EVAL_RETURN(0);
     }
     default:
       error("++ does not support value type %s\n",
             nodeTypeToString(left->type));
   }
-  return 0;  // never reach here
+  EVAL_RETURN(0);  // never reach here
 }
 
 EvalResult *evalLocal(Value *ev, Node *p) {
+  EVAL_HEADER;
   Node *ids = chld(p, 0);
   int i, n = chldNum(ids);
   Env *e = ev->data;
@@ -898,10 +924,11 @@ EvalResult *evalLocal(Value *ev, Node *p) {
     envPutLocal(e, (long)chld(ids, i)->data, newNoneValue());
   }
   opStackPush(newNoneValue());
-  return 0;
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalImport(Value *ev, Node *p) {
+  EVAL_HEADER;
   int i;
   Env *e = ev->data;
   Node *id = chld(p, 0);
@@ -915,28 +942,33 @@ EvalResult *evalImport(Value *ev, Node *p) {
 #else
   if (!parse(tokenize(readFile(f)))) error("failed to parse %s\n", s);
 #endif
-  Value *res = newEnvValue(newEnv(globalEnv));
-  opStackPush(res);
-  Node *t = listLast(parseTrees);
-  EvalResult *er = eval(res, t);
-  opStackPop();
+
+  opStackPush(newEnvValue(&globalEnv));
+  EvalResult *er = eval(opStackPeek(0), listLast(parseTrees));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
-    return er;
+    opStackPop(); // pop env
+    EVAL_RETURN(er);
   }
-  envPut(e, (long)id->data, res);
-  return 0;
+  opStackPop(); // discard dummy eval result
+  envPut(e, (long)id->data, opStackPeek(0));
+  EVAL_RETURN(0);
 }
 
 EvalResult *evalModuleAccess(Value *ev, Node *p) {
+  EVAL_HEADER;
   int i, n = chldNum(p);
-  Value *res = ev;
+  Env* e = getEnvFromValue(ev);
   for (i = 0; i < n; i++) {
-    long id = (long)chld(p, i)->data;
-    if (res->type != ENV_VALUE_TYPE)
-      error("module access must use env type, %s get\n", valueToString(res));
-    res = envGet(res->data, id);
+    long id = getIdFromNode(chld(p, i));
+    if (i != n-1) {
+      e = getEnvFromValue(envGet(e, id));
+    } else {
+      opStackPush(envGet(e, id));
+    }
   }
-  opStackPush(res);
-  return 0;
+  EVAL_RETURN(0);
 }
+
+#undef EVAL_RETURN
+#undef EVAL_HEADER
