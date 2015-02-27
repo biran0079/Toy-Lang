@@ -30,7 +30,7 @@ static Node *buildTree(Node *fst, List *rst) {
 #define TM(n, T) tokenMatch(&n, t, ip, T)
 #define M(TYPE) matchT(t, ip, TYPE)
 #define M2(T1, T2) M(T1) && M(T2)
-#define LF(i, T) ((Token*)(listGet(t, *ip + i)))->type == T
+#define LF(i, T) (((Token*)(listGet(t, *ip + i)))->type == T)
 
 Node *parse(List *t) {
   int idx = 0;
