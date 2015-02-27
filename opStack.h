@@ -19,9 +19,6 @@ void opStackPopTo(int);
 void opStackPopNPush(int, Value *);
 void opStackPopToPush(int, Value *);
 
-void opStackSave();
-void opStackRestore();
-
 void opStackAppendValuesTo(List *);
 
 void showOpStack();
