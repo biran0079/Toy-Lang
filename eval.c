@@ -167,6 +167,7 @@ EvalResult *evalList(Env *ev, Node *p) {
       return er;
     }
     listValuePush(lv, opStackPeek(0));
+    opStackPop();
   }
   return 0;
 }

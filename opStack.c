@@ -65,7 +65,7 @@ void showOpStack() {
 
 void opStackPopToPush(int n, Value *v) {
   ref(v);
-  opStackPopTo(v);
+  opStackPopTo(n);
   opStackPush(v);
   deref(v);
 }

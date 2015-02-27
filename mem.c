@@ -19,7 +19,7 @@ void initValuesBlock() {
 void cleanupValuesBlock() {
   int i, n = listSize(allValues);
   for (i = 0; i < n; i++) {
-    Value* v = listGet(allValues);
+    Value* v = listGet(allValues, i);
     if (v->type != FREED_TYPE) {
       error("value is still alive!\n%s\n", valueToString(v));
     }
