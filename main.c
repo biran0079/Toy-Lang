@@ -88,7 +88,9 @@ int main(int argc, char **argv) {
 #ifdef USE_YY_PARSER
   yyparse();
 #else
-  List *tokens = tokenize(readFileWithPath(src));
+  char* code = readFileWithPath(src);
+  if (!code) error("cannot open input file\n");
+  List *tokens = tokenize(code);
   parse(tokens);
 #endif
   if (toDot) {
@@ -103,7 +105,7 @@ int main(int argc, char **argv) {
   } else {
     Node *tree = listGet(parseTrees, 0);
     if (0 == eval(globalEnv, tree)) {
-      opStackPop();
+      opStackPop(); // pop eval result
     }
   }
   cleanup();

@@ -72,3 +72,16 @@ void showOpStack() {
   }
   printf("]\n");
 }
+
+void opStackPopToPush(int n, Value* v) {
+  if (n == listSize(opStack)) {
+    opStackPush(v);
+  } else {
+    listSet(opStack, n, v);
+    listPopTo(opStack, n + 1 );
+  }
+}
+
+void opStackPopNPush(int n, Value* v) {
+  opStackPopToPush(listSize(opStack) - n, v);
+}

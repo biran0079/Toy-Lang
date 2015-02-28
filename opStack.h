@@ -15,6 +15,9 @@ Value* opStackPeek(int);
 int opStackSize();
 void opStackPopTo(int);
 
+void opStackPopNPush(int, Value*);
+void opStackPopToPush(int, Value*);
+
 void opStackSave();
 void opStackRestore();
 

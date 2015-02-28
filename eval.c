@@ -88,9 +88,10 @@ EvalResult* evalCall(Value *ev, Node *p) {
     return er;
   }
   while (1) {
-    Value *closureValue = opStackPop();
+    Value *closureValue = opStackPeek(0);
     if (closureValue->type == BUILTIN_FUN_VALUE_TYPE) {
       BuiltinFun f = closureValue->data;
+      opStackPop(); // pop closure
       f(n);
       // always success and result is in stack
       return 0;
@@ -102,10 +103,9 @@ EvalResult* evalCall(Value *ev, Node *p) {
     Node *ids = chld(f, 1);
     if (chldNum(ids) != n) error("%s parameter number incorrect\n", valueToString(closureValue));
     for (i = 0; i < n; i++)
-      envPutLocal(e2, (long)chld(ids, i)->data, opStackPeek(i));
+      envPutLocal(e2, (long)chld(ids, i)->data, opStackPeek(i + 1));
     Value* ev2 = newEnvValue(e2);
-    opStackPopN(n);
-    opStackPush(ev2);
+    opStackPopNPush(n + 1, ev2);
     EvalResult* er = eval(ev2, chld(f, 2));
     if (er) {
       switch (er->type) {
@@ -125,8 +125,7 @@ EvalResult* evalCall(Value *ev, Node *p) {
                                       continue;
                                     }
         case RETURN_RESULT: {
-                              opStackPopTo(beforeStackSize);
-                              opStackPush(er->value);
+                              opStackPopToPush(beforeStackSize, er->value);
                               freeEvalResult(er);
                               return 0;
                             }
@@ -135,8 +134,7 @@ EvalResult* evalCall(Value *ev, Node *p) {
       }
     } else {
       // no return called, always return none 
-      opStackPopTo(beforeStackSize);
-      opStackPush(newNoneValue());
+      opStackPopToPush(beforeStackSize, newNoneValue());
       return 0;
     }
   }
@@ -194,8 +192,7 @@ EvalResult* evalAdd(Value *ev, Node *p) {
     return er;
   }
   Value *res = valueAdd(opStackPeek(0), opStackPeek(1));
-  opStackPopN(2);
-  opStackPush(res);
+  opStackPopNPush(2, res);
   return 0;
 }
 
@@ -212,8 +209,7 @@ EvalResult* evalSub(Value *ev, Node *p) {
     return er;
   }
   Value *res = valueSub(opStackPeek(0), opStackPeek(1));
-  opStackPopN(2);
-  opStackPush(res);
+  opStackPopNPush(2, res);
   return 0;
 }
 
@@ -230,8 +226,7 @@ EvalResult* evalMul(Value *ev, Node *p) {
     return er;
   }
   Value *res = valueMul(opStackPeek(0), opStackPeek(1));
-  opStackPopN(2);
-  opStackPush(res);
+  opStackPopNPush(2, res);
   return 0;
 }
 
@@ -248,8 +243,7 @@ EvalResult* evalDiv(Value *ev, Node *p) {
     return er;
   }
   Value *res = valueDiv(opStackPeek(0), opStackPeek(1));
-  opStackPopN(2);
-  opStackPush(res);
+  opStackPopNPush(2, res);
   return 0;
 }
 
@@ -266,8 +260,7 @@ EvalResult* evalMod(Value *ev, Node *p) {
     return er;
   }
   Value *res = valueMod(opStackPeek(0), opStackPeek(1));
-  opStackPopN(2);
-  opStackPush(res);
+  opStackPopNPush(2, res);
   return 0;
 }
 
@@ -284,8 +277,7 @@ EvalResult* evalGT(Value *ev, Node *p) {
     return er;
   }
   Value* res = newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) > 0);
-  opStackPopN(2);
-  opStackPush(res);
+  opStackPopNPush(2, res);
   return 0;
 }
 
@@ -302,8 +294,7 @@ EvalResult* evalLT(Value *ev, Node *p) {
     return er;
   }
   Value* res = newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) < 0);
-  opStackPopN(2);
-  opStackPush(res);
+  opStackPopNPush(2, res);
   return 0;
 }
 
@@ -320,8 +311,7 @@ EvalResult* evalGE(Value *ev, Node *p) {
     return er;
   }
   Value* res = newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) >= 0);
-  opStackPopN(2);
-  opStackPush(res);
+  opStackPopNPush(2, res);
   return 0;
 }
 
@@ -338,8 +328,7 @@ EvalResult* evalLE(Value *ev, Node *p) {
     return er;
   }
   Value* res = newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) <= 0);
-  opStackPopN(2);
-  opStackPush(res);
+  opStackPopNPush(2, res);
   return 0;
 }
 
@@ -356,8 +345,7 @@ EvalResult* evalEQ(Value *ev, Node *p) {
     return er;
   }
   Value* res = newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) == 0);
-  opStackPopN(2);
-  opStackPush(res);
+  opStackPopNPush(2, res);
   return 0;
 }
 
@@ -374,8 +362,7 @@ EvalResult* evalNE(Value *ev, Node *p) {
     return er;
   }
   Value* res = newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) != 0);
-  opStackPopN(2);
-  opStackPush(res);
+  opStackPopNPush(2, res);
   return 0;
 }
 
@@ -397,8 +384,7 @@ EvalResult* evalAnd(Value *ev, Node *p) {
     return er;
   }
   Value* res = opStackPeek(0)->data ? newIntValue(1) : newIntValue(0);
-  opStackPopN(2);
-  opStackPush(res);
+  opStackPopNPush(2, res);
   return 0;
 }
 
@@ -420,8 +406,7 @@ EvalResult* evalOr(Value *ev, Node *p) {
     return er;
   }
   Value* res = opStackPeek(0)->data ? newIntValue(1) : newIntValue(0);
-  opStackPopN(2);
-  opStackPush(res);
+  opStackPopNPush(2, res);
   return 0;
 }
 
@@ -432,8 +417,7 @@ EvalResult* evalNot(Value *ev, Node *p) {
     return er;
   }
   Value* res = newIntValue(!(opStackPeek(0)->data));
-  opStackPop();
-  opStackPush(res);
+  opStackPopNPush(1, res);
   return 0;
 }
 
@@ -509,8 +493,7 @@ EvalResult* evalListAccess(Value *ev, Node *p) {
     default:
       error("list access does not support value type %s\n", valueToString(v));
   }
-  opStackPopN(2);
-  opStackPush(res);
+  opStackPopNPush(2, res);
   return 0;
 }
 
@@ -569,8 +552,7 @@ EvalResult* evalAssign(Value *ev, Node *p) {
       }
       Value* newValue = opStackPeek(0);
       listSet(l, (long)idx->data, newValue);
-      opStackPopTo(beforeStackSize);
-      opStackPush(newValue);
+      opStackPopToPush(beforeStackSize, newValue);
       return 0;
     }
     case ID_TYPE: {
@@ -579,9 +561,9 @@ EvalResult* evalAssign(Value *ev, Node *p) {
         assert(er->type == EXCEPTION_RESULT);
         return er;
       }
-      Value* newValue = opStackPop();
+      Value* newValue = opStackPeek(0);
       envPut(e, (long)left->data, newValue);
-      opStackPush(newValue);
+      opStackPopNPush(1, newValue);
       return 0;
     }
     case MODULE_ACCESS_TYPE: {
@@ -659,8 +641,7 @@ EvalResult* evalAddEq(Value *ev, Node *p) {
         default:
           error("unknown type for operator +=: %d\n", e1->type);
       }
-      opStackPopTo(beforeStackSize);
-      opStackPush(res);
+      opStackPopToPush(beforeStackSize, res);
       return 0;
     }
     case ID_TYPE: {
@@ -693,8 +674,7 @@ EvalResult* evalAddEq(Value *ev, Node *p) {
           error("unknown type for operator +=\n");
       }
       envPut(e, key, res);
-      opStackPopTo(beforeStackSize);
-      opStackPush(res);
+      opStackPopToPush(beforeStackSize, res);
       return 0;
     }
     default:
@@ -742,7 +722,7 @@ EvalResult* evalForEach(Value *ev, Node *p) {
   Node *id = chld(p, 0);
   EvalResult* er = eval(ev, chld(p, 1));
   if (er) return er;
-  Value* lv = opStackPop();
+  Value* lv = opStackPeek(0);
   if (id->type != ID_TYPE || lv->type != LIST_VALUE_TYPE) {
     error("param type incorrect for for( : ) statement\n ");
   }
@@ -759,13 +739,14 @@ EvalResult* evalForEach(Value *ev, Node *p) {
         freeEvalResult(er);
         break;
       } else {
+        opStackPop();
         return er;
-      } 
+      }
     } else {
       opStackPop();
     }
   }
-  opStackPush(newNoneValue());
+  opStackPopNPush(1, newNoneValue());
   return 0;
 }
 
@@ -873,8 +854,7 @@ EvalResult* evalAddAdd(Value *ev, Node *p) {
         error("++ can only apply to int\n%s\n",
               valueToString(nodeToListValue(p)));
       envPut(e, id, newIntValue((long)i->data + 1));
-      opStackPopTo(beforeStackSize);
-      opStackPush(i);
+      opStackPopToPush(beforeStackSize, i);
       return 0;
     }
     case LIST_ACCESS_TYPE: {
@@ -899,8 +879,7 @@ EvalResult* evalAddAdd(Value *ev, Node *p) {
       Value *i = listGet(l, idxv);
       if (i->type != INT_VALUE_TYPE) error("++ only applys on int\n");
       listSet(l, idxv, newIntValue((long)i->data + 1));
-      opStackPopTo(beforeStackSize);
-      opStackPush(i);
+      opStackPopToPush(beforeStackSize, i);
       return 0;
     }
     default:

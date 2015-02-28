@@ -54,7 +54,7 @@ void init(int argc, char **args) {
 
   listPush(path, copyStr("./"));
   globalEnv = newEnvValue(newEnv(newNoneValue()));
-  listPush(rootValues, globalEnv);
+  opStackPush(globalEnv);
   registerBuiltinFunctions(globalEnv->data);
 }
 
@@ -63,6 +63,7 @@ void cleanup() {
   cleanupTlJump();
   listClear(rootValues);
   forceGC();
+  assert(globalEnv == opStackPop()); // clean up global env
   cleanupOpStack();
   freeList(rootValues);
   freeList(values);

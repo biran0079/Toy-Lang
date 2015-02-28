@@ -91,7 +91,9 @@ void forceGC() {
   freeList(values);
   values = values2;
   int after = listSize(values);
-  pushGCHistory(before, after);
+  if (shouldDumpGCHistory) {
+    pushGCHistory(before, after);
+  }
 }
 
 extern int memoryUsage, memoryLimit, gcTestMode;
