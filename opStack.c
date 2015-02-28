@@ -19,9 +19,7 @@ void cleanupOpStack() {
   freeList(opStackState);
 }
 
-void opStackPush(Value *v) {
-  listPush(opStack, v);
-}
+void opStackPush(Value *v) { listPush(opStack, v); }
 
 void opStackPopN(int n) {
   int newSize = listSize(opStack) - n;
@@ -47,22 +45,18 @@ void opStackRestore() {
   listPopTo(opStack, (long)listPop(opStackState));
 }
 
-void opStackAppendValuesTo(List* l) {
+void opStackAppendValuesTo(List *l) {
   int i, n = listSize(opStack);
-  for (i = 0; i < n; i++) listPush(l, listGet(opStack, i)); 
+  for (i = 0; i < n; i++) listPush(l, listGet(opStack, i));
 }
 
-Value* opStackPeek(int i) {
+Value *opStackPeek(int i) {
   return listGet(opStack, listSize(opStack) - 1 - i);
 }
 
-int opStackSize() {
-  return listSize(opStack);
-}
+int opStackSize() { return listSize(opStack); }
 
-void opStackPopTo(int n) {
-  listPopTo(opStack, n);
-}
+void opStackPopTo(int n) { listPopTo(opStack, n); }
 
 void showOpStack() {
   int i, n = listSize(opStack);
@@ -73,15 +67,15 @@ void showOpStack() {
   printf("]\n");
 }
 
-void opStackPopToPush(int n, Value* v) {
+void opStackPopToPush(int n, Value *v) {
   if (n == listSize(opStack)) {
     opStackPush(v);
   } else {
     listSet(opStack, n, v);
-    listPopTo(opStack, n + 1 );
+    listPopTo(opStack, n + 1);
   }
 }
 
-void opStackPopNPush(int n, Value* v) {
+void opStackPopNPush(int n, Value *v) {
   opStackPopToPush(listSize(opStack) - n, v);
 }

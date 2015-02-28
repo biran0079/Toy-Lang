@@ -11,8 +11,8 @@
 extern Value *globalEnv;
 extern List *parseTrees;
 
-
-#define CHECK_ARG_NUM(num, name) if (n != num) error(#num" argument required for "#name"\n");
+#define CHECK_ARG_NUM(num, name) \
+  if (n != num) error(#num " argument required for " #name "\n");
 void builtinLen(int n) {
   CHECK_ARG_NUM(1, len());
   Value *l = opStackPeek(0);
@@ -37,7 +37,7 @@ void builtinOrd(int n) {
   if (v->type != STRING_VALUE_TYPE || strlen((char *)v->data) != 1)
     error("ord() can only apply to string with length 1, got %s\n",
           valueToString(v));
-  Value* res = newIntValue(*((char *)v->data));
+  Value *res = newIntValue(*((char *)v->data));
   opStackPopN(n);
   opStackPush(res);
 }
@@ -66,7 +66,7 @@ void builtinChr(int n) {
   char *s = (char *)tlMalloc(2);
   s[0] = (long)v->data;
   s[1] = 0;
-  Value* res = newStringValue(s);
+  Value *res = newStringValue(s);
   opStackPopN(n);
   opStackPush(res);
 }
@@ -80,12 +80,12 @@ void builtinPrint(int n) {
     tlFree(s);
   }
   printf("\n");
-  Value* res = newNoneValue();
+  Value *res = newNoneValue();
   opStackPopN(n);
   opStackPush(res);
 }
 
-void builtinRand(int n) { 
+void builtinRand(int n) {
   CHECK_ARG_NUM(0, rand());
   opStackPopN(n);
   opStackPush(newIntValue(rand()));
@@ -108,7 +108,7 @@ void builtinParse(int n) {
 #else
   if (!parse(tokenize(code))) error("failed to parse %s\n", code);
 #endif
-  Value* res = nodeToListValue(listLast(parseTrees));
+  Value *res = nodeToListValue(listLast(parseTrees));
   opStackPopN(n);
   opStackPush(res);
 }
@@ -120,7 +120,8 @@ void builtinRead(int n) {
     error("read only applys to string, got type %d\n", v->type);
   }
   char *s = readFileWithPath((char *)v->data);
-  Value* res = newNoneValue();;
+  Value *res = newNoneValue();
+  ;
   if (s) res = newStringValue(s);
   opStackPopN(n);
   opStackPush(res);

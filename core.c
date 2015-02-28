@@ -10,7 +10,7 @@
 #include "opStack.h"
 
 List *parseTrees;
-List *values;      // all values created
+List *values;  // all values created
 Value *globalEnv;
 int memoryLimit = 200000000;
 List *path;  // where import loads from
@@ -58,7 +58,7 @@ void init(int argc, char **args) {
 void cleanup() {
   cleanupIdMap();
   forceGC();
-  assert(globalEnv == opStackPop()); // clean up global env
+  assert(globalEnv == opStackPop());  // clean up global env
   cleanupOpStack();
   freeList(values);
   int i, n = listSize(parseTrees);
