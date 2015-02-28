@@ -3,6 +3,7 @@
 #include "core.h"
 #include "list.h"
 #include "env.h"
+#include "eval.h"
 #define chldNum(t) listSize((List *)(t)->data)
 #define chld(t, i) ((Node *)listGet((List *)(t)->data, i))
 

@@ -2,7 +2,6 @@
 #include "list.h"
 #include "value.h"
 #include "env.h"
-#include "tljmp.h"
 #include "closure.h"
 #include "util.h"
 #include "core.h"
@@ -32,10 +31,6 @@ static void mark() {
         Env *e = v->data;
         hashTableAddAllToList(e->t, q);
         listPush(q, e->parent);
-        for (i = 0; i < envNumOfExceptionStates(e); i++) {
-          Exception *ex = envGetExceptionStates(e, i);
-          if (ex->finally) mark(ex->finally->ev);
-        }
         break;
       }
       case LIST_VALUE_TYPE: {

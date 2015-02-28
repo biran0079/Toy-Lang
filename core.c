@@ -1,7 +1,6 @@
 #include "ast.h"
 #include "core.h"
 #include "env.h"
-#include "tljmp.h"
 #include "builtinFun.h"
 #include "gc.h"
 #include "hashTable.h"
@@ -42,7 +41,6 @@ void listCreatedObjectsCount() {
 void init(int argc, char **args) {
   initIdMap();
   initOpStack();
-  initTljump();
   path = newList();
   char *tlDir = getFolder(args[0]);
   listPush(path, catStr(tlDir, "lib/"));
@@ -60,7 +58,6 @@ void init(int argc, char **args) {
 
 void cleanup() {
   cleanupIdMap();
-  cleanupTlJump();
   listClear(rootValues);
   forceGC();
   assert(globalEnv == opStackPop()); // clean up global env
