@@ -54,7 +54,8 @@ testgc: tl
 	./gctest.sh
 
 clear:
-	rm -f tl.exe tl *.o lex.yy.c tl.tab.c tl.tab.h
+	rm -f tl.exe tl *.o lex.yy.c tl.tab.c tl.tab.h parser parser.exe\
+	tokenizer tokenizer.exe parserbenchmark parserbenchmark.exe
 
 benchmark: CFLAGS=-O3
 benchmark: tl
