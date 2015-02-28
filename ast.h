@@ -3,6 +3,7 @@
 #include "core.h"
 #include "list.h"
 #include "env.h"
+#include "eval.h"
 #define chldNum(t) listSize((List *)(t)->data)
 #define chld(t, i) ((Node *)listGet((List *)(t)->data, i))
 
@@ -52,7 +53,11 @@ enum NodeType {
   __DUMMY_TYPE,  // Used for parsing. Not part of language.
 };
 
+#ifndef USE_LEGACY_EVAL
+typedef EvalResult* (*EvalFunc)(Value *, Node *);
+#else
 typedef Value *(*EvalFunc)(Value *, Node *);
+#endif
 
 struct Node {
   NodeType type;

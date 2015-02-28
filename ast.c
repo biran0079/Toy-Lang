@@ -2,6 +2,7 @@
 #include "ast.h"
 #include "util.h"
 #include "list.h"
+#include "opStack.h"
 
 int newNodeC = 0, freeNodeC = 0;
 
@@ -60,7 +61,7 @@ void markTailRecursions(Node *t) {
 Value *nodeToListValue(Node *p) {
   List *l = newList();
   Value *res = newListValue(l);
-  pushRootValue(res);
+  opStackPush(res);
   listPush(l, newStringValue(copyStr(nodeTypeToString(p->type))));
   switch (p->type) {
     case INT_TYPE:
@@ -118,6 +119,7 @@ Value *nodeToListValue(Node *p) {
     default:
       error("unknown node type in nodeToListValue");
   }
+  assert(res == opStackPop());
   return res;
 }
 

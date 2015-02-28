@@ -2,10 +2,10 @@
 #include "list.h"
 #include "value.h"
 #include "env.h"
-#include "tljmp.h"
 #include "closure.h"
 #include "util.h"
 #include "core.h"
+#include "opStack.h"
 
 extern List *values, *rootValues, *gcHistory;
 
@@ -16,6 +16,7 @@ static void mark() {
   for (i = 0; i < n; i++) {
     listPush(q, listGet(rootValues, i));
   }
+  opStackAppendValuesTo(q);
   while (listSize(q)) {
     v = listPop(q);
     if (v->mark) continue;
@@ -30,10 +31,6 @@ static void mark() {
         Env *e = v->data;
         hashTableAddAllToList(e->t, q);
         listPush(q, e->parent);
-        for (i = 0; i < envNumOfExceptionStates(e); i++) {
-          Exception *ex = envGetExceptionStates(e, i);
-          if (ex->finally) mark(ex->finally->ev);
-        }
         break;
       }
       case LIST_VALUE_TYPE: {
@@ -50,7 +47,7 @@ static void mark() {
       case NONE_VALUE_TYPE:
         break;
       default:
-        error("cannot mark unknown value\n");
+        error("cannot mark unknown value %d\n", v->type);
     }
   }
   freeList(q);
@@ -89,7 +86,9 @@ void forceGC() {
   freeList(values);
   values = values2;
   int after = listSize(values);
-  pushGCHistory(before, after);
+  if (shouldDumpGCHistory) {
+    pushGCHistory(before, after);
+  }
 }
 
 extern int memoryUsage, memoryLimit, gcTestMode;

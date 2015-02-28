@@ -2,6 +2,7 @@
 #define _VALUE_H_
 
 #include "core.h"
+#include "builtinFun.h"
 
 enum ValueType {
   INT_VALUE_TYPE,

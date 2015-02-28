@@ -1,5 +1,5 @@
-CFLAGS = -O3
-      
+CFLAGS = -g
+CC=clang
 
 all: tl
 
@@ -9,8 +9,8 @@ lex.yy.c: tl.l tl.tab.c
 %.tab.c %.tab.h: %.y
 	bison -d $<
 
-CORE_OBJS = ast.o builtinFun.o closure.o compile.o core.o dumpGCHistory.o env.o eval.o exception.o \
-	execUnit.o gc.o hashTable.o list.o tljmp.o toDot.o util.o value.o idMap.o opStack.o
+CORE_OBJS = ast.o builtinFun.o closure.o compile.o core.o dumpGCHistory.o env.o eval.o \
+	gc.o hashTable.o list.o toDot.o util.o value.o idMap.o opStack.o
 
 PARSER_OBJs = tokenizer.o parser.o 
 
@@ -33,6 +33,7 @@ yytl: clear $(CORE_OBJS) $(TL_MAIN_OBJ) $(YY_PARSER_OBJS)
 parser: $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_MAIN_OBJ)
 	$(CC) $(CFLAGS) $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_MAIN_OBJ) -o parser
 
+parserBenchmark: CFLAGS=-O3
 parserbenchmark: $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_BENCHMARK_OBJ) $(YY_PARSER_OBJS)
 	$(CC) $(CFLAGS) $(CORE_OBJS) $(PARSER_OBJs) $(PARSER_BENCHMARK_OBJ) $(YY_PARSER_OBJS) -o parserbenchmark 
 
@@ -40,7 +41,7 @@ tokenizer: list.o idMap.o hashtable.o util.o tokenizerMain.o tokenizer.o
 	$(CC) $(CFLAGS) list.o idMap.o hashtable.o util.o tokenizerMain.o tokenizer.o -o tokenizer
 
 
-test: tl
+test: tl test/*.tl test/*.tl.out
 	./test.sh
 
 testparser: parser
@@ -55,6 +56,7 @@ testgc: tl
 clear:
 	rm -f tl.exe tl *.o lex.yy.c tl.tab.c tl.tab.h
 
+benchmark: CFLAGS=-O3
 benchmark: tl
 	./benchmark.sh
 

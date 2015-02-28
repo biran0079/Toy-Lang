@@ -9,6 +9,8 @@
 #include "tokenizer.h"
 #include "parser.h"
 #include "toDot.h"
+#include "eval.h"
+#include "opStack.h"
 
 extern List *parseTrees;
 extern List *rootValues;
@@ -86,7 +88,9 @@ int main(int argc, char **argv) {
 #ifdef USE_YY_PARSER
   yyparse();
 #else
-  List *tokens = tokenize(readFileWithPath(src));
+  char* code = readFileWithPath(src);
+  if (!code) error("cannot open input file\n");
+  List *tokens = tokenize(code);
   parse(tokens);
 #endif
   if (toDot) {
@@ -100,7 +104,9 @@ int main(int argc, char **argv) {
     printAst(listGet(parseTrees, 0));
   } else {
     Node *tree = listGet(parseTrees, 0);
-    tree->eval(globalEnv, tree);
+    if (0 == eval(globalEnv, tree)) {
+      opStackPop(); // pop eval result
+    }
   }
   cleanup();
   if (shouldDumpGCHistory) {

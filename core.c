@@ -1,7 +1,6 @@
 #include "ast.h"
 #include "core.h"
 #include "env.h"
-#include "tljmp.h"
 #include "builtinFun.h"
 #include "gc.h"
 #include "hashTable.h"
@@ -14,7 +13,6 @@ List *parseTrees;
 List *values;      // all values created
 List *rootValues;  // all values should be treated as root when gc
 Value *globalEnv;
-JmpMsg __jmpMsg__;
 int memoryLimit = 200000000;
 List *path;  // where import loads from
 
@@ -54,15 +52,16 @@ void init(int argc, char **args) {
 
   listPush(path, copyStr("./"));
   globalEnv = newEnvValue(newEnv(newNoneValue()));
-  listPush(rootValues, globalEnv);
+  opStackPush(globalEnv);
   registerBuiltinFunctions(globalEnv->data);
 }
 
 void cleanup() {
   cleanupIdMap();
-  cleanupOpStack();
   listClear(rootValues);
   forceGC();
+  assert(globalEnv == opStackPop()); // clean up global env
+  cleanupOpStack();
   freeList(rootValues);
   freeList(values);
   int i, n = listSize(parseTrees);

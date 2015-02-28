@@ -3,5 +3,12 @@
 #include "core.h"
 #include "list.h"
 
+#ifndef USE_LEGACY_EVAL
+typedef void (*BuiltinFun)(int);
+#else
+typedef Value *(*BuiltinFun)(List *l);
+#endif
+
 void registerBuiltinFunctions(Env *e);
+
 #endif

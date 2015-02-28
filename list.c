@@ -47,7 +47,9 @@ void listPushFront(List *lst, void *e) {
 }
 
 void *listPop(List *lst) {
-  if (lst->size == 0) error("cannot pop empty list\n");
+  if (lst->size == 0) {
+    error("cannot pop empty list\n");
+  }
   return lst->arr[--lst->size];
 }
 
