@@ -13,7 +13,6 @@
 #include "opStack.h"
 
 extern List *parseTrees;
-extern List *rootValues;
 extern List *values;
 extern List *path;
 extern Value *globalEnv;

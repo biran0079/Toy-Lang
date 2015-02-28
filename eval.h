@@ -17,6 +17,8 @@ typedef struct EvalResult {
   Value* value;
 } EvalResult;
 
+int newEvalResultC, freeEvalResultC;
+
 EvalResult* newEvalResult(EvalResultType t, Value* v);
 
 void freeEvalResult(EvalResult* er);

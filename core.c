@@ -11,7 +11,6 @@
 
 List *parseTrees;
 List *values;      // all values created
-List *rootValues;  // all values should be treated as root when gc
 Value *globalEnv;
 int memoryLimit = 200000000;
 List *path;  // where import loads from
@@ -36,6 +35,7 @@ void listCreatedObjectsCount() {
   fprintf(stderr, "\tList: %d %d\n", newListC, freeListC);
   fprintf(stderr, "\tHashTable: %d %d\n", newHashTableC, freeHashTableC);
   fprintf(stderr, "\tBuiltinFun: %d %d\n", newBuiltinFunC, freeBuiltinFunC);
+  fprintf(stderr, "\tEvalResult: %d %d\n", newEvalResultC, freeEvalResultC);
 }
 
 void init(int argc, char **args) {
@@ -47,7 +47,6 @@ void init(int argc, char **args) {
   tlFree(tlDir);
   parseTrees = newList();
   values = newList();
-  rootValues = newList();
   gcHistory = newList();
 
   listPush(path, copyStr("./"));
@@ -58,11 +57,9 @@ void init(int argc, char **args) {
 
 void cleanup() {
   cleanupIdMap();
-  listClear(rootValues);
   forceGC();
   assert(globalEnv == opStackPop()); // clean up global env
   cleanupOpStack();
-  freeList(rootValues);
   freeList(values);
   int i, n = listSize(parseTrees);
   for (i = 0; i < n; i++) freeNode(listGet(parseTrees, i));

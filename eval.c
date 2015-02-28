@@ -12,11 +12,11 @@
 
 #include <assert.h>
 
-extern List *rootValues, *parseTrees;
-void pushRootValue(Value *v) { listPush(rootValues, v); }
+extern List *parseTrees;
 extern Value *globalEnv;
 
 EvalResult* newEvalResult(EvalResultType t, Value* v) {
+  newEvalResultC++;
   EvalResult* res = MALLOC(EvalResult);
   res->type = t;
   res->value = v;
@@ -24,6 +24,7 @@ EvalResult* newEvalResult(EvalResultType t, Value* v) {
 }
 
 void freeEvalResult(EvalResult* er) {
+  freeEvalResultC++;
   tlFree(er);
 }
 
@@ -519,7 +520,7 @@ EvalResult* evalReturn(Value *ev, Node *p) {
 EvalResult* evalAssign(Value *ev, Node *p) {
   int beforeStackSize = opStackSize();
   Node *left = chld(p, 0);
-  int i, initSize = listSize(rootValues);
+  int i;
   Env *e = ev->data;
   switch (left->type) {
     case LIST_ACCESS_TYPE: {
@@ -896,7 +897,7 @@ EvalResult* evalLocal(Value *ev, Node *p) {
 }
 
 EvalResult* evalImport(Value *ev, Node *p) {
-  int i, initSize = listSize(rootValues);
+  int i;
   Env *e = ev->data;
   Node *id = chld(p, 0);
   char *s = catStr(getStrId((long)id->data), ".tl");

@@ -7,15 +7,11 @@
 #include "core.h"
 #include "opStack.h"
 
-extern List *values, *rootValues, *gcHistory;
+extern List *values, *gcHistory;
 
 static void mark() {
   Value *v;
   List *q = newList();
-  int i, n = listSize(rootValues);
-  for (i = 0; i < n; i++) {
-    listPush(q, listGet(rootValues, i));
-  }
   opStackAppendValuesTo(q);
   while (listSize(q)) {
     v = listPop(q);
@@ -35,7 +31,7 @@ static void mark() {
       }
       case LIST_VALUE_TYPE: {
         List *l = v->data;
-        n = listSize(l);
+        int i, n = listSize(l);
         for (i = 0; i < n; i++) {
           listPush(q, listGet(l, i));
         }
