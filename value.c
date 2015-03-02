@@ -413,7 +413,7 @@ void listValueExtend(Value* lv1, Value* lv2) {
 
 void deref(Value* v) {
 #ifdef DEBUG_GC
-  printf("deref %s @ %p\n", valueToString(v), v);
+  printf("deref(%d)  %s @ %p\n", v->ref-1,  valueToString(v), v);
 #endif
   int ref = --(v->ref); 
   assert(ref >= 0);
@@ -428,7 +428,7 @@ void deref(Value* v) {
 
 Value* ref(Value* v) {
 #ifdef DEBUG_GC
-  printf("ref %s @ %p\n", valueToString(v), v);
+  printf("ref (%d) %s @ %p\n", v->ref+1,  valueToString(v), v);
 #endif
   if (v->type == FREED_TYPE) {
     error("refering freed object\n");
