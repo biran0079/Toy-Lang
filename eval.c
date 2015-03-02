@@ -542,7 +542,6 @@ EvalResult *evalAssign(Env *ev, Node *p) {
         assert(er->type == EXCEPTION_RESULT);
         return er;
       }
-      opStackPopNPush(1, opStackPeek(0));
       envPut(ev, (long)left->data, opStackPeek(0));
       return 0;
     }
