@@ -103,6 +103,7 @@ void freeValue(Value *v) {
 #ifdef DEBUG_GC
   printf("freeing %s @ %p\n", valueToString(v), v);
 #endif
+  v->type = FREED_TYPE;
   int i, n;
   switch (v->type) {
     case CLOSURE_VALUE_TYPE:
@@ -139,7 +140,6 @@ void freeValue(Value *v) {
     default:
       error("unkonwn value type passed to freeValue: %d\n", v->type);
   }
-  v->type = FREED_TYPE;
   listPush(deadValues, v);
   tlFree(v);
 }
@@ -417,6 +417,10 @@ void deref(Value* v) {
 #endif
   int ref = --(v->ref); 
   assert(ref >= 0);
+  if (ref == 1 && v->type == ENV_VALUE_TYPE) {
+    freeValue(v);
+    // environment variable always has self reference "this"
+  }
   if(!ref && v->type != FREED_TYPE) {
     freeValue(v);
   }
