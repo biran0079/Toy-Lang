@@ -141,3 +141,15 @@ char *readFile(FILE *f) {
   *s = 0;
   return res;
 }
+
+int mySnprintf(char *s, int n, char *format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  if (n > 0) {
+    return vsnprintf(s, n, format, ap);
+  } else {
+    return vsnprintf(0, 0, format, ap);
+  }
+  va_end(ap);
+}
+

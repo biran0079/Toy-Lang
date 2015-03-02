@@ -14,6 +14,9 @@
 
 extern List *parseTrees;
 extern Env *globalEnv;
+#ifdef DEBUG_GC
+extern List* astStack;
+#endif
 
 EvalResult *newEvalResult(EvalResultType t, Value *v) {
   newEvalResultC++;
@@ -41,6 +44,9 @@ void freeEvalResult(EvalResult *er) {
  * 6. no GC in env operations and op-stack operations
  */
 EvalResult *eval(Env *ev, Node *p) {
+#ifdef DEBUG_GC
+  listPush(astStack, p);
+#endif
   int beforeStackSize = opStackSize();
   EvalResult *er = p->eval(ev, p);
   if (er) {
@@ -50,6 +56,9 @@ EvalResult *eval(Env *ev, Node *p) {
     if (opStackSize() != beforeStackSize + 1) printAst(p);
     assert(opStackSize() == beforeStackSize + 1);
   }
+#ifdef DEBUG_GC
+  listPop(astStack);
+#endif
   return er;
 }
 

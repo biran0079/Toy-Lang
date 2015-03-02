@@ -77,4 +77,6 @@ long getIdFromNode(Node *node);
 
 Node *postProcessAst(Node *p);
 
+char* nodeToString(Node* p);
+
 #endif

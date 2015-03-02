@@ -110,6 +110,7 @@ void *hashTableRemove(HashTable *t, void *key) {
     p->next = l->next;
     tlFree(l);
   }
+  t->size--;
   return res;
 }
 
@@ -175,4 +176,8 @@ List *hashTableGetAllKeys(HashTable *t) {
     }
   }
   return q;
+}
+
+int hashTableSize(HashTable* t) {
+  return t->size;
 }

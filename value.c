@@ -1,4 +1,5 @@
 #include "env.h"
+#include "hashTable.h"
 #include "value.h"
 #include "list.h"
 #include "util.h"
@@ -103,9 +104,12 @@ void freeValue(Value *v) {
 #ifdef DEBUG_GC
   printf("freeing %s @ %p\n", valueToString(v), v);
 #endif
-  v->type = FREED_TYPE;
+  if (v->type == FREED_TYPE) error("freeing a value twice.\n");
+  if (v->type == FREEING_TYPE) return;
   int i, n;
-  switch (v->type) {
+  ValueType t = v->type;
+  v->type = FREEING_TYPE;
+  switch (t) {
     case CLOSURE_VALUE_TYPE:
       freeClosure((Closure *)v->data);
       freeClosureValueC++;
@@ -115,9 +119,9 @@ void freeValue(Value *v) {
       freeEnvValueC++;
       break;
     case LIST_VALUE_TYPE:
-      n = listValueSize(v);
+      n = listSize(v->data);
       for (i = 0; i < n; i++) {
-        deref(listValueGet(v, i));
+        deref(listGet(v->data, i));
       }
       freeList(v->data);
       freeListValueC++;
@@ -126,22 +130,22 @@ void freeValue(Value *v) {
       tlFree((char *)v->data);
       freeStringValueC++;
       break;
-    case INT_VALUE_TYPE: {
+    case INT_VALUE_TYPE:
       freeIntValueC++;
       break;
-    }
     case BUILTIN_FUN_VALUE_TYPE:
       freeBuiltinFunC++;
       break;
     case NONE_VALUE_TYPE:
       return;  // none is never freed
     case FREED_TYPE:
-      error("freeing a value twice.\n");
+    case FREEING_TYPE:
+      error("never reach here\n");
     default:
       error("unkonwn value type passed to freeValue: %d\n", v->type);
   }
   listPush(deadValues, v);
-  tlFree(v);
+  v->type = FREED_TYPE;
 }
 
 static int getStringLength(char *format, ...) {
@@ -153,29 +157,24 @@ static int getStringLength(char *format, ...) {
   return len;
 }
 
-static int mySnprintf(char *s, int n, char *format, ...) {
-  va_list ap;
-  va_start(ap, format);
-  if (n > 0) {
-    return vsnprintf(s, n, format, ap);
-  } else {
-    return vsnprintf(0, 0, format, ap);
+static int valueToStringInternal(Value *v, char *s, int n, HashTable* vis) {
+  if (hashTableGet(vis, v)) {
+    return mySnprintf(s, n, "...", v->data);
   }
-  va_end(ap);
-}
-
-static int valueToStringInternal(Value *v, char *s, int n) {
+  hashTablePut(vis, v, (void*) 1L);
   Node *t;
-  int i;
+  int i, len = 0;
   switch (v->type) {
     case BUILTIN_FUN_VALUE_TYPE:
-      return mySnprintf(s, n, "<builtin-function@%p>", v->data);
+      len += mySnprintf(s, n, "<builtin-function@%p>", v->data);
+      break;
     case NONE_VALUE_TYPE:
-      return mySnprintf(s, n, "none");
+      len += mySnprintf(s, n, "none");
+      break;
     case INT_VALUE_TYPE:
-      return mySnprintf(s, n, "%d", v->data);
+      len += mySnprintf(s, n, "%d", v->data);
+      break;
     case CLOSURE_VALUE_TYPE: {
-      int len = 0;
       Node *f = ((Closure *)v->data)->f;
       len += mySnprintf(s + len, n - len, "fun %s(",
                         getStrId((long)chld(f, 0)->data));
@@ -188,27 +187,25 @@ static int valueToStringInternal(Value *v, char *s, int n) {
                           getStrId((long)chld(t, i)->data));
       }
       len += mySnprintf(s + len, n - len, ")");
-      return len;
+      break;
     }
     case LIST_VALUE_TYPE: {
-      int len = 0;
       List *l = v->data;
       len += mySnprintf(s + len, n - len, "[");
       for (i = 0; i < listSize(l); i++) {
         if (i) {
           len += mySnprintf(s + len, n - len, ", ");
         }
-        len += valueToStringInternal(listGet(l, i), s + len, n - len);
+        len += valueToStringInternal(listGet(l, i), s + len, n - len, vis);
       }
       len += mySnprintf(s + len, n - len, "]");
-      return len;
+      break;
     }
-    case STRING_VALUE_TYPE: {
-      return mySnprintf(s, n, "%s", v->data);
-    }
+    case STRING_VALUE_TYPE:
+      len += mySnprintf(s, n, "%s", v->data);
+      break;
     case ENV_VALUE_TYPE: {
       List *keys = envGetAllIds(v->data);
-      int len = 0;
       len += mySnprintf(s, n, "env parent->%p { ", getEnvFromValue(v)->parent);
       int keyN = listSize(keys);
       for (i = 0; i < keyN; i++) {
@@ -218,20 +215,28 @@ static int valueToStringInternal(Value *v, char *s, int n) {
       }
       len += mySnprintf(s + len, n - len, "}");
       freeList(keys);
-      return len;
+      break;
     }
     case FREED_TYPE:
-      return mySnprintf(s, n, "<FREED @ %p>", v);
+      len += mySnprintf(s, n, "<FREED @ %p>", v);
+      break;
+    case FREEING_TYPE:
+      len += mySnprintf(s, n, "<FREEING @ %p>", v);
+      break;
     default:
       error("cannot print unknown value type: %d at %p\n", v->type, v);
   }
-  return 0;
+  hashTableRemove(vis, v);
+  return len;
 }
 
 char *valueToString(Value *v) {
-  int l = valueToStringInternal(v, 0, 0) + 1;
+  HashTable *vis = newIntHashTable();
+  int l = valueToStringInternal(v, 0, 0, vis) + 1;
+  assert(hashTableSize(vis) == 0);
   char *s = (char *)tlMalloc(l);
-  valueToStringInternal(v, s, l);
+  valueToStringInternal(v, s, l, vis);
+  freeHashTable(vis);
   return s;
 }
 
@@ -411,27 +416,43 @@ void listValueExtend(Value* lv1, Value* lv2) {
   }
 }
 
+#ifdef DEBUG_GC
+char* getEvaluating() {
+  if (listSize(astStack) == 0) return copyStr("<empty>");
+  return nodeToString(listLast(astStack));
+}
+#endif
 void deref(Value* v) {
 #ifdef DEBUG_GC
-  printf("deref(%d)  %s @ %p\n", v->ref-1,  valueToString(v), v);
+  char* evaluating = getEvaluating();
+  printf("deref (%d) %s @ %p  evaling %s\n", v->ref-1,  valueToString(v), v, evaluating);
+  tlFree(evaluating);
 #endif
   int ref = --(v->ref); 
   assert(ref >= 0);
-  if (ref == 1 && v->type == ENV_VALUE_TYPE) {
-    freeValue(v);
-    // environment variable always has self reference "this"
-  }
-  if(!ref && v->type != FREED_TYPE) {
-    freeValue(v);
+  if (v->type == ENV_VALUE_TYPE) {
+    if (ref == 1) {
+      freeValue(v);
+      // environment variable always has self reference "this"
+    }
+  } else if(!ref) {
+    if (v->type != FREEING_TYPE && v->type != FREED_TYPE) {
+      freeValue(v);
+    }
   }
 }
 
 Value* ref(Value* v) {
 #ifdef DEBUG_GC
-  printf("ref (%d) %s @ %p\n", v->ref+1,  valueToString(v), v);
+  char* evaluating = getEvaluating();
+  printf("ref (%d) %s @ %p  evaling %s\n", v->ref+1,  valueToString(v), v, evaluating);
+  tlFree(evaluating);
 #endif
   if (v->type == FREED_TYPE) {
     error("refering freed object\n");
+  }
+  if (v->type == FREEING_TYPE) {
+    error("refering freeing object\n");
   }
   v->ref++;
   return v;

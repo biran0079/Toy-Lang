@@ -27,6 +27,9 @@ extern int newClosureC, freeClosureC;
 extern int newEnvC, freeEnvC;
 extern int memoryUsage;
 extern int isInitialized;
+#ifdef DEBUG_GC
+extern List* astStack;
+#endif
 
 #define YYSTYPE Node *
 

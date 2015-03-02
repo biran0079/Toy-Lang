@@ -24,6 +24,10 @@ List *gcHistory;
 int sysArgc;
 char **sysArgv;
 
+#ifdef DEBUG_GC
+List* astStack;
+#endif
+
 /*** ALL GLOBAL VARIABLES DECLARES ABOVE!  ***/
 
 void listCreatedObjectsCount() {
@@ -54,6 +58,9 @@ void listCreatedObjectsCount() {
 }
 
 void init(int argc, char **args) {
+#ifdef DEBUG_GC
+  astStack = newList();
+#endif
   initValuesBlock();
   initIdMap();
   initOpStack();
@@ -77,6 +84,10 @@ void init(int argc, char **args) {
 }
 
 void cleanup() {
+#ifdef DEBUG_GC
+  assert(listSize(astStack) == 0);
+  freeList(astStack);
+#endif
   assert(globalEnv->envValue == opStackPeek(0));  // make sure global env get GCed
   opStackPop();
 
@@ -108,3 +119,4 @@ FILE *openFromPath(char *s, char *mode) {
   }
   return f;
 }
+

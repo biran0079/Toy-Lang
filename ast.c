@@ -59,6 +59,79 @@ void markTailRecursions(Node *t) {
   }
 }
 
+static int nodeToStringInternal(Node *p, char *s, int n) {
+  Value *res = newListValue(newList());
+  int len = 0;
+  len += mySnprintf(s + len, n - len, " (%s", nodeTypeToString(p->type));
+  switch (p->type) {
+    case INT_TYPE:
+      len += mySnprintf(s + len, n - len, " %d", (long)p->data);
+      break;
+    case ID_TYPE:
+      len += mySnprintf(s + len, n - len, " %s", getStrId((long)p->data));
+      break;
+    case STRING_TYPE:
+      len += mySnprintf(s + len, n - len, " %s", (char *)p->data);
+      break;
+    case STMTS_TYPE:
+    case ASSIGN_TYPE:
+    case ADD_TYPE:
+    case SUB_TYPE:
+    case MUL_TYPE:
+    case DIV_TYPE:
+    case IF_TYPE:
+    case GT_TYPE:
+    case LT_TYPE:
+    case GE_TYPE:
+    case LE_TYPE:
+    case EQ_TYPE:
+    case NE_TYPE:
+    case AND_TYPE:
+    case OR_TYPE:
+    case NOT_TYPE:
+    case WHILE_TYPE:
+    case FUN_TYPE:
+    case EXP_LIST_TYPE:
+    case ID_LIST_TYPE:
+    case CALL_TYPE:
+    case TAIL_CALL_TYPE:
+    case RETURN_TYPE:
+    case BREAK_TYPE:
+    case CONTINUE_TYPE:
+    case MOD_TYPE:
+    case LIST_TYPE:
+    case LIST_ACCESS_TYPE:
+    case FOR_TYPE:
+    case ADDEQ_TYPE:
+    case TIME_TYPE:
+    case NONE_TYPE:
+    case FOREACH_TYPE:
+    case TRY_TYPE:
+    case THROW_TYPE:
+    case ADDADD_TYPE:
+    case LOCAL_TYPE:
+    case IMPORT_TYPE:
+    case MODULE_ACCESS_TYPE: {
+      int i, chldN = chldNum(p);
+      for (i = 0; i < chldN; i++) {
+        len += nodeToStringInternal(chld(p, i), s + len, n - len);
+      }
+      break;
+    }
+    default:
+      error("unknown node type in nodeToListValue");
+  }
+  len += mySnprintf(s + len, n - len, ")");
+  return len;
+}
+
+char* nodeToString(Node* p) {
+  int l = nodeToStringInternal(p, 0, 0) + 1;
+  char *s = (char *)tlMalloc(l);
+  nodeToStringInternal(p, s, l);
+  return s;
+}
+
 Value *nodeToListValue(Node *p) {
   Value *res = newListValue(newList());
   listValuePush(res, newStringValue(copyStr(nodeTypeToString(p->type))));
@@ -233,10 +306,9 @@ void freeNode(Node *t) {
 }
 
 void printAst(Node *ast) {
-  Value* v = nodeToListValue(ast);
-  ref(v);
-  printf("%s\n", valueToString(v));
-  deref(v);
+  char *s = nodeToString(ast);
+  printf("%s\n", s);
+  tlFree(s);
 }
 
 long getIdFromNode(Node *node) {

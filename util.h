@@ -23,5 +23,7 @@ char *getFolder(char *s);
 FILE *openFromPath(char *s, char *mode);
 char *readFileWithPath(char *path);
 char *readFile(FILE *f);
+int mySnprintf(char *s, int n, char *format, ...);
+
 
 #endif
