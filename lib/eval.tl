@@ -191,7 +191,7 @@ fun eval(e, l){
     ids = list.suffix(l[2], 1);
     fbody = l[3];
     res = newInternalFun(e, ids, fbody);
-    envPut(e, l[1][1], res);
+    envPutLocal(e, l[1][1], res);
     return res;
   } else if(tag == "lambda") {
     local ids, fbody;

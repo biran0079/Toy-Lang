@@ -430,7 +430,7 @@ EvalResult *evalNot(Env *ev, Node *p) {
 
 EvalResult *evalFun(Env *ev, Node *p) {
   opStackPush(newClosureValue(p, ev));
-  envPut(ev, (long)chld(p, 0)->data, opStackPeek(0));
+  envPutLocal(ev, (long)chld(p, 0)->data, opStackPeek(0));
   return 0;
 }
 
