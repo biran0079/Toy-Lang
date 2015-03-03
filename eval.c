@@ -108,8 +108,9 @@ EvalResult *evalCallInternal(int argNum) {
       for (i = 0; i < argNum; i++)
         envPutLocal(e2, (long)chld(ids, i)->data, opStackPeek(i + 1));
 
-      opStackPopN(argNum + 1);
+      opStackPopNPush(argNum + 1, e2->envValue);
       er = eval(e2, chld(f, 2));
+      opStackPop();
     }
     if (er) {
       switch (er->type) {
