@@ -51,6 +51,9 @@ testparser: parser
 testeval: tl
 	./testeval.sh
 
+testevaleval: tl
+	./testevaleval.sh
+
 testgc: tl
 	./gctest.sh
 

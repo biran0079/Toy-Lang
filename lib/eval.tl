@@ -56,20 +56,18 @@ fun assert(b, msg){
   }
 }
 
-fun getBuiltinFuns(){
-  local res;
-  res = hashtable.newStringHashTable();
-  hashtable.put(res, "print", print);
-  hashtable.put(res, "len", len);
-  hashtable.put(res, "ord", ord);
-  hashtable.put(res, "chr", chr);
-  hashtable.put(res, "sort", sort);
-  hashtable.put(res, "str", str);
-  hashtable.put(res, "rand", rand);
-  hashtable.put(res, "parse", parse);
-  hashtable.put(res, "read", read);
-  hashtable.put(res, "exit", exit);
-  hashtable.put(res, "sysArgs", sysArgs);
+fun setUpBuiltinFuns(e){
+  envPut(e, "print", ["builtinFun", print]);
+  envPut(e, "len", ["builtinFun", len]);
+  envPut(e, "ord", ["builtinFun", ord]);
+  envPut(e, "chr", ["builtinFun", chr]);
+  envPut(e, "sort", ["builtinFun", sort]);
+  envPut(e, "str", ["builtinFun", str]);
+  envPut(e, "rand", ["builtinFun", rand]);
+  envPut(e, "parse", ["builtinFun", parse]);
+  envPut(e, "read", ["builtinFun", read]);
+  envPut(e, "exit", ["builtinFun", exit]);
+  envPut(e, "sysArgs", ["builtinFun", lambda() {return list.suffix(sysArgs(), 1);}]);
   return res;
 }
 
@@ -84,9 +82,15 @@ fun readFromPath(f){
   exit(-1);
 }
 
+fun newGlobalEnv() {
+  local res;
+  res = newEnv(none);
+  setUpBuiltinFuns(res);
+  return res;
+}
+
 fun eval(e, l){
-  local tag,funname,i,n,exps, builtInFun, res;
-  builtInFun = getBuiltinFuns();
+  local tag,funname,i,n,exps, res;
   tag = l[0];
   n = len(l);
   if(tag == "stmts") {
@@ -112,8 +116,6 @@ fun eval(e, l){
   else if(tag == "id") {
     if(envHas(e, l[1]))
       return envGet(e, l[1]);
-    if(hashtable.has(builtInFun, l[1]))
-      return ["builtinFun", hashtable.get(builtInFun, l[1])];
     return none;
   } else if(tag == "return") throw ["return", eval(e, l[1])];
   else if(tag == "module_access") {
@@ -289,23 +291,22 @@ fun eval(e, l){
     funname = l[1];
     exps=l[2];
     closure = eval(e, funname);
+    assert(exps[0]=="exps", "exps type expected for arguments of function call");
     if(closure[0] == "builtinFun") {
       local f;
       if(closure[1]==print){
-        assert(exps[0]=="exps", "exps type expected for argument of print");
         args =list.map(lambda(x){return eval(e,x);}, list.suffix(exps, 1));
         print(string.join(" ", list.map(str, args)));
         return ;
       } else {
         f = closure[1];
-        assert(exps[0]=="exps", "exps type expected for arguments of print");
         if(len(exps) == 2) {
           return f(eval(e,exps[1]));
         } else if(len(exps) == 1){
           return  f();
         }
       }
-    }else{
+    } else {
       args =list.map(lambda(x){return eval(e,x);}, list.suffix(exps, 1));
       e2 = newEnv(closure[0]);
       f = closure[1];

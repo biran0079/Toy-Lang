@@ -1,4 +1,5 @@
 import eval;
+import list;
 
 args = sysArgs();
 if(len(args) < 2) {
@@ -6,4 +7,5 @@ if(len(args) < 2) {
   exit(-1);
 }
 code = parse(read(args[1]));
-eval.eval(eval.newEnv(none), code);
+global = eval.newGlobalEnv();
+eval.eval(global, code);
