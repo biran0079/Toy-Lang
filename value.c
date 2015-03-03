@@ -420,6 +420,9 @@ void deref(Value* v) {
   printf("deref (%d) %s @ %p  evaling %s\n", v->ref-1,  valueToString(v), v, evaluating);
   tlFree(evaluating);
 #endif
+  if (v->ref == 1 && v->mark == MARKED) {
+    printf("!!!!\n");
+  }
   int ref = --(v->ref); 
   assert(ref >= 0);
   if(!ref) {

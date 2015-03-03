@@ -160,12 +160,12 @@ EvalResult* builtinApply(int n) {
   }
   opStackPush(cv);
   EvalResult* er = evalCallInternal(listSize(l));
-  opStackPopN(2);
   if (er) {
+    opStackPopN(2);
     return er;
   }
   er = newEvalResult(RETURN_RESULT, opStackPeek(0));
-  opStackPop();
+  opStackPopN(3);
   return er;
 }
 
