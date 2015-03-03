@@ -99,7 +99,7 @@ EvalResult *evalCallInternal(int argNum) {
 
       opStackPopNPush(argNum + 1, e2->envValue);
 
-      er = eval(getEnvFromValue(opStackPeek(0)), chld(f, 2));
+      er = eval(e2, chld(f, 2));
       if (er) {
         opStackPop(); // pop env
       } else {
