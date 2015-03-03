@@ -1,4 +1,4 @@
-CFLAGS = -g
+CFLAGS = -g -Wall
 CC=clang
 
 all: tl
@@ -50,6 +50,9 @@ testparser: parser
 
 testeval: tl
 	./testeval.sh
+
+testevaleval: tl
+	./testevaleval.sh
 
 testgc: tl
 	./gctest.sh

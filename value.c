@@ -148,15 +148,6 @@ void freeValue(Value *v) {
   v->type = FREED_TYPE;
 }
 
-static int getStringLength(char *format, ...) {
-  va_list ap;
-  int len = 0;
-  va_start(ap, format);
-  len = vsnprintf(0, 0, format, ap);
-  va_end(ap);
-  return len;
-}
-
 static int valueToStringInternal(Value *v, char *s, int n, HashTable* vis) {
   if (hashTableGet(vis, v)) {
     return mySnprintf(s, n, "...", v->data);
@@ -305,20 +296,21 @@ Value *valueAdd(Value *v1, Value *v2) {
           error("int can only add to int\n");
       }
     case LIST_VALUE_TYPE: {
-      List *res = listCopy(v1->data);
+      Value *res = newListValue(listCopy(v1->data));
       int i;
       switch (v2->type) {
         case LIST_VALUE_TYPE: {
-          List *l = v2->data;
-          for (i = 0; i < listSize(l); i++) listPush(res, listGet(l, i));
+          for (i = 0; i < listValueSize(v2); i++) {
+            listValuePush(res, listValueGet(v2, i));
+          }
           break;
         }
         default: {
-          listPush(res, v2);
+          listValuePush(res, v2);
           break;
         }
       }
-      return newListValue(res);
+      return res;
     }
     case STRING_VALUE_TYPE: {
       if (v2->type == STRING_VALUE_TYPE) {
@@ -411,7 +403,7 @@ int listValueSize(Value* lv) {
 
 void listValueExtend(Value* lv1, Value* lv2) {
   int i, n = listValueSize(lv2);
-  for (int i = 0; i < n; i++) {
+  for (i = 0; i < n; i++) {
     listValuePush(lv1, listValueGet(lv2, i));
   }
 }
@@ -430,12 +422,7 @@ void deref(Value* v) {
 #endif
   int ref = --(v->ref); 
   assert(ref >= 0);
-  if (v->type == ENV_VALUE_TYPE) {
-    if (ref == 1) {
-      freeValue(v);
-      // environment variable always has self reference "this"
-    }
-  } else if(!ref) {
+  if(!ref) {
     if (v->type != FREEING_TYPE && v->type != FREED_TYPE) {
       freeValue(v);
     }

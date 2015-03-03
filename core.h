@@ -7,6 +7,7 @@ typedef struct Node Node;
 typedef struct Value Value;
 typedef struct Closure Closure;
 typedef struct Env Env;
+typedef struct EvalResult EvalResult;
 typedef enum ValueType ValueType;
 typedef enum NodeType NodeType;
 

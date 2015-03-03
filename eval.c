@@ -50,10 +50,12 @@ EvalResult *eval(Env *ev, Node *p) {
   int beforeStackSize = opStackSize();
   EvalResult *er = p->eval(ev, p);
   if (er) {
-    if (opStackSize() != beforeStackSize) printAst(p);
+    if (opStackSize() != beforeStackSize)
+      printAst(p);
     assert(opStackSize() == beforeStackSize);
   } else {
-    if (opStackSize() != beforeStackSize + 1) printAst(p);
+    if (opStackSize() != beforeStackSize + 1)
+      printAst(p);
     assert(opStackSize() == beforeStackSize + 1);
   }
 #ifdef DEBUG_GC
@@ -77,6 +79,70 @@ EvalResult *evalStmts(Env *ev, Node *p) {
   return 0;
 }
 
+/**
+ * This function assumes argNum + 1 values in opstack.
+ * All argNum + 1 values will be poped out when returns.
+ * Result will be pushed in if eval succeed.
+ */
+EvalResult *evalCallInternal(int argNum) {
+  int i;
+  while (1) {
+    EvalResult* er;
+    if (opStackPeek(0)->type == BUILTIN_FUN_VALUE_TYPE) {
+      BuiltinFun f = opStackPeek(0)->data;
+      opStackPop();  // pop closure
+      er = f(argNum);
+      assert(er != 0);
+    } else {
+      assert(opStackPeek(0)->type == CLOSURE_VALUE_TYPE);
+      // regular function call
+      Closure *c = opStackPeek(0)->data;
+      Node *f = c->f;
+
+      Env *e2 = getEnvFromValue(newEnvValue(getEnvFromValue(c->e)));
+
+      Node *ids = chld(f, 1);
+      if (chldNum(ids) != argNum)
+        error("%s parameter number incorrect\n", valueToString(opStackPeek(0)));
+
+      for (i = 0; i < argNum; i++)
+        envPutLocal(e2, (long)chld(ids, i)->data, opStackPeek(i + 1));
+
+      opStackPopN(argNum + 1);
+      er = eval(e2, chld(f, 2));
+    }
+    if (er) {
+      switch (er->type) {
+        case EXCEPTION_RESULT: {
+          return er;
+        }
+        case TAIL_RECURSION_RESULT: {
+          Value *lv = er->value;
+          argNum = listValueSize(lv);
+          for (i = 0; i < argNum; i++) {
+            opStackPush(listValueGet(lv, i));
+          }
+          argNum--;  // one of the args is closure
+          freeEvalResult(er);
+          continue;
+        }
+        case RETURN_RESULT: {
+          opStackPush(er->value);
+          freeEvalResult(er);
+          return 0;
+        }
+        case CONTINUE_RESULT:
+        case BREAK_RESULT:
+          error("continue or break outside loop\n");
+      }
+    } else {
+      // no return called, always return none
+      opStackPopNPush(1, newNoneValue()); // pop eval result and always return none.
+      return 0;
+    }
+  }
+}
+
 EvalResult *evalCall(Env *ev, Node *p) {
   int i, n;
   Node *args = chld(p, 1);
@@ -96,63 +162,7 @@ EvalResult *evalCall(Env *ev, Node *p) {
     opStackPopTo(beforeStackSize);
     return er;
   }
-  while (1) {
-    if (opStackPeek(0)->type == BUILTIN_FUN_VALUE_TYPE) {
-      BuiltinFun f = opStackPeek(0)->data;
-      opStackPop();  // pop closure
-      f(n);
-      // always success and result is in stack
-      return 0;
-    }
-    // regular function call
-    Closure *c = opStackPeek(0)->data;
-    Node *f = c->f;
-
-    Env *e2 = getEnvFromValue(newEnvValue(getEnvFromValue(c->e)));
-
-    Node *ids = chld(f, 1);
-    if (chldNum(ids) != n)
-      error("%s parameter number incorrect\n", valueToString(opStackPeek(0)));
-
-    for (i = 0; i < n; i++)
-      envPutLocal(e2, (long)chld(ids, i)->data, opStackPeek(i + 1));
-
-    opStackPopNPush(n + 1, e2->envValue);
-
-    EvalResult *er = eval(getEnvFromValue(opStackPeek(0)), chld(f, 2));
-
-    if (er) {
-      switch (er->type) {
-        case EXCEPTION_RESULT: {
-          opStackPopTo(beforeStackSize);
-          return er;
-        }
-        case TAIL_RECURSION_RESULT: {
-          opStackPopTo(beforeStackSize);
-          Value *lv = er->value;
-          n = listValueSize(lv);
-          for (i = 0; i < n; i++) {
-            opStackPush(listValueGet(lv, i));
-          }
-          n--;  // one of the args is closure
-          freeEvalResult(er);
-          continue;
-        }
-        case RETURN_RESULT: {
-          opStackPopToPush(beforeStackSize, er->value);
-          freeEvalResult(er);
-          return 0;
-        }
-        case CONTINUE_RESULT:
-        case BREAK_RESULT:
-          error("continue or break outside loop\n");
-      }
-    } else {
-      // no return called, always return none
-      opStackPopToPush(beforeStackSize, newNoneValue());
-      return 0;
-    }
-  }
+  return evalCallInternal(n);
 }
 
 EvalResult *evalId(Env *ev, Node *p) {
@@ -173,6 +183,7 @@ EvalResult *evalList(Env *ev, Node *p) {
     EvalResult *er = eval(ev, chld(p, i));
     if (er) {
       assert(er->type == EXCEPTION_RESULT);
+      opStackPop();
       return er;
     }
     listValuePush(lv, opStackPeek(0));
@@ -549,8 +560,8 @@ EvalResult *evalAssign(Env *ev, Node *p) {
         opStackPopTo(beforeStackSize);
         return er;
       }
-      opStackPopToPush(beforeStackSize, opStackPeek(0));
       listValueSet(lv, idx, opStackPeek(0));
+      opStackPopToPush(beforeStackSize, opStackPeek(0));
       return 0;
     }
     case ID_TYPE: {
@@ -559,7 +570,6 @@ EvalResult *evalAssign(Env *ev, Node *p) {
         assert(er->type == EXCEPTION_RESULT);
         return er;
       }
-      opStackPopNPush(1, opStackPeek(0));
       envPut(ev, (long)left->data, opStackPeek(0));
       return 0;
     }
@@ -584,7 +594,6 @@ EvalResult *evalAssign(Env *ev, Node *p) {
 
 EvalResult *evalAddEq(Env *ev, Node *p) {
   int beforeStackSize = opStackSize();
-  int i;
   Node *left = chld(p, 0);
   switch (left->type) {
     case LIST_ACCESS_TYPE: {
@@ -872,7 +881,6 @@ EvalResult *evalLocal(Env *ev, Node *p) {
 }
 
 EvalResult *evalImport(Env *ev, Node *p) {
-  int i;
   Node *id = chld(p, 0);
   char *s = catStr(getStrId((long)id->data), ".tl");
   FILE *f = openFromPath(s, "r");

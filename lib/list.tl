@@ -8,6 +8,7 @@ fun prefix(l, n){
   }
   return res;
 }
+
 fun suffix(l,n){
   local res,length, i;
   res=[];

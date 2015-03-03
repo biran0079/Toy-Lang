@@ -138,7 +138,7 @@ static int nodeToDotInternal(FILE *o, Node *t, int *nextId) {
       nodeToDotHelper(o, t, nextId, 1L, "ids");
       break;
     case IF_TYPE: {
-      int n = chldNum(t), to;
+      int n = chldNum(t);
       if (n == 2) {
         nodeToDotHelper(o, t, nextId, 2L, "cond", "then");
       } else {
@@ -147,7 +147,7 @@ static int nodeToDotInternal(FILE *o, Node *t, int *nextId) {
       break;
     }
     case TRY_TYPE: {
-      int n = chldNum(t), to;
+      int n = chldNum(t);
       if (n == 3) {
         nodeToDotHelper(o, t, nextId, 3L, "try", "excep id", "catch");
       } else {

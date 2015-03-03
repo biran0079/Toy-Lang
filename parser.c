@@ -237,7 +237,6 @@ List *listAccessOrCallInternal(List *t, int *ip) {
 Node *expr0(List *t, int *ip) {
   int i0 = *ip;
   Node *n = 0;
-  List *l;
   if (TM(n, INT_T)) {
     return n;
   } else if ((*ip = i0), TM(n, NONE_T)) {

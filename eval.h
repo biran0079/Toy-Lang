@@ -2,7 +2,6 @@
 #define _EVAL_H_
 #include "core.h"
 #include "value.h"
-#include "builtinFun.h"
 #include "hashTable.h"
 
 typedef enum EvalResultType {
@@ -13,10 +12,10 @@ typedef enum EvalResultType {
   TAIL_RECURSION_RESULT,
 } EvalResultType;
 
-typedef struct EvalResult {
+struct EvalResult {
   EvalResultType type;
   Value *value;
-} EvalResult;
+};
 
 int newEvalResultC, freeEvalResultC;
 
@@ -67,5 +66,7 @@ EvalResult *evalLocal(Env *ev, Node *p);
 EvalResult *evalImport(Env *ev, Node *p);
 EvalResult *evalModuleAccess(Env *ev, Node *p);
 EvalResult *evalError(Env *ev, Node *p);
+
+EvalResult *evalCallInternal(int argNum);
 
 #endif

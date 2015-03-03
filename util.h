@@ -25,5 +25,6 @@ char *readFileWithPath(char *path);
 char *readFile(FILE *f);
 int mySnprintf(char *s, int n, char *format, ...);
 
+int getStringLength(char *format, ...);
 
 #endif

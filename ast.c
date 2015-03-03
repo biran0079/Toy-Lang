@@ -60,7 +60,6 @@ void markTailRecursions(Node *t) {
 }
 
 static int nodeToStringInternal(Node *p, char *s, int n) {
-  Value *res = newListValue(newList());
   int len = 0;
   len += mySnprintf(s + len, n - len, " (%s", nodeTypeToString(p->type));
   switch (p->type) {
