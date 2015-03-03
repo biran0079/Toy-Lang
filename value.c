@@ -269,16 +269,10 @@ Value *valueAdd(Value *v1, Value *v2) {
     case LIST_VALUE_TYPE: {
       List *res = listCopy(v1->data);
       int i;
-      switch (v2->type) {
-        case LIST_VALUE_TYPE: {
-          List *l = v2->data;
-          for (i = 0; i < listSize(l); i++) listPush(res, listGet(l, i));
-          break;
-        }
-        default: {
-          listPush(res, v2);
-          break;
-        }
+      assert(v2->type == LIST_VALUE_TYPE);
+      List *l = v2->data;
+      for (i = 0; i < listSize(l); i++) {
+        listPush(res, listGet(l, i));
       }
       return newListValue(res);
     }

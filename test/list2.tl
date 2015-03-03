@@ -1,8 +1,8 @@
 a=[];
 i=0;
 while(i<5){
-  a = a+i;
-  i = i+1;
+  a = a + [i];
+  i = i + 1;
 }
 print(a);
 a=a+[3,2,1];

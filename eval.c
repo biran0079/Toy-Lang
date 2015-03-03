@@ -615,12 +615,10 @@ EvalResult *evalAddEq(Env *ev, Node *p) {
           listSet(l, idx, opStackPeek(0));
           break;
         case LIST_VALUE_TYPE:
-          if (e2->type == LIST_VALUE_TYPE) {
-            List *l = (List *)e2->data;
-            for (i = 0; i < listSize(l); i++)
-              listPush((List *)e1->data, listGet(l, i));
-          } else {
-            listPush((List *)e1->data, e2);
+          assert (e2->type == LIST_VALUE_TYPE);
+          List *l = (List *)e2->data;
+          for (i = 0; i < listSize(l); i++) {
+            listPush((List *)e1->data, listGet(l, i));
           }
           opStackPopToPush(beforeStackSize, e1);
           break;
