@@ -81,6 +81,7 @@ EvalResult *evalCallInternal(int argNum) {
       BuiltinFun f = opStackPeek(0)->data;
       opStackPop();  // pop closure
       er = f(argNum);
+      assert(er != 0); // built in function should never return 0
     } else {
       assert(opStackPeek(0)->type == CLOSURE_VALUE_TYPE);
       // regular function call
@@ -99,7 +100,11 @@ EvalResult *evalCallInternal(int argNum) {
       opStackPopNPush(argNum + 1, e2->envValue);
 
       er = eval(getEnvFromValue(opStackPeek(0)), chld(f, 2));
-      opStackPop();  // pop env
+      if (er) {
+        opStackPop(); // pop env
+      } else {
+        opStackPopN(2);  // pop env and eval result, which is not needed
+      }
     }
     if (er) {
       switch (er->type) {
@@ -127,7 +132,7 @@ EvalResult *evalCallInternal(int argNum) {
       }
     } else {
       // no return called, always return none
-      opStackPopNPush(1, newNoneValue()); // pop eval result and always return none.
+      opStackPush(newNoneValue()); // always return none.
       return 0;
     }
   }
