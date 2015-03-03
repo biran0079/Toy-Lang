@@ -57,18 +57,18 @@ fun assert(b, msg){
 }
 
 fun setUpBuiltinFuns(e){
-  envPut(e, "print", ["builtinFun", print]);
-  envPut(e, "len", ["builtinFun", len]);
-  envPut(e, "ord", ["builtinFun", ord]);
-  envPut(e, "chr", ["builtinFun", chr]);
-  envPut(e, "sort", ["builtinFun", sort]);
-  envPut(e, "str", ["builtinFun", str]);
-  envPut(e, "rand", ["builtinFun", rand]);
-  envPut(e, "parse", ["builtinFun", parse]);
-  envPut(e, "read", ["builtinFun", read]);
-  envPut(e, "exit", ["builtinFun", exit]);
-  envPut(e, "apply", ["builtinFun", apply]);
-  envPut(e, "sysArgs", ["builtinFun", lambda() {return list.suffix(sysArgs(), 1);}]);
+  envPut(e, "print", newBuiltinFun(print));
+  envPut(e, "len", newBuiltinFun(len));
+  envPut(e, "ord", newBuiltinFun(ord));
+  envPut(e, "chr", newBuiltinFun(chr));
+  envPut(e, "sort", newBuiltinFun(sort));
+  envPut(e, "str", newBuiltinFun(str));
+  envPut(e, "rand", newBuiltinFun(rand));
+  envPut(e, "parse", newBuiltinFun(parse));
+  envPut(e, "read", newBuiltinFun(read));
+  envPut(e, "exit", newBuiltinFun(exit));
+  envPut(e, "apply", builtinApply);
+  envPut(e, "sysArgs", newBuiltinFun(lambda() {return list.suffix(sysArgs(), 1);}));
   return res;
 }
 
@@ -187,14 +187,17 @@ fun eval(e, l){
         eval(e, l[3]);
     }
   } else if(tag == "fun") {
-    local closure;
-    closure = [e, list.suffix(l, 1)];
-    envPut(e, l[1][1], closure);
-    return closure;
+    local res, ids, fbody;
+    ids = list.suffix(l[2], 1);
+    fbody = l[3];
+    res = newInternalFun(e, ids, fbody);
+    envPut(e, l[1][1], res);
+    return res;
   } else if(tag == "lambda") {
-    local closure;
-    closure = [e, [["id", "lambda"], l[1], l[2]]];
-    return closure;
+    local ids, fbody;
+    ids = l[1];
+    fbody = l[2];
+    return newInternalFun(e, ids, fbody);
   } else if(tag == "local") {
     local ids;
     ids = l[1];
@@ -282,40 +285,51 @@ fun eval(e, l){
       res += [eval(e, l[i])];
     }
     return res;
-  } else if(tag == "string" || tag == "builtinFun") {
+  } else if(tag == "string") {
     return l[1];
   } else if(tag == "exps") {
     for(i=1;i<len(l);i++)
       res = eval(e, l[i]);
     return res;
   } else if(tag == "call" || tag == "tail_call"){
-    funname = l[1];
     exps=l[2];
-    closure = eval(e, funname);
+    f = eval(e, l[1]);
     assert(exps[0]=="exps", "exps type expected for arguments of function call");
-    args =list.map(lambda(x){return eval(e,x);}, list.suffix(exps, 1));
-    if(closure[0] == "builtinFun") {
-      apply(closure[1], args);
-    } else {
-      e2 = newEnv(closure[0]);
-      f = closure[1];
-      ids = list.suffix(f[1], 1);
-      fbody = f[2];
-      assert(len(ids) == len(args),str(len(ids)) + " parameter needed, " + str(len(args)) + " parameters get\n");
-      for(i=0;i<len(ids);i++)
-        envPutLocal(e2, ids[i][1], args[i]);
-      try{
-        eval(e2, fbody);
-      }catch(ex){
-        if(ex[0]=="return") {
-          return ex[1];
-        } else {
-          throw ex;
-        }
+    args = list.map(lambda(x){return eval(e,x);}, list.suffix(exps, 1));
+    try{
+      f(args);
+    }catch(ex){
+      if(ex[0]=="return") {
+        return ex[1];
+      } else {
+        throw ex;
       }
     }
   }else{
     print("unown tag " + tag + " in " + str(l));
     exit(-1);
   }
+}
+
+fun newBuiltinFun(f) {
+  fun internalBuiltinFun(args) {
+    throw ["return", apply(f, args)];  
+  }
+  return internalBuiltinFun;
+}
+
+fun builtinApply(args) {
+  throw ["return", apply(args[0], list.suffix(args, 1))];
+}
+
+fun newInternalFun(e, ids, fbody) {
+  fun internalFunction(args) {
+    local e2, i;
+    e2 = newEnv(e);
+    assert(len(ids) == len(args),str(len(ids)) + " parameter needed, " + str(len(args)) + " parameters get\n");
+    for(i=0;i<len(ids);i++)
+      envPutLocal(e2, ids[i][1], args[i]);
+    throw ["return", eval(e2, fbody)];
+  }
+  return internalFunction;
 }

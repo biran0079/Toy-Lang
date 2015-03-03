@@ -76,32 +76,32 @@ EvalResult *evalStmts(Env *ev, Node *p) {
 EvalResult *evalCallInternal(int argNum) {
   int i;
   while (1) {
+    EvalResult* er;
     if (opStackPeek(0)->type == BUILTIN_FUN_VALUE_TYPE) {
       BuiltinFun f = opStackPeek(0)->data;
       opStackPop();  // pop closure
-      f(argNum);
-      // always success and result is in stack
-      return 0;
-    }
-    // regular function call
-    Closure *c = opStackPeek(0)->data;
-    Node *f = c->f;
+      er = f(argNum);
+    } else {
+      assert(opStackPeek(0)->type == CLOSURE_VALUE_TYPE);
+      // regular function call
+      Closure *c = opStackPeek(0)->data;
+      Node *f = c->f;
 
-    Env *e2 = getEnvFromValue(newEnvValue(getEnvFromValue(c->e)));
+      Env *e2 = getEnvFromValue(newEnvValue(getEnvFromValue(c->e)));
 
-    Node *ids = chld(f, 1);
-    if (chldNum(ids) != argNum)
-      error("%s parameter number incorrect\n", valueToString(opStackPeek(0)));
+      Node *ids = chld(f, 1);
+      if (chldNum(ids) != argNum)
+        error("%s parameter number incorrect\n", valueToString(opStackPeek(0)));
 
-    for (i = 0; i < argNum; i++)
-      envPutLocal(e2, (long)chld(ids, i)->data, opStackPeek(i + 1));
+      for (i = 0; i < argNum; i++)
+        envPutLocal(e2, (long)chld(ids, i)->data, opStackPeek(i + 1));
 
-    opStackPopNPush(argNum + 1, e2->envValue);
+      opStackPopNPush(argNum + 1, e2->envValue);
 
-    EvalResult *er = eval(getEnvFromValue(opStackPeek(0)), chld(f, 2));
-
-    if (er) {
+      er = eval(getEnvFromValue(opStackPeek(0)), chld(f, 2));
       opStackPop();  // pop env
+    }
+    if (er) {
       switch (er->type) {
         case EXCEPTION_RESULT: {
           return er;
@@ -127,7 +127,7 @@ EvalResult *evalCallInternal(int argNum) {
       }
     } else {
       // no return called, always return none
-      opStackPopNPush(2, newNoneValue()); // pop env and eval result (always none)
+      opStackPopNPush(1, newNoneValue()); // pop eval result and always return none.
       return 0;
     }
   }
@@ -173,6 +173,7 @@ EvalResult *evalList(Env *ev, Node *p) {
     EvalResult *er = eval(ev, chld(p, i));
     if (er) {
       assert(er->type == EXCEPTION_RESULT);
+      opStackPop();
       return er;
     }
     listPush(vs, opStackPop());

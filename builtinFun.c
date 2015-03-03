@@ -27,8 +27,7 @@ EvalResult* builtinLen(int n) {
       error("len() cannot apply on value type %d\n", l->type);
   }
   opStackPopN(n);
-  opStackPush(res);
-  return 0;
+  return newEvalResult(RETURN_RESULT, res);
 }
 
 EvalResult* builtinOrd(int n) {
@@ -39,8 +38,7 @@ EvalResult* builtinOrd(int n) {
           valueToString(v));
   Value *res = newIntValue(*((char *)v->data));
   opStackPopN(n);
-  opStackPush(res);
-  return 0;
+  return newEvalResult(RETURN_RESULT, res);
 }
 
 EvalResult* builtinSort(int n) {
@@ -49,8 +47,7 @@ EvalResult* builtinSort(int n) {
   if (v->type != LIST_VALUE_TYPE) error("sort only applys on list\n");
   listSort(v->data, valueCmp);
   opStackPopN(n);
-  opStackPush(newNoneValue());
-  return 0;
+  return newEvalResult(RETURN_RESULT, newNoneValue());
 }
 
 EvalResult* builtinStr(int n) {
@@ -58,21 +55,20 @@ EvalResult* builtinStr(int n) {
   Value *v = opStackPeek(0);
   Value *res = newStringValue(valueToString(v));
   opStackPopN(n);
-  opStackPush(res);
-  return 0;
+  return newEvalResult(RETURN_RESULT, res);
 }
 
 EvalResult* builtinChr(int n) {
   CHECK_ARG_NUM(1, chr());
   Value *v = opStackPeek(0);
-  if (v->type != INT_VALUE_TYPE) error("chr only applys to int\n");
+  if (v->type != INT_VALUE_TYPE) 
+    error("chr only applys to int, get %s\n", valueToString(v));
   char *s = (char *)tlMalloc(2);
   s[0] = (long)v->data;
   s[1] = 0;
   Value *res = newStringValue(s);
   opStackPopN(n);
-  opStackPush(res);
-  return 0;
+  return newEvalResult(RETURN_RESULT, res);
 }
 
 EvalResult* builtinPrint(int n) {
@@ -86,15 +82,13 @@ EvalResult* builtinPrint(int n) {
   printf("\n");
   Value *res = newNoneValue();
   opStackPopN(n);
-  opStackPush(res);
-  return 0;
+  return newEvalResult(RETURN_RESULT, res);
 }
 
 EvalResult* builtinRand(int n) {
   CHECK_ARG_NUM(0, rand());
   opStackPopN(n);
-  opStackPush(newIntValue(rand()));
-  return 0;
+  return newEvalResult(RETURN_RESULT, newIntValue(rand()));
 }
 
 EvalResult* builtinParse(int n) {
@@ -116,8 +110,7 @@ EvalResult* builtinParse(int n) {
 #endif
   Value *res = nodeToListValue(listLast(parseTrees));
   opStackPopN(n);
-  opStackPush(res);
-  return 0;
+  return newEvalResult(RETURN_RESULT, res);
 }
 
 EvalResult* builtinRead(int n) {
@@ -130,8 +123,7 @@ EvalResult* builtinRead(int n) {
   Value *res = newNoneValue();
   if (s) res = newStringValue(s);
   opStackPopN(n);
-  opStackPush(res);
-  return 0;
+  return newEvalResult(RETURN_RESULT, res);
 }
 
 EvalResult* builtinExit(int n) {
@@ -139,7 +131,6 @@ EvalResult* builtinExit(int n) {
   Value *v = opStackPeek(0);
   if (v->type != INT_VALUE_TYPE) error("exit only applys to string\n");
   exit((long)v->data);
-  return 0;
 }
 
 int sysArgc;
@@ -150,12 +141,11 @@ EvalResult* builtinSysargs(int n) {
   List *lst = newList();
   Value *res = newListValue(lst);
   opStackPopN(n);
-  opStackPush(res);
   int i;
   for (i = 0; i < sysArgc; i++) {
     listPush(lst, newStringValue(copyStr(sysArgv[i])));
   }
-  return 0;
+  return newEvalResult(RETURN_RESULT, res);
 }
 
 EvalResult* builtinApply(int n) {
@@ -175,8 +165,9 @@ EvalResult* builtinApply(int n) {
     opStackPopN(2);
     return er;
   }
-  opStackPopNPush(3, opStackPeek(0));
-  return 0;
+  Value* res = opStackPeek(0);
+  opStackPopN(3);
+  return newEvalResult(RETURN_RESULT, res);
 }
 
 void registerBuiltinFunctions(Env *e) {
