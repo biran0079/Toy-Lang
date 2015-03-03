@@ -16,6 +16,5 @@ int main(int argc, char **args) {
   freeTokenList(tokens);
   printAst(tree);
   cleanup();
-  listCreatedObjectsCount();
   return 0;
 }
