@@ -12,10 +12,10 @@ extern List *parseTrees;
 
 #define CHECK_ARG_NUM(num, name) \
   if (n != num) error(#num " argument required for " #name "\n");
-void builtinLen(int n) {
+EvalResult* builtinLen(int n) {
   CHECK_ARG_NUM(1, len());
   Value *l = opStackPeek(0);
-  Value *res;
+  Value *res = 0;
   switch (l->type) {
     case LIST_VALUE_TYPE:
       res = newIntValue(listSize(l->data));
@@ -28,9 +28,10 @@ void builtinLen(int n) {
   }
   opStackPopN(n);
   opStackPush(res);
+  return 0;
 }
 
-void builtinOrd(int n) {
+EvalResult* builtinOrd(int n) {
   CHECK_ARG_NUM(1, ord());
   Value *v = opStackPeek(0);
   if (v->type != STRING_VALUE_TYPE || strlen((char *)v->data) != 1)
@@ -39,26 +40,29 @@ void builtinOrd(int n) {
   Value *res = newIntValue(*((char *)v->data));
   opStackPopN(n);
   opStackPush(res);
+  return 0;
 }
 
-void builtinSort(int n) {
+EvalResult* builtinSort(int n) {
   CHECK_ARG_NUM(1, sort());
   Value *v = opStackPeek(0);
   if (v->type != LIST_VALUE_TYPE) error("sort only applys on list\n");
   listSort(v->data, valueCmp);
   opStackPopN(n);
   opStackPush(newNoneValue());
+  return 0;
 }
 
-void builtinStr(int n) {
+EvalResult* builtinStr(int n) {
   CHECK_ARG_NUM(1, str());
   Value *v = opStackPeek(0);
   Value *res = newStringValue(valueToString(v));
   opStackPopN(n);
   opStackPush(res);
+  return 0;
 }
 
-void builtinChr(int n) {
+EvalResult* builtinChr(int n) {
   CHECK_ARG_NUM(1, chr());
   Value *v = opStackPeek(0);
   if (v->type != INT_VALUE_TYPE) error("chr only applys to int\n");
@@ -68,9 +72,10 @@ void builtinChr(int n) {
   Value *res = newStringValue(s);
   opStackPopN(n);
   opStackPush(res);
+  return 0;
 }
 
-void builtinPrint(int n) {
+EvalResult* builtinPrint(int n) {
   int i;
   for (i = 0; i < n; i++) {
     if (i) printf(" ");
@@ -82,15 +87,17 @@ void builtinPrint(int n) {
   Value *res = newNoneValue();
   opStackPopN(n);
   opStackPush(res);
+  return 0;
 }
 
-void builtinRand(int n) {
+EvalResult* builtinRand(int n) {
   CHECK_ARG_NUM(0, rand());
   opStackPopN(n);
   opStackPush(newIntValue(rand()));
+  return 0;
 }
 
-void builtinParse(int n) {
+EvalResult* builtinParse(int n) {
   CHECK_ARG_NUM(1, parse());
   Value *v = opStackPeek(0);
   if (v->type != STRING_VALUE_TYPE) error("parse only applys to string\n");
@@ -110,9 +117,10 @@ void builtinParse(int n) {
   Value *res = nodeToListValue(listLast(parseTrees));
   opStackPopN(n);
   opStackPush(res);
+  return 0;
 }
 
-void builtinRead(int n) {
+EvalResult* builtinRead(int n) {
   CHECK_ARG_NUM(1, read());
   Value *v = opStackPeek(0);
   if (v->type != STRING_VALUE_TYPE) {
@@ -120,23 +128,24 @@ void builtinRead(int n) {
   }
   char *s = readFileWithPath((char *)v->data);
   Value *res = newNoneValue();
-  ;
   if (s) res = newStringValue(s);
   opStackPopN(n);
   opStackPush(res);
+  return 0;
 }
 
-void builtinExit(int n) {
+EvalResult* builtinExit(int n) {
   CHECK_ARG_NUM(1, read());
   Value *v = opStackPeek(0);
   if (v->type != INT_VALUE_TYPE) error("exit only applys to string\n");
   exit((long)v->data);
+  return 0;
 }
 
 int sysArgc;
 char **sysArgv;
 
-void builtinSysargs(int n) {
+EvalResult* builtinSysargs(int n) {
   CHECK_ARG_NUM(0, sysargs());
   List *lst = newList();
   Value *res = newListValue(lst);
@@ -146,6 +155,28 @@ void builtinSysargs(int n) {
   for (i = 0; i < sysArgc; i++) {
     listPush(lst, newStringValue(copyStr(sysArgv[i])));
   }
+  return 0;
+}
+
+EvalResult* builtinApply(int n) {
+  CHECK_ARG_NUM(2, sysargs());
+  Value* cv = opStackPeek(0);
+  assert(cv->type == CLOSURE_VALUE_TYPE || cv->type ==  BUILTIN_FUN_VALUE_TYPE);
+  Value* args = opStackPeek(1);
+  assert(args->type == LIST_VALUE_TYPE);
+  List* l = (List*) args->data;
+  int i;
+  for (i = listSize(l) - 1; i >= 0; i--) {
+    opStackPush(listGet(l, i));
+  }
+  opStackPush(cv);
+  EvalResult* er = evalCallInternal(listSize(l));
+  if (er) {
+    opStackPopN(2);
+    return er;
+  }
+  opStackPopNPush(3, opStackPeek(0));
+  return 0;
 }
 
 void registerBuiltinFunctions(Env *e) {
@@ -160,4 +191,5 @@ void registerBuiltinFunctions(Env *e) {
   envPut(e, getIntId("read"), newBuiltinFun(builtinRead));
   envPut(e, getIntId("exit"), newBuiltinFun(builtinExit));
   envPut(e, getIntId("sysArgs"), newBuiltinFun(builtinSysargs));
+  envPut(e, getIntId("apply"), newBuiltinFun(builtinApply));
 }

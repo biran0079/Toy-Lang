@@ -23,5 +23,6 @@ char *getFolder(char *s);
 FILE *openFromPath(char *s, char *mode);
 char *readFileWithPath(char *path);
 char *readFile(FILE *f);
+int getStringLength(char *format, ...);
 
 #endif

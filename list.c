@@ -21,7 +21,6 @@ List *newList() {
 
 void freeList(List *lst) {
   freeListC++;
-  int i;
   tlFree(lst->arr);
   lst->arr = 0;
   lst->cap = 0;

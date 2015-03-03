@@ -68,6 +68,71 @@ EvalResult *evalStmts(Env *ev, Node *p) {
   return 0;
 }
 
+/**
+ * This function assumes argNum + 1 values in opstack.
+ * All argNum + 1 values will be poped out when returns.
+ * Result will be pushed in if eval succeed.
+ */
+EvalResult *evalCallInternal(int argNum) {
+  int i;
+  while (1) {
+    if (opStackPeek(0)->type == BUILTIN_FUN_VALUE_TYPE) {
+      BuiltinFun f = opStackPeek(0)->data;
+      opStackPop();  // pop closure
+      f(argNum);
+      // always success and result is in stack
+      return 0;
+    }
+    // regular function call
+    Closure *c = opStackPeek(0)->data;
+    Node *f = c->f;
+
+    Env *e2 = getEnvFromValue(newEnvValue(getEnvFromValue(c->e)));
+
+    Node *ids = chld(f, 1);
+    if (chldNum(ids) != argNum)
+      error("%s parameter number incorrect\n", valueToString(opStackPeek(0)));
+
+    for (i = 0; i < argNum; i++)
+      envPutLocal(e2, (long)chld(ids, i)->data, opStackPeek(i + 1));
+
+    opStackPopNPush(argNum + 1, e2->envValue);
+
+    EvalResult *er = eval(getEnvFromValue(opStackPeek(0)), chld(f, 2));
+
+    if (er) {
+      opStackPop();  // pop env
+      switch (er->type) {
+        case EXCEPTION_RESULT: {
+          return er;
+        }
+        case TAIL_RECURSION_RESULT: {
+          List *l = (List *)er->value->data;
+          argNum = listSize(l);
+          for (i = 0; i < argNum; i++) {
+            opStackPush(listGet(l, i));
+          }
+          argNum--;  // one of the args is closure
+          freeEvalResult(er);
+          continue;
+        }
+        case RETURN_RESULT: {
+          opStackPush(er->value);
+          freeEvalResult(er);
+          return 0;
+        }
+        case CONTINUE_RESULT:
+        case BREAK_RESULT:
+          error("continue or break outside loop\n");
+      }
+    } else {
+      // no return called, always return none
+      opStackPopNPush(2, newNoneValue()); // pop env and eval result (always none)
+      return 0;
+    }
+  }
+}
+
 EvalResult *evalCall(Env *ev, Node *p) {
   int i, n;
   Node *args = chld(p, 1);
@@ -87,63 +152,7 @@ EvalResult *evalCall(Env *ev, Node *p) {
     opStackPopTo(beforeStackSize);
     return er;
   }
-  while (1) {
-    if (opStackPeek(0)->type == BUILTIN_FUN_VALUE_TYPE) {
-      BuiltinFun f = opStackPeek(0)->data;
-      opStackPop();  // pop closure
-      f(n);
-      // always success and result is in stack
-      return 0;
-    }
-    // regular function call
-    Closure *c = opStackPeek(0)->data;
-    Node *f = c->f;
-
-    Env *e2 = getEnvFromValue(newEnvValue(getEnvFromValue(c->e)));
-
-    Node *ids = chld(f, 1);
-    if (chldNum(ids) != n)
-      error("%s parameter number incorrect\n", valueToString(opStackPeek(0)));
-
-    for (i = 0; i < n; i++)
-      envPutLocal(e2, (long)chld(ids, i)->data, opStackPeek(i + 1));
-
-    opStackPopNPush(n + 1, e2->envValue);
-
-    EvalResult *er = eval(getEnvFromValue(opStackPeek(0)), chld(f, 2));
-
-    if (er) {
-      switch (er->type) {
-        case EXCEPTION_RESULT: {
-          opStackPopTo(beforeStackSize);
-          return er;
-        }
-        case TAIL_RECURSION_RESULT: {
-          opStackPopTo(beforeStackSize);
-          List *l = (List *)er->value->data;
-          n = listSize(l);
-          for (i = 0; i < n; i++) {
-            opStackPush(listGet(l, i));
-          }
-          n--;  // one of the args is closure
-          freeEvalResult(er);
-          continue;
-        }
-        case RETURN_RESULT: {
-          opStackPopToPush(beforeStackSize, er->value);
-          freeEvalResult(er);
-          return 0;
-        }
-        case CONTINUE_RESULT:
-        case BREAK_RESULT:
-          error("continue or break outside loop\n");
-      }
-    } else {
-      // no return called, always return none
-      opStackPopToPush(beforeStackSize, newNoneValue());
-      return 0;
-    }
-  }
+  return evalCallInternal(n);
 }
 
 EvalResult *evalId(Env *ev, Node *p) {
@@ -848,7 +857,6 @@ EvalResult *evalLocal(Env *ev, Node *p) {
 }
 
 EvalResult *evalImport(Env *ev, Node *p) {
-  int i;
   Node *id = chld(p, 0);
   char *s = catStr(getStrId((long)id->data), ".tl");
   FILE *f = openFromPath(s, "r");

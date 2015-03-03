@@ -2,12 +2,9 @@
 #define _BUILTINFUN_H_
 #include "core.h"
 #include "list.h"
+#include "eval.h"
 
-#ifndef USE_LEGACY_EVAL
-typedef void (*BuiltinFun)(int);
-#else
-typedef Value *(*BuiltinFun)(List *l);
-#endif
+typedef EvalResult* (*BuiltinFun)(int n);
 
 void registerBuiltinFunctions(Env *e);
 

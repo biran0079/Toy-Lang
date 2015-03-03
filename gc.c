@@ -69,7 +69,6 @@ void clearGCHistory() {
 }
 
 void forceGC() {
-  int i, n;
   int before = getInMemoryValueCount();
 #ifdef DEBUG_GC
   printf("gc start\n\n");

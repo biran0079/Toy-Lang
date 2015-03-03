@@ -67,6 +67,7 @@ fun setUpBuiltinFuns(e){
   envPut(e, "parse", ["builtinFun", parse]);
   envPut(e, "read", ["builtinFun", read]);
   envPut(e, "exit", ["builtinFun", exit]);
+  envPut(e, "apply", ["builtinFun", apply]);
   envPut(e, "sysArgs", ["builtinFun", lambda() {return list.suffix(sysArgs(), 1);}]);
   return res;
 }
@@ -281,7 +282,7 @@ fun eval(e, l){
       res += [eval(e, l[i])];
     }
     return res;
-  } else if(tag == "string") {
+  } else if(tag == "string" || tag == "builtinFun") {
     return l[1];
   } else if(tag == "exps") {
     for(i=1;i<len(l);i++)
@@ -292,22 +293,10 @@ fun eval(e, l){
     exps=l[2];
     closure = eval(e, funname);
     assert(exps[0]=="exps", "exps type expected for arguments of function call");
+    args =list.map(lambda(x){return eval(e,x);}, list.suffix(exps, 1));
     if(closure[0] == "builtinFun") {
-      local f;
-      if(closure[1]==print){
-        args =list.map(lambda(x){return eval(e,x);}, list.suffix(exps, 1));
-        print(string.join(" ", list.map(str, args)));
-        return ;
-      } else {
-        f = closure[1];
-        if(len(exps) == 2) {
-          return f(eval(e,exps[1]));
-        } else if(len(exps) == 1){
-          return  f();
-        }
-      }
+      apply(closure[1], args);
     } else {
-      args =list.map(lambda(x){return eval(e,x);}, list.suffix(exps, 1));
       e2 = newEnv(closure[0]);
       f = closure[1];
       ids = list.suffix(f[1], 1);

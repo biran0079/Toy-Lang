@@ -124,15 +124,6 @@ void freeValue(Value *v) {
   v->type = NONE_VALUE_TYPE;
 }
 
-static int getStringLength(char *format, ...) {
-  va_list ap;
-  int len = 0;
-  va_start(ap, format);
-  len = vsnprintf(0, 0, format, ap);
-  va_end(ap);
-  return len;
-}
-
 static int mySnprintf(char *s, int n, char *format, ...) {
   va_list ap;
   va_start(ap, format);
