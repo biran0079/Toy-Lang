@@ -1,6 +1,6 @@
-import eval;
-import list;
+import eval2;
 import lang;
+import list;
 
 args = sysArgs();
 if(len(args) < 2) {
@@ -8,5 +8,7 @@ if(len(args) < 2) {
   exit(-1);
 }
 code = parse(read(args[1]));
+f = eval2.process(code);
 global = lang.newGlobalEnv();
-eval.eval(global, code);
+f(global);
+

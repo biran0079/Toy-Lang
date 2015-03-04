@@ -49,10 +49,10 @@ testparser: parser
 	./testparser.sh
 
 testeval: tl
-	./testeval.sh
+	./test.sh tl.tl
 
 testevaleval: tl
-	./testevaleval.sh
+	./test.sh tl.tl tl.tl
 
 testgc: tl
 	./gctest.sh
@@ -70,6 +70,18 @@ draw: tl
 
 format:
 	clang-format -i --style=Google *.c *.h
+
+testeval2: tl
+	./test.sh tl2.tl
+
+testeval2eval2: tl
+	./test.sh tl2.tl tl2.tl
+
+testevaleval2: tl
+	./test.sh tl.tl tl2.tl
+
+testeval2eval: tl
+	./test.sh tl2.tl tl.tl
 
 debug: CFLAGS = -DDEBUG_GC -g
 debug: all

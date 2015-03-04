@@ -1,94 +1,7 @@
 import hashtable;
+import lang;
 import list;
 import string;
-
-fun newEnv(p){
-  local res;
-  res = [p,hashtable.newStringHashTable()];
-  envPut(res, "this", res);
-  return res;
-}
-
-fun envHas(e, key) {
-  while(e!=none){
-    if(hashtable.has(e[1], key)) {
-      return 1;
-    }
-    e=e[0];
-  }  
-  return 0;
-}
-
-fun envGet(e, key) {
-  while(e!=none){
-    if(hashtable.has(e[1], key)) {
-      return hashtable.get(e[1],key);
-    }
-    e=e[0];
-  }  
-  return none;
-}
-
-fun envPut(e, key, value) {
-  e0 = e;
-  while(1){
-    if(hashtable.has(e[1], key)){
-      hashtable.put(e[1], key, value);
-      return;
-    } else {
-      if(e[0] == none)  break;
-      e = e[0];
-    }
-  }
-  hashtable.put(e0[1], key, value);
-}
-
-fun envPutLocal(e, key, value) {
-  hashtable.put(e[1], key, value);
-}
-
-
-fun assert(b, msg){
-  if(!b){
-    print("assertion failure\n"); 
-    print(msg);
-    exit(-1);
-  }
-}
-
-fun setUpBuiltinFuns(e){
-  envPut(e, "print", newBuiltinFun(print));
-  envPut(e, "len", newBuiltinFun(len));
-  envPut(e, "ord", newBuiltinFun(ord));
-  envPut(e, "chr", newBuiltinFun(chr));
-  envPut(e, "sort", newBuiltinFun(sort));
-  envPut(e, "str", newBuiltinFun(str));
-  envPut(e, "rand", newBuiltinFun(rand));
-  envPut(e, "parse", newBuiltinFun(parse));
-  envPut(e, "read", newBuiltinFun(read));
-  envPut(e, "exit", newBuiltinFun(exit));
-  envPut(e, "apply", builtinApply);
-  envPut(e, "sysArgs", newBuiltinFun(lambda() {return list.suffix(sysArgs(), 1);}));
-  return res;
-}
-
-path = ["lib/", "./"];
-fun readFromPath(f){
-  local i;
-  for(i=0;i<len(path);i++){
-    s = read(path[i]+f);
-    if(s!=none) return s;
-  }
-  print("failed to read " + f + "from path");
-  exit(-1);
-}
-
-fun newGlobalEnv() {
-  local res;
-  res = newEnv(none);
-  setUpBuiltinFuns(res);
-  return res;
-}
 
 fun eval(e, l){
   local tag,funname,i,n,exps, res;
@@ -115,23 +28,23 @@ fun eval(e, l){
   else if(tag == "not") return !eval(e, l[1]);
   else if(tag == "none") return none;
   else if(tag == "id") {
-    if(envHas(e, l[1]))
-      return envGet(e, l[1]);
+    if(lang.envHas(e, l[1]))
+      return lang.envGet(e, l[1]);
     return none;
   } else if(tag == "return") throw ["return", eval(e, l[1])];
   else if(tag == "module_access") {
     local res;
     res = e;
     for(i=1;i<len(l);i++){
-      res = envGet(res, l[i][1]);
+      res = lang.envGet(res, l[i][1]);
     }
     return res;
   } else if(tag == "import") {
     local res, moduleName;
-    res = newEnv(e);
+    res = lang.newEnv(e);
     moduleName = l[1][1];
-    eval(res, parse(readFromPath(moduleName + ".tl")));
-    envPut(e, moduleName, res);
+    eval(res, parse(lang.readFromPath(moduleName + ".tl")));
+    lang.envPut(e, moduleName, res);
   } else if(tag == "continue") {
     throw ["continue"];
   } else if(tag == "break") {
@@ -152,7 +65,7 @@ fun eval(e, l){
     }
   } else if(tag == "foreach") {
     for(i : eval(e, l[2])) {
-      envPut(e, l[1][1], i);
+      lang.envPut(e, l[1][1], i);
       try {
         eval(e, l[3]);
       }catch(ex){
@@ -191,7 +104,7 @@ fun eval(e, l){
     ids = list.suffix(l[2], 1);
     fbody = l[3];
     res = newInternalFun(e, ids, fbody);
-    envPutLocal(e, l[1][1], res);
+    lang.envPutLocal(e, l[1][1], res);
     return res;
   } else if(tag == "lambda") {
     local ids, fbody;
@@ -202,13 +115,13 @@ fun eval(e, l){
     local ids;
     ids = l[1];
     for(i=1;i<len(ids);i++)
-      envPutLocal(e, ids[i][1], none);
+      lang.envPutLocal(e, ids[i][1], none);
   } else if(tag == "try") {
     try {
       eval(e, l[1]);
     } catch(ex) {
       if(ex[0] == "exception") {
-        envPutLocal(e, l[2][1], ex[1]);
+        lang.envPutLocal(e, l[2][1], ex[1]);
         eval(e, l[3]);
       } else {
         throw ex;
@@ -233,7 +146,7 @@ fun eval(e, l){
     v = eval(e,l[1]);
     res = (v+=eval(e, l[2]));
     if(l[1][0] == "id") {
-      envPut(e, l[1][1], v);
+      lang.envPut(e, l[1][1], v);
     } else if(l[1][0] == "list_access") {
       local lst, idx;
       lst = eval(e, l[1][1]);
@@ -246,7 +159,7 @@ fun eval(e, l){
     v = eval(e,l[1]);
     res = v++;
     if(l[1][0] == "id") {
-      envPut(e, l[1][1], v);
+      lang.envPut(e, l[1][1], v);
     } else if(l[1][0] == "list_access") {
       local lst, idx;
       lst = eval(e, l[1][1]);
@@ -263,14 +176,14 @@ fun eval(e, l){
       idx = eval(e, left[2]);
       lst[idx] = v;
     }else if(left[0]=="id"){
-      envPut(e, left[1], v);
+      lang.envPut(e, left[1], v);
     }else if(left[0]=="module_access"){
       local res;
       res = e;
       for(i=1;i<len(left)-1;i++){
-        res = envGet(res, left[i][1]);
+        res = lang.envGet(res, left[i][1]);
       }
-      envPut(res, left[i][1], v);
+      lang.envPut(res, left[i][1], v);
     }else {
       print("unknown type for =\n");
       exit(-1);
@@ -291,7 +204,7 @@ fun eval(e, l){
   } else if(tag == "call" || tag == "tail_call"){
     exps=l[2];
     f = eval(e, l[1]);
-    assert(exps[0]=="exps", "exps type expected for arguments of function call");
+    lang.assert(exps[0]=="exps", "exps type expected for arguments of function call");
     args = list.map(lambda(x){return eval(e,x);}, list.suffix(exps, 1));
     try{
       f(args);
@@ -322,10 +235,10 @@ fun builtinApply(args) {
 fun newInternalFun(e, ids, fbody) {
   fun internalFunction(args) {
     local e2, i;
-    e2 = newEnv(e);
-    assert(len(ids) == len(args),str(len(ids)) + " parameter needed, " + str(len(args)) + " parameters get\n");
+    e2 = lang.newEnv(e);
+    lang.assert(len(ids) == len(args),str(len(ids)) + " parameter needed, " + str(len(args)) + " parameters get\n");
     for(i=0;i<len(ids);i++)
-      envPutLocal(e2, ids[i][1], args[i]);
+      lang.envPutLocal(e2, ids[i][1], args[i]);
     throw ["return", eval(e2, fbody)];
   }
   return internalFunction;

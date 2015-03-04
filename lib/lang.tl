@@ -100,14 +100,12 @@ fun builtinApply(args) {
   throw ["return", apply(args[0], list.suffix(args, 1))];
 }
 
-fun newInternalFun(e, ids, fbody) {
-  fun internalFunction(args) {
-    local e2, i;
-    e2 = newEnv(e);
-    assert(len(ids) == len(args),str(len(ids)) + " parameter needed, " + str(len(args)) + " parameters get\n");
-    for(i=0;i<len(ids);i++)
-      envPutLocal(e2, ids[i][1], args[i]);
-    throw ["return", eval(e2, fbody)];
+
+fun assert(b, msg){
+  if(!b){
+    print("assertion failure\n"); 
+    print(msg);
+    exit(-1);
   }
-  return internalFunction;
 }
+
