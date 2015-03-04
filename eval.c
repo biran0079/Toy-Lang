@@ -76,12 +76,12 @@ EvalResult *evalStmts(Env *ev, Node *p) {
 EvalResult *evalCallInternal(int argNum) {
   int i;
   while (1) {
-    EvalResult* er;
+    EvalResult *er;
     if (opStackPeek(0)->type == BUILTIN_FUN_VALUE_TYPE) {
       BuiltinFun f = opStackPeek(0)->data;
       opStackPop();  // pop closure
       er = f(argNum);
-      assert(er != 0); // built in function should never return 0
+      assert(er != 0);  // built in function should never return 0
     } else {
       assert(opStackPeek(0)->type == CLOSURE_VALUE_TYPE);
       // regular function call
@@ -101,7 +101,7 @@ EvalResult *evalCallInternal(int argNum) {
 
       er = eval(e2, chld(f, 2));
       if (er) {
-        opStackPop(); // pop env
+        opStackPop();  // pop env
       } else {
         opStackPopN(2);  // pop env and eval result, which is not needed
       }
@@ -132,7 +132,7 @@ EvalResult *evalCallInternal(int argNum) {
       }
     } else {
       // no return called, always return none
-      opStackPush(newNoneValue()); // always return none.
+      opStackPush(newNoneValue());  // always return none.
       return 0;
     }
   }
@@ -615,7 +615,7 @@ EvalResult *evalAddEq(Env *ev, Node *p) {
           listSet(l, idx, opStackPeek(0));
           break;
         case LIST_VALUE_TYPE:
-          assert (e2->type == LIST_VALUE_TYPE);
+          assert(e2->type == LIST_VALUE_TYPE);
           List *l = (List *)e2->data;
           for (i = 0; i < listSize(l); i++) {
             listPush((List *)e1->data, listGet(l, i));

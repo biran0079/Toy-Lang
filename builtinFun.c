@@ -12,7 +12,7 @@ extern List *parseTrees;
 
 #define CHECK_ARG_NUM(num, name) \
   if (n != num) error(#num " argument required for " #name "\n");
-EvalResult* builtinLen(int n) {
+EvalResult *builtinLen(int n) {
   CHECK_ARG_NUM(1, len());
   Value *l = opStackPeek(0);
   Value *res = 0;
@@ -30,7 +30,7 @@ EvalResult* builtinLen(int n) {
   return newEvalResult(RETURN_RESULT, res);
 }
 
-EvalResult* builtinOrd(int n) {
+EvalResult *builtinOrd(int n) {
   CHECK_ARG_NUM(1, ord());
   Value *v = opStackPeek(0);
   if (v->type != STRING_VALUE_TYPE || strlen((char *)v->data) != 1)
@@ -41,7 +41,7 @@ EvalResult* builtinOrd(int n) {
   return newEvalResult(RETURN_RESULT, res);
 }
 
-EvalResult* builtinSort(int n) {
+EvalResult *builtinSort(int n) {
   CHECK_ARG_NUM(1, sort());
   Value *v = opStackPeek(0);
   if (v->type != LIST_VALUE_TYPE) error("sort only applys on list\n");
@@ -50,7 +50,7 @@ EvalResult* builtinSort(int n) {
   return newEvalResult(RETURN_RESULT, newNoneValue());
 }
 
-EvalResult* builtinStr(int n) {
+EvalResult *builtinStr(int n) {
   CHECK_ARG_NUM(1, str());
   Value *v = opStackPeek(0);
   Value *res = newStringValue(valueToString(v));
@@ -58,10 +58,10 @@ EvalResult* builtinStr(int n) {
   return newEvalResult(RETURN_RESULT, res);
 }
 
-EvalResult* builtinChr(int n) {
+EvalResult *builtinChr(int n) {
   CHECK_ARG_NUM(1, chr());
   Value *v = opStackPeek(0);
-  if (v->type != INT_VALUE_TYPE) 
+  if (v->type != INT_VALUE_TYPE)
     error("chr only applys to int, get %s\n", valueToString(v));
   char *s = (char *)tlMalloc(2);
   s[0] = (long)v->data;
@@ -71,7 +71,7 @@ EvalResult* builtinChr(int n) {
   return newEvalResult(RETURN_RESULT, res);
 }
 
-EvalResult* builtinPrint(int n) {
+EvalResult *builtinPrint(int n) {
   int i;
   for (i = 0; i < n; i++) {
     if (i) printf(" ");
@@ -85,13 +85,13 @@ EvalResult* builtinPrint(int n) {
   return newEvalResult(RETURN_RESULT, res);
 }
 
-EvalResult* builtinRand(int n) {
+EvalResult *builtinRand(int n) {
   CHECK_ARG_NUM(0, rand());
   opStackPopN(n);
   return newEvalResult(RETURN_RESULT, newIntValue(rand()));
 }
 
-EvalResult* builtinParse(int n) {
+EvalResult *builtinParse(int n) {
   CHECK_ARG_NUM(1, parse());
   Value *v = opStackPeek(0);
   if (v->type != STRING_VALUE_TYPE) error("parse only applys to string\n");
@@ -113,7 +113,7 @@ EvalResult* builtinParse(int n) {
   return newEvalResult(RETURN_RESULT, res);
 }
 
-EvalResult* builtinRead(int n) {
+EvalResult *builtinRead(int n) {
   CHECK_ARG_NUM(1, read());
   Value *v = opStackPeek(0);
   if (v->type != STRING_VALUE_TYPE) {
@@ -126,7 +126,7 @@ EvalResult* builtinRead(int n) {
   return newEvalResult(RETURN_RESULT, res);
 }
 
-EvalResult* builtinExit(int n) {
+EvalResult *builtinExit(int n) {
   CHECK_ARG_NUM(1, read());
   Value *v = opStackPeek(0);
   if (v->type != INT_VALUE_TYPE) error("exit only applys to string\n");
@@ -136,7 +136,7 @@ EvalResult* builtinExit(int n) {
 int sysArgc;
 char **sysArgv;
 
-EvalResult* builtinSysargs(int n) {
+EvalResult *builtinSysargs(int n) {
   CHECK_ARG_NUM(0, sysargs());
   List *lst = newList();
   Value *res = newListValue(lst);
@@ -148,24 +148,24 @@ EvalResult* builtinSysargs(int n) {
   return newEvalResult(RETURN_RESULT, res);
 }
 
-EvalResult* builtinApply(int n) {
+EvalResult *builtinApply(int n) {
   CHECK_ARG_NUM(2, sysargs());
-  Value* cv = opStackPeek(0);
-  assert(cv->type == CLOSURE_VALUE_TYPE || cv->type ==  BUILTIN_FUN_VALUE_TYPE);
-  Value* args = opStackPeek(1);
+  Value *cv = opStackPeek(0);
+  assert(cv->type == CLOSURE_VALUE_TYPE || cv->type == BUILTIN_FUN_VALUE_TYPE);
+  Value *args = opStackPeek(1);
   assert(args->type == LIST_VALUE_TYPE);
-  List* l = (List*) args->data;
+  List *l = (List *)args->data;
   int i;
   for (i = listSize(l) - 1; i >= 0; i--) {
     opStackPush(listGet(l, i));
   }
   opStackPush(cv);
-  EvalResult* er = evalCallInternal(listSize(l));
+  EvalResult *er = evalCallInternal(listSize(l));
   if (er) {
     opStackPopN(2);
     return er;
   }
-  Value* res = opStackPeek(0);
+  Value *res = opStackPeek(0);
   opStackPopN(3);
   return newEvalResult(RETURN_RESULT, res);
 }

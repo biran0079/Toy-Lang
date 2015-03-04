@@ -21,7 +21,8 @@ Value *newNoneValue() {
     res = allocValue();
     res->type = NONE_VALUE_TYPE;
     res->data = 0;
-    res->mark = UNMARKED; // none is alwaus refed by global env's parent, so it wil never be GCed.
+    res->mark = UNMARKED;  // none is alwaus refed by global env's parent, so it
+                           // wil never be GCed.
     return res;
   }
 }

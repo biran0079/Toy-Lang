@@ -5,9 +5,7 @@
 
 static List *opStack;
 
-void initOpStack() {
-  opStack = newList();
-}
+void initOpStack() { opStack = newList(); }
 
 void cleanupOpStack() {
   if (listSize(opStack)) {
