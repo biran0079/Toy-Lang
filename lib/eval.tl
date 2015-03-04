@@ -276,9 +276,6 @@ fun eval(e, l){
       exit(-1);
     }
     return v;
-  } else if(tag == "local") {
-    for(i=1;i<len(l);i++)
-      envPut(e, l[i][1], none);
   } else if(tag == "list") {
     res = []; 
     for(i=1;i<len(l);i++){
