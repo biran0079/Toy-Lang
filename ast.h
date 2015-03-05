@@ -69,7 +69,7 @@ void markTailRecursions(Node *t);
 
 char *nodeTypeToString(NodeType type);
 
-Value *nodeToListValue(Node *p);
+void nodeToListValue(Node *p, Value* res);
 
 void printAst(Node *ast);
 

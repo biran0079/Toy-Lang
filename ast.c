@@ -131,8 +131,7 @@ char *nodeToString(Node *p) {
   return s;
 }
 
-Value *nodeToListValue(Node *p) {
-  Value *res = newListValue(newList());
+void nodeToListValue(Node *p, Value* res) {
   listValuePush(res, newStringValue(copyStr(nodeTypeToString(p->type))));
   switch (p->type) {
     case INT_TYPE:
@@ -184,13 +183,16 @@ Value *nodeToListValue(Node *p) {
     case IMPORT_TYPE:
     case MODULE_ACCESS_TYPE: {
       int i, n = chldNum(p);
-      for (i = 0; i < n; i++) listValuePush(res, nodeToListValue(chld(p, i)));
+      for (i = 0; i < n; i++){
+        Value* lv = newListValue(newList());
+        listValuePush(res, lv);
+        nodeToListValue(chld(p, i), lv);
+      }
       break;
     }
     default:
       error("unknown node type in nodeToListValue");
   }
-  return res;
 }
 
 char *nodeTypeToString(NodeType type) {

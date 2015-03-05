@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
     if (!f) error("failed to open %s\n", s);
     dumpGCHistory(f);
     fclose(f);
-    free(s);
+    tlFree(s);
     clearGCHistory();
   }
   return 0;

@@ -15,19 +15,19 @@ extern List *parseTrees;
 EvalResult *builtinLen(int n) {
   CHECK_ARG_NUM(1, len());
   Value *l = opStackPeek(0);
-  Value *res = 0;
+  int len = 0;
   switch (l->type) {
     case LIST_VALUE_TYPE:
-      res = newIntValue(listSize(l->data));
+      len = listSize(l->data);
       break;
     case STRING_VALUE_TYPE:
-      res = newIntValue(strlen(l->data));
+      len = strlen(l->data);
       break;
     default:
       error("len() cannot apply on value type %d\n", l->type);
   }
   opStackPopN(n);
-  return newEvalResult(RETURN_RESULT, res);
+  return newEvalResult(RETURN_RESULT, newIntValue(len));
 }
 
 EvalResult *builtinOrd(int n) {
@@ -108,9 +108,12 @@ EvalResult *builtinParse(int n) {
 #else
   if (!parse(tokenize(code))) error("failed to parse %s\n", code);
 #endif
-  Value *res = nodeToListValue(listLast(parseTrees));
-  opStackPopN(n);
-  return newEvalResult(RETURN_RESULT, res);
+  Value *res = newListValue(newList());
+  EvalResult* er = newEvalResult(RETURN_RESULT, res);
+  opStackPush(res);
+  nodeToListValue(listLast(parseTrees), res);
+  opStackPopN(n + 1);
+  return er;
 }
 
 EvalResult *builtinRead(int n) {
@@ -120,8 +123,12 @@ EvalResult *builtinRead(int n) {
     error("read only applys to string, got type %d\n", v->type);
   }
   char *s = readFileWithPath((char *)v->data);
-  Value *res = newNoneValue();
-  if (s) res = newStringValue(s);
+  Value *res;
+  if (s) {
+    res = newStringValue(s);
+  } else {
+    res = newNoneValue();
+  }
   opStackPopN(n);
   return newEvalResult(RETURN_RESULT, res);
 }
@@ -139,12 +146,14 @@ char **sysArgv;
 EvalResult *builtinSysargs(int n) {
   CHECK_ARG_NUM(0, sysargs());
   Value *res = newListValue(newList());
+  opStackPush(res);
   int i;
   for (i = 0; i < sysArgc; i++) {
     listValuePush(res, newStringValue(copyStr(sysArgv[i])));
   }
-  opStackPopN(n);
-  return newEvalResult(RETURN_RESULT, res);
+  EvalResult* er = newEvalResult(RETURN_RESULT, res);
+  opStackPopN(n + 1);
+  return er;
 }
 
 EvalResult *builtinApply(int n) {
