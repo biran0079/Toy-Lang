@@ -13,6 +13,7 @@
 
 List *parseTrees;  // make sure no tree is deleted during evaluation by keeping
                    // track of all parse trees
+List *intCache;
 Env *globalEnv;
 int memoryLimit = 64 * 1024 * 1024;
 List *path;  // where import loads from
@@ -53,10 +54,20 @@ void listCreatedObjectsCount() {
   fprintf(stderr, "memory usage: %d\n", memoryUsage);
 }
 
+void initIntCache() {
+  intCache = newList();
+  int i;
+  for (i = 0; i < 100; i++) {
+    listPush(intCache, newIntValue(i));
+  }
+  opStackPush(newListValue(intCache));
+}
+
 void init(int argc, char **args) {
   initValuesBlock();
   initIdMap();
   initOpStack();
+  initIntCache();
 
   // global env depends on value block (none value), id map (default 'this'
   // field)
@@ -77,6 +88,7 @@ void init(int argc, char **args) {
 
 void cleanup() {
   assert(globalEnv->envValue == opStackPop());  // make sure global env get GCed
+  assert(intCache == opStackPop()->data);  // make sure global env get GCed
   forceGC();
   cleanupOpStack();
   cleanupValuesBlock();

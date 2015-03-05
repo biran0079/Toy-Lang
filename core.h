@@ -28,6 +28,7 @@ extern int newClosureC, freeClosureC;
 extern int newEnvC, freeEnvC;
 extern int memoryUsage;
 extern int isInitialized;
+extern List *intCache;
 
 #define YYSTYPE Node *
 
