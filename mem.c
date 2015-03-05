@@ -7,16 +7,18 @@
 #include "eval.h"
 #include <assert.h>
 
+// Make sure no duplicate value in allValues list.
 List* allValues, *deadValues;
 
 extern int memoryUsage, memoryLimit;
 
-void initValuesBlock() {
+void initMem() {
   allValues = newList();
   deadValues = newList();
 }
 
-void cleanupValuesBlock() {
+// called after gc
+void cleanupMem() {
   int i, n = listSize(allValues);
   for (i = 0; i < n; i++) {
     Value* v = listGet(allValues, i);

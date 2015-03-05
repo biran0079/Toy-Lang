@@ -61,7 +61,7 @@ void init(int argc, char **args) {
 #ifdef DEBUG_GC
   astStack = newList();
 #endif
-  initValuesBlock();
+  initMem();
   initIdMap();
   initOpStack();
 
@@ -93,8 +93,8 @@ void cleanup() {
   opStackPop();
 
   forceGC();
-  cleanupOpStack();
-  cleanupValuesBlock();
+  cleanupOpStack(); // depends on gc
+  cleanupMem();  // depends on gc
   cleanupIdMap();
   int i, n = listSize(parseTrees);
   for (i = 0; i < n; i++) {
