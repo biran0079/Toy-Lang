@@ -420,15 +420,14 @@ void deref(Value* v) {
   printf("deref (%d) %s @ %p  evaling %s\n", v->ref-1,  valueToString(v), v, evaluating);
   tlFree(evaluating);
 #endif
-  if (v->ref == 1 && v->mark == MARKED) {
-    printf("!!!!\n");
-  }
   int ref = --(v->ref); 
   assert(ref >= 0);
-  if(!ref) {
+  if (!ref) {
     if (v->type != FREEING_TYPE && v->type != FREED_TYPE) {
       freeValue(v);
     }
+  } else if (ref == 1 && v->type == ENV_VALUE_TYPE) {
+    freeValue(v);
   }
 }
 

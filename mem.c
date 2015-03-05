@@ -38,8 +38,8 @@ Value* allocValue() {
     v = listPop(deadValues);
   } else {
     v = tlMalloc(sizeof(Value));
+    listPush(allValues, v);
   }
-  listPush(allValues, v);
   return v;
 }
 
@@ -58,6 +58,11 @@ void freeUnmarkedValues() {
   }
   freeList(allValues);
   allValues = newAllValues;
+  n = listSize(deadValues);
+  for (i = 0; i < n; i++) {
+    tlFree(listGet(deadValues, i));
+  }
+  listClear(deadValues);
 }
 
 int getInMemoryValueCount() {

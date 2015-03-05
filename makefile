@@ -42,7 +42,7 @@ tokenizer: list.o idMap.o hashtable.o util.o tokenizerMain.o tokenizer.o
 	$(CC) $(CFLAGS) list.o idMap.o hashtable.o util.o tokenizerMain.o tokenizer.o -o tokenizer
 
 
-test: tl test/*.tl test/*.tl.out
+test: tl 
 	./test.sh
 
 testparser: parser

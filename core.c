@@ -14,7 +14,7 @@
 List *parseTrees;  // make sure no tree is deleted during evaluation by keeping
                    // track of all parse trees
 Env *globalEnv;
-int memoryLimit = 256 * 1024 * 1024;
+int memoryLimit = 64 * 1024 * 1024;
 List *path;  // where import loads from
 int isInitialized = 0;
 
