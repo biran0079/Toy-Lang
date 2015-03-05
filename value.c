@@ -23,7 +23,8 @@ Value *newNoneValue() {
     res->type = NONE_VALUE_TYPE;
     res->data = 0;
     res->ref = 0;
-    res->mark = UNMARKED;
+    res->mark = UNMARKED;  // none is alwaus refed by global env's parent, so it
+                           // wil never be GCed.
     return res;
   }
 }
@@ -298,17 +299,9 @@ Value *valueAdd(Value *v1, Value *v2) {
     case LIST_VALUE_TYPE: {
       Value *res = newListValue(listCopy(v1->data));
       int i;
-      switch (v2->type) {
-        case LIST_VALUE_TYPE: {
-          for (i = 0; i < listValueSize(v2); i++) {
-            listValuePush(res, listValueGet(v2, i));
-          }
-          break;
-        }
-        default: {
-          listValuePush(res, v2);
-          break;
-        }
+      assert(v2->type == LIST_VALUE_TYPE);
+      for (i = 0; i < listValueSize(v2); i++) {
+        listValuePush(res, listValueGet(v2, i));
       }
       return res;
     }

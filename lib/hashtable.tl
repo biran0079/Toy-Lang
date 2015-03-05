@@ -65,6 +65,7 @@ fun keys(table){
       res+=[item[0]];
   return res;
 }
+
 fun has(table, k) {
   local hash,eq,t;
   hash=table[0];

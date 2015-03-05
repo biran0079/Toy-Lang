@@ -90,7 +90,7 @@ EvalResult *evalCallInternal(int argNum) {
       BuiltinFun f = opStackPeek(0)->data;
       opStackPop();  // pop closure
       er = f(argNum);
-      assert(er != 0);
+      assert(er != 0);  // built in function should never return 0
     } else {
       assert(opStackPeek(0)->type == CLOSURE_VALUE_TYPE);
       // regular function call
@@ -107,8 +107,13 @@ EvalResult *evalCallInternal(int argNum) {
         envPutLocal(e2, (long)chld(ids, i)->data, opStackPeek(i + 1));
 
       opStackPopNPush(argNum + 1, e2->envValue);
+
       er = eval(e2, chld(f, 2));
-      opStackPop();
+      if (er) {
+        opStackPop();  // pop env
+      } else {
+        opStackPopN(2);  // pop env and eval result, which is not needed
+      }
     }
     if (er) {
       switch (er->type) {
@@ -136,8 +141,7 @@ EvalResult *evalCallInternal(int argNum) {
       }
     } else {
       // no return called, always return none
-      opStackPopNPush(
-          1, newNoneValue());  // pop eval result and always return none.
+      opStackPush(newNoneValue());  // always return none.
       return 0;
     }
   }
@@ -202,7 +206,9 @@ EvalResult *evalNone(Env *ev, Node *p) {
   return 0;
 }
 
-EvalResult *evalAdd(Env *ev, Node *p) {
+typedef Value* (*BinaryOp)(Value*, Value*);
+
+static EvalResult* binaryFunction(Env* ev, Node* p, BinaryOp op) {
   EvalResult *er = eval(ev, chld(p, 1));
   if (er) {
     assert(er->type == EXCEPTION_RESULT);
@@ -214,172 +220,59 @@ EvalResult *evalAdd(Env *ev, Node *p) {
     opStackPop();
     return er;
   }
-  opStackPopNPush(2, valueAdd(opStackPeek(0), opStackPeek(1)));
+  opStackPopNPush(2, op(opStackPeek(0), opStackPeek(1)));
   return 0;
+}
+
+EvalResult *evalAdd(Env *ev, Node *p) {
+  return binaryFunction(ev, p, valueAdd);
 }
 
 EvalResult *evalSub(Env *ev, Node *p) {
-  EvalResult *er = eval(ev, chld(p, 1));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    return er;
-  }
-  er = eval(ev, chld(p, 0));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    opStackPop();
-    return er;
-  }
-  opStackPopNPush(2, valueSub(opStackPeek(0), opStackPeek(1)));
-  return 0;
+  return binaryFunction(ev, p, valueSub);
 }
 
 EvalResult *evalMul(Env *ev, Node *p) {
-  EvalResult *er = eval(ev, chld(p, 1));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    return er;
-  }
-  er = eval(ev, chld(p, 0));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    opStackPop();
-    return er;
-  }
-  opStackPopNPush(2, valueMul(opStackPeek(0), opStackPeek(1)));
-  return 0;
+  return binaryFunction(ev, p, valueMul);
 }
 
 EvalResult *evalDiv(Env *ev, Node *p) {
-  EvalResult *er = eval(ev, chld(p, 1));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    return er;
-  }
-  er = eval(ev, chld(p, 0));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    opStackPop();
-    return er;
-  }
-  opStackPopNPush(2, valueDiv(opStackPeek(0), opStackPeek(1)));
-  return 0;
+  return binaryFunction(ev, p, valueDiv);
 }
 
 EvalResult *evalMod(Env *ev, Node *p) {
-  EvalResult *er = eval(ev, chld(p, 1));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    return er;
-  }
-  er = eval(ev, chld(p, 0));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    opStackPop();
-    return er;
-  }
-  opStackPopNPush(2, valueMod(opStackPeek(0), opStackPeek(1)));
-  return 0;
+  return binaryFunction(ev, p, valueMod);
 }
 
+static Value* gt(Value* a, Value* b) { return newIntValue(valueCmp(a, b) > 0); }
+static Value* lt(Value* a, Value* b) { return newIntValue(valueCmp(a, b) < 0); }
+static Value* ge(Value* a, Value* b) { return newIntValue(valueCmp(a, b) >= 0); }
+static Value* le(Value* a, Value* b) { return newIntValue(valueCmp(a, b) <= 0); }
+static Value* eq(Value* a, Value* b) { return newIntValue(valueCmp(a, b) == 0); }
+static Value* ne(Value* a, Value* b) { return newIntValue(valueCmp(a, b) != 0); }
+
 EvalResult *evalGT(Env *ev, Node *p) {
-  EvalResult *er = eval(ev, chld(p, 1));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    return er;
-  }
-  er = eval(ev, chld(p, 0));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    opStackPop();
-    return er;
-  }
-  opStackPopNPush(2, newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) > 0));
-  return 0;
+  return binaryFunction(ev, p, gt);
 }
 
 EvalResult *evalLT(Env *ev, Node *p) {
-  EvalResult *er = eval(ev, chld(p, 1));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    return er;
-  }
-  er = eval(ev, chld(p, 0));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    opStackPop();
-    return er;
-  }
-  opStackPopNPush(2, newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) < 0));
-  return 0;
+  return binaryFunction(ev, p, lt);
 }
 
 EvalResult *evalGE(Env *ev, Node *p) {
-  EvalResult *er = eval(ev, chld(p, 1));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    return er;
-  }
-  er = eval(ev, chld(p, 0));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    opStackPop();
-    return er;
-  }
-  opStackPopNPush(2,
-                  newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) >= 0));
-  return 0;
+  return binaryFunction(ev, p, ge);
 }
 
 EvalResult *evalLE(Env *ev, Node *p) {
-  EvalResult *er = eval(ev, chld(p, 1));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    return er;
-  }
-  er = eval(ev, chld(p, 0));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    opStackPop();
-    return er;
-  }
-  opStackPopNPush(2,
-                  newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) <= 0));
-  return 0;
+  return binaryFunction(ev, p, le);
 }
 
 EvalResult *evalEQ(Env *ev, Node *p) {
-  EvalResult *er = eval(ev, chld(p, 1));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    return er;
-  }
-  er = eval(ev, chld(p, 0));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    opStackPop();
-    return er;
-  }
-  opStackPopNPush(2,
-                  newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) == 0));
-  return 0;
+  return binaryFunction(ev, p, eq);
 }
 
 EvalResult *evalNE(Env *ev, Node *p) {
-  EvalResult *er = eval(ev, chld(p, 1));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    return er;
-  }
-  er = eval(ev, chld(p, 0));
-  if (er) {
-    assert(er->type == EXCEPTION_RESULT);
-    opStackPop();
-    return er;
-  }
-  opStackPopNPush(2,
-                  newIntValue(valueCmp(opStackPeek(0), opStackPeek(1)) != 0));
-  return 0;
+  return binaryFunction(ev, p, ne);
 }
 
 EvalResult *evalAnd(Env *ev, Node *p) {
@@ -436,7 +329,7 @@ EvalResult *evalNot(Env *ev, Node *p) {
 
 EvalResult *evalFun(Env *ev, Node *p) {
   opStackPush(newClosureValue(p, ev));
-  envPut(ev, (long)chld(p, 0)->data, opStackPeek(0));
+  envPutLocal(ev, (long)chld(p, 0)->data, opStackPeek(0));
   return 0;
 }
 
@@ -627,11 +520,8 @@ EvalResult *evalAddEq(Env *ev, Node *p) {
           listValueSet(lv, idx, opStackPeek(0));
           break;
         case LIST_VALUE_TYPE:
-          if (e2->type == LIST_VALUE_TYPE) {
-            listValueExtend(e1, e2);
-          } else {
-            listValuePush(e1, e2);
-          }
+          assert(e2->type == LIST_VALUE_TYPE);
+          listValueExtend(e1, e2);
           opStackPopToPush(beforeStackSize, e1);
           break;
         default:
