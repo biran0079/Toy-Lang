@@ -5,7 +5,6 @@
 #include "idMap.h"
 #include "closure.h"
 #include "ast.h"
-#include "gc.h"
 #include "mem.h"
 
 int newIntValueC = 0, newStringValueC = 0, newClosureValueC = 0,
@@ -28,7 +27,6 @@ Value *newNoneValue() {
 }
 
 Value *newIntValue(long x) {
-  gc();
   newIntValueC++;
   Value *res = allocValue();
   res->type = INT_VALUE_TYPE;
@@ -38,7 +36,6 @@ Value *newIntValue(long x) {
 }
 
 Value *newStringValue(char *s) {
-  gc();
   newStringValueC++;
   Value *res = allocValue();
   res->type = STRING_VALUE_TYPE;
@@ -48,7 +45,6 @@ Value *newStringValue(char *s) {
 }
 
 Value *newListValue(List *list) {
-  gc();
   newListValueC++;
   Value *res = allocValue();
   res->type = LIST_VALUE_TYPE;
@@ -58,7 +54,6 @@ Value *newListValue(List *list) {
 }
 
 Value *newClosureValue(Node *t, Env *e) {
-  gc();
   newClosureValueC++;
   Value *res = allocValue();
   res->type = CLOSURE_VALUE_TYPE;
@@ -68,7 +63,6 @@ Value *newClosureValue(Node *t, Env *e) {
 }
 
 Value *newBuiltinFun(BuiltinFun f) {
-  gc();
   newBuiltinFunC++;
   Value *res = allocValue();
   res->type = BUILTIN_FUN_VALUE_TYPE;
@@ -78,12 +72,10 @@ Value *newBuiltinFun(BuiltinFun f) {
 }
 
 Value *newEnvValue(Env *parent) {
-  gc();
-  Value *pv = parent ? parent->envValue : newNoneValue();
   newEnvValueC++;
   Value *res = allocValue();
   res->type = ENV_VALUE_TYPE;
-  res->data = newEnv(pv, res);
+  res->data = newEnv(parent ? parent->envValue : newNoneValue(), res);
   res->mark = UNMARKED;
   envPutLocal(res->data, getIntId("this"), res);
   return res;

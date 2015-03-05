@@ -5,6 +5,7 @@
 #include "hashTable.h"
 #include "opStack.h"
 #include "eval.h"
+#include "gc.h"
 #include <assert.h>
 #define MAX_BLOCK_SIZE 4 * 1024 * 1024
 
@@ -47,6 +48,7 @@ void cleanupValuesBlock() {
 }
 
 Value* allocValue() {
+  gc();
   ValuesBlock* cur = head;
   while (1) {
     if (cur->top < cur->capacity) {
