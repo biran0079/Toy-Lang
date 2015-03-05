@@ -6,6 +6,6 @@
 
 typedef EvalResult* (*BuiltinFun)(int n);
 
-void registerBuiltinFunctions(Env *e);
+void registerBuiltinFunctions(Env* e);
 
 #endif

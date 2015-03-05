@@ -15,7 +15,7 @@ Env *newEnv(Value *parentEnv, Value *envValue) {
   return res;
 }
 
-static void derefAllValues(Env* e) {
+static void derefAllValues(Env *e) {
   int i, n = listSize(e->l);
   for (i = 0; i < n; i++) {
     Value *v = listGet(e->l, i);
@@ -61,7 +61,7 @@ Value *envPut(Env *e, long key, Value *value) {
 Value *envPutLocal(Env *e, long key, Value *value) {
   ref(value);
   increaseSizeTo(e->l, key + 1);
-  Value* oldValue = (Value *)listSet(e->l, key, value);
+  Value *oldValue = (Value *)listSet(e->l, key, value);
   if (oldValue) {
     deref(oldValue);
   }
@@ -90,4 +90,3 @@ void envAddAllValuesToList(Env *e, List *q) {
     if (v) listPush(q, v);
   }
 }
-

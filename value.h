@@ -52,12 +52,12 @@ int valueCmp(Value *v1, Value *v2);
 
 long getIntFromValue(Value *intValue);
 Env *getEnvFromValue(Value *v);
-Value* ref(Value* v);
-void deref(Value* p);
+Value *ref(Value *v);
+void deref(Value *p);
 
-void listValuePush(Value* lv, Value* v);
-Value* listValueGet(Value* lv, int i);
-void listValueSet(Value* lv, int i, Value* v);
-int listValueSize(Value* lv);
-void listValueExtend(Value* lv1, Value* lv2);
+void listValuePush(Value *lv, Value *v);
+Value *listValueGet(Value *lv, int i);
+void listValueSet(Value *lv, int i, Value *v);
+int listValueSize(Value *lv);
+void listValueExtend(Value *lv1, Value *lv2);
 #endif

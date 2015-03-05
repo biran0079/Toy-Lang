@@ -15,7 +15,7 @@
 extern List *parseTrees;
 extern Env *globalEnv;
 #ifdef DEBUG_GC
-extern List* astStack;
+extern List *astStack;
 #endif
 
 EvalResult *newEvalResult(EvalResultType t, Value *v) {
@@ -50,12 +50,10 @@ EvalResult *eval(Env *ev, Node *p) {
   int beforeStackSize = opStackSize();
   EvalResult *er = p->eval(ev, p);
   if (er) {
-    if (opStackSize() != beforeStackSize)
-      printAst(p);
+    if (opStackSize() != beforeStackSize) printAst(p);
     assert(opStackSize() == beforeStackSize);
   } else {
-    if (opStackSize() != beforeStackSize + 1)
-      printAst(p);
+    if (opStackSize() != beforeStackSize + 1) printAst(p);
     assert(opStackSize() == beforeStackSize + 1);
   }
 #ifdef DEBUG_GC
@@ -87,7 +85,7 @@ EvalResult *evalStmts(Env *ev, Node *p) {
 EvalResult *evalCallInternal(int argNum) {
   int i;
   while (1) {
-    EvalResult* er;
+    EvalResult *er;
     if (opStackPeek(0)->type == BUILTIN_FUN_VALUE_TYPE) {
       BuiltinFun f = opStackPeek(0)->data;
       opStackPop();  // pop closure
@@ -138,7 +136,8 @@ EvalResult *evalCallInternal(int argNum) {
       }
     } else {
       // no return called, always return none
-      opStackPopNPush(1, newNoneValue()); // pop eval result and always return none.
+      opStackPopNPush(
+          1, newNoneValue());  // pop eval result and always return none.
       return 0;
     }
   }
@@ -177,7 +176,7 @@ EvalResult *evalInt(Env *ev, Node *p) {
 }
 
 EvalResult *evalList(Env *ev, Node *p) {
-  Value* lv = newListValue(newList());
+  Value *lv = newListValue(newList());
   opStackPush(lv);
   int i, n = chldNum(p);
   for (i = 0; i < n; i++) {
@@ -449,7 +448,7 @@ EvalResult *evalError(Env *ev, Node *p) {
 EvalResult *evalIf(Env *ev, Node *p) {
   EvalResult *er = eval(ev, chld(p, 0));
   if (er) return er;
-  void* cond = opStackPeek(0)->data;
+  void *cond = opStackPeek(0)->data;
   opStackPop();
   if (cond) {
     er = eval(ev, chld(p, 1));
@@ -508,7 +507,7 @@ EvalResult *evalListAccess(Env *ev, Node *p) {
 
 EvalResult *evalTailRecursion(Env *ev, Node *p) {
   int i, n;
-  Value* lv = newListValue(newList()); 
+  Value *lv = newListValue(newList());
   opStackPush(lv);
   Node *args = chld(p, 1);
   n = chldNum(args);
@@ -681,9 +680,9 @@ EvalResult *evalFor(Env *ev, Node *p) {
   while (1) {
     er = eval(ev, chld(p, 1));
     if (er) return er;
-    void* cond = opStackPeek(0)->data;
+    void *cond = opStackPeek(0)->data;
     opStackPop();
-    if (!cond)  break;
+    if (!cond) break;
     er = eval(ev, chld(p, 3));
     if (er) {
       if (CONTINUE_RESULT == er->type) {
@@ -741,7 +740,7 @@ EvalResult *evalWhile(Env *ev, Node *p) {
   while (1) {
     EvalResult *er = eval(ev, chld(p, 0));
     if (er) return er;
-    void* cond = opStackPeek(0)->data;
+    void *cond = opStackPeek(0)->data;
     opStackPop();
     if (!cond) {
       break;
@@ -840,7 +839,7 @@ EvalResult *evalAddAdd(Env *ev, Node *p) {
     case ID_TYPE: {
       long id = (long)left->data;
       long newValue = getIntFromValue(envGet(ev, id)) + 1;
-      Value* oldValue = envGet(ev, id);
+      Value *oldValue = envGet(ev, id);
       opStackPopToPush(beforeStackSize, oldValue);
       envPut(ev, id, newIntValue(newValue));
       return 0;

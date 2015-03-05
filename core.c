@@ -25,7 +25,7 @@ int sysArgc;
 char **sysArgv;
 
 #ifdef DEBUG_GC
-List* astStack;
+List *astStack;
 #endif
 
 /*** ALL GLOBAL VARIABLES DECLARES ABOVE!  ***/
@@ -88,7 +88,8 @@ void cleanup() {
   assert(listSize(astStack) == 0);
   freeList(astStack);
 #endif
-  assert(globalEnv->envValue == opStackPeek(0));  // make sure global env get GCed
+  assert(globalEnv->envValue ==
+         opStackPeek(0));  // make sure global env get GCed
   opStackPop();
 
   forceGC();
@@ -119,4 +120,3 @@ FILE *openFromPath(char *s, char *mode) {
   }
   return f;
 }
-

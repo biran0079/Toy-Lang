@@ -178,6 +178,4 @@ List *hashTableGetAllKeys(HashTable *t) {
   return q;
 }
 
-int hashTableSize(HashTable* t) {
-  return t->size;
-}
+int hashTableSize(HashTable *t) { return t->size; }

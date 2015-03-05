@@ -27,7 +27,7 @@ void *hashTablePut(HashTable *t, void *key, void *value);
 void *hashTableGet(HashTable *t, void *key);
 void *hashTableRemove(HashTable *t, void *key);
 void hashTableClear(HashTable *t);
-int hashTableSize(HashTable* t);
+int hashTableSize(HashTable *t);
 
 HashTable *newStringHashTable();
 HashTable *newIntHashTable();

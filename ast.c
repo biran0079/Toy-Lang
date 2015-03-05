@@ -124,7 +124,7 @@ static int nodeToStringInternal(Node *p, char *s, int n) {
   return len;
 }
 
-char* nodeToString(Node* p) {
+char *nodeToString(Node *p) {
   int l = nodeToStringInternal(p, 0, 0) + 1;
   char *s = (char *)tlMalloc(l);
   nodeToStringInternal(p, s, l);

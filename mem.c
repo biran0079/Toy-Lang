@@ -7,7 +7,7 @@
 #include "eval.h"
 #include <assert.h>
 
-List *allValues, *deadValues;
+List* allValues, *deadValues;
 
 extern int memoryUsage, memoryLimit;
 
@@ -54,7 +54,7 @@ void freeUnmarkedValues() {
       listPush(newAllValues, v);
     } else if (v->type != FREED_TYPE && v->mark == UNMARKED) {
       freeValue(v);
-    } 
+    }
   }
   freeList(allValues);
   allValues = newAllValues;
@@ -65,9 +65,7 @@ void freeUnmarkedValues() {
   listClear(deadValues);
 }
 
-int getInMemoryValueCount() {
-  return listSize(allValues);
-}
+int getInMemoryValueCount() { return listSize(allValues); }
 
 void dumpValueMemory() {
   int i, n = listSize(allValues);

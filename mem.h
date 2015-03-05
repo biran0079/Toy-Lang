@@ -3,7 +3,7 @@
 
 #include "value.h"
 
-extern List *allValues, *deadValues;
+extern List* allValues, *deadValues;
 
 typedef struct ValuesBlock ValuesBlock;
 struct ValuesBlock {

@@ -117,7 +117,7 @@ void increaseSizeTo(List *lst, int size) {
 
 void listSwap(List *lst, int i, int j) {
   if (i == j) return;
-  void* t = listGet(lst, i);
+  void *t = listGet(lst, i);
   listSet(lst, i, listGet(lst, j));
   listSet(lst, j, t);
 }

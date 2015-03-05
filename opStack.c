@@ -5,9 +5,7 @@
 
 static List *opStack;
 
-void initOpStack() {
-  opStack = newList();
-}
+void initOpStack() { opStack = newList(); }
 
 void cleanupOpStack() {
   if (listSize(opStack)) {
@@ -16,9 +14,7 @@ void cleanupOpStack() {
   freeList(opStack);
 }
 
-void opStackPush(Value *v) {
-  listPush(opStack, ref(v));
-}
+void opStackPush(Value *v) { listPush(opStack, ref(v)); }
 
 void opStackPopN(int n) {
   int i;

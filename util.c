@@ -161,4 +161,3 @@ int getStringLength(char *format, ...) {
   va_end(ap);
   return len;
 }
-
