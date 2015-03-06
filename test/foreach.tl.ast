@@ -1,1 +1,1 @@
-[stmts, [foreach, [id, i], [list, [int, 1], [int, 2], [int, 3], [int, 4], [int, 5]], [stmts, [call, [id, print], [exps, [id, i]]]]]]
+(stmts (foreach (id i) (list (int 1) (int 2) (int 3) (int 4) (int 5)) (stmts (call (id print) (exps (id i))))))

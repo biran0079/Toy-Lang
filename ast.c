@@ -61,7 +61,7 @@ void markTailRecursions(Node *t) {
 
 static int nodeToStringInternal(Node *p, char *s, int n) {
   int len = 0;
-  len += mySnprintf(s + len, n - len, " (%s", nodeTypeToString(p->type));
+  len += mySnprintf(s + len, n - len, "(%s", nodeTypeToString(p->type));
   switch (p->type) {
     case INT_TYPE:
       len += mySnprintf(s + len, n - len, " %d", (long)p->data);
@@ -70,7 +70,21 @@ static int nodeToStringInternal(Node *p, char *s, int n) {
       len += mySnprintf(s + len, n - len, " %s", getStrId((long)p->data));
       break;
     case STRING_TYPE:
-      len += mySnprintf(s + len, n - len, " %s", (char *)p->data);
+      {
+        len += mySnprintf(s + len, n - len, " \"");
+        char* ts = p->data;
+        while (*ts) {
+          switch (*ts) {
+            case '\n': len += mySnprintf(s + len, n - len, "\\n"); break;
+            case '\r': len += mySnprintf(s + len, n - len, "\\r"); break;
+            case '\"': len += mySnprintf(s + len, n - len, "\\\""); break;
+            case '\\': len += mySnprintf(s + len, n - len, "\\\\"); break;
+            default: len += mySnprintf(s + len, n - len, "%c", *ts); break;
+          }
+          ts++;
+        }
+        len += mySnprintf(s + len, n - len, "\"");
+      }
       break;
     case STMTS_TYPE:
     case ASSIGN_TYPE:
@@ -113,6 +127,7 @@ static int nodeToStringInternal(Node *p, char *s, int n) {
     case MODULE_ACCESS_TYPE: {
       int i, chldN = chldNum(p);
       for (i = 0; i < chldN; i++) {
+        len += mySnprintf(s + len, n - len, " ");
         len += nodeToStringInternal(chld(p, i), s + len, n - len);
       }
       break;

@@ -1,1 +1,1 @@
-[stmts, [=, [id, a], [int, 0]], [while, [int, 1], [stmts, [if, [==, [id, a], [int, 5]], [break]], [call, [id, print], [exps, [id, a]]], [=, [id, a], [+, [id, a], [int, 1]]]]]]
+(stmts (= (id a) (int 0)) (while (int 1) (stmts (if (== (id a) (int 5)) (break)) (call (id print) (exps (id a))) (= (id a) (+ (id a) (int 1))))))

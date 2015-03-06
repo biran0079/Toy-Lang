@@ -97,8 +97,13 @@ static Node *tokenMatch(Node **p, List *t, int *ip, Token_t type) {
 Node *stmt(List *t, int *ip) {
   Node *n1 = 0, *n2 = 0, *n3 = 0, *n4 = 0;
   int i0 = *ip;
-  if (M(RETURN_T) && M(SEMICOLON_T)) {
-    return newNode2(RETURN_TYPE, 1, newNode2(NONE_TYPE, 0));
+  if (M(RETURN_T)) {
+    if (M(SEMICOLON_T)) {
+      return newNode2(RETURN_TYPE, 1, newNode2(NONE_TYPE, 0));
+    } else {
+      assert(PM(n1, expr) && M(SEMICOLON_T));
+      return newNode2(RETURN_TYPE, 1, n1);
+    }
   } else if ((*ip = i0), M2(CONTINUE_T, SEMICOLON_T)) {
     return newNode2(CONTINUE_TYPE, 0);
   } else if ((*ip = i0), M2(BREAK_T, SEMICOLON_T)) {
@@ -111,8 +116,6 @@ Node *stmt(List *t, int *ip) {
     return newNode2(LOCAL_TYPE, 1, n1);
   } else if ((*ip = i0), M(THROW_T) && PM(n1, expr) && M(SEMICOLON_T)) {
     return newNode2(THROW_TYPE, 1, n1);
-  } else if ((*ip = i0), M(RETURN_T) && PM(n1, expr) && M(SEMICOLON_T)) {
-    return newNode2(RETURN_TYPE, 1, n1);
   } else if ((*ip = i0),
              M2(IF_T, OP_B_T) && PM(n1, expr) && M(CLO_B_T) && PM(n2, block)) {
     int i1 = *ip;

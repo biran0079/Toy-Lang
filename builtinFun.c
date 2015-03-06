@@ -96,18 +96,7 @@ EvalResult *builtinParse(int n) {
   Value *v = opStackPeek(0);
   if (v->type != STRING_VALUE_TYPE) error("parse only applys to string\n");
   char *code = (char *)v->data;
-#if USE_YY_PARSER
-#ifdef _WIN32
-  error("Win32 does not support built in parse with YY parser.");
-#else
-  FILE *f = fmemopen(code, strlen(code), "r");
-  yyrestart(f);
-  if (yyparse()) error("failed to parse code %s\n", code);
-  fclose(f);
-#endif
-#else
   if (!parse(tokenize(code))) error("failed to parse %s\n", code);
-#endif
   Value *res = newListValue(newList());
   EvalResult* er = newEvalResult(RETURN_RESULT, res);
   opStackPush(res);

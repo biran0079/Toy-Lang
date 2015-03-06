@@ -1,1 +1,1 @@
-[stmts, [=, [id, a], [int, 1]], [=, [id, b], [int, 2]], [call, [id, print], [exps, [id, a]]], [call, [id, print], [exps, [id, b]]], [=, [id, c], [id, a]], [=, [id, a], [id, b]], [=, [id, b], [id, c]], [call, [id, print], [exps, [id, a]]], [call, [id, print], [exps, [id, b]]]]
+(stmts (= (id a) (int 1)) (= (id b) (int 2)) (call (id print) (exps (id a))) (call (id print) (exps (id b))) (= (id c) (id a)) (= (id a) (id b)) (= (id b) (id c)) (call (id print) (exps (id a))) (call (id print) (exps (id b))))
