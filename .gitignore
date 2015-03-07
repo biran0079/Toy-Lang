@@ -10,5 +10,5 @@ lex.yy.c
 gmon.out
 gprof.out
 parser
-parserbenchmark
+parserBenchmark
 tokenizer
