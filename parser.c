@@ -27,15 +27,16 @@ static Node *buildTree(Node *fst, List *rst) {
 }
 
 #define PM(n, pred) predMatch(&n, pred(t, ip))
+#define TM(n, T) tokenMatch(&n, t, ip, T)
+#define M(TYPE) matchT(t, ip, TYPE)
+#define M2(T1, T2) M(T1) && M(T2)
+#define LF(i, T) ((Token*)(listGet(t, *ip + i)))->type == T
 
-Node *parse(List *tokens) {
+Node *parse(List *t) {
   int idx = 0;
-  Node *tree = stmts(tokens, &idx);
-  if (idx < listSize(tokens)) {
-    int i;
-    for (i = 0; i < idx; i++) {
-      printf("%s\n", tokenTypeToStr(((Token *)listGet(tokens, i))->type));
-    }
+  int *ip = &idx;
+  Node *tree = stmts(t, ip);
+  if (!LF(0, EOF_T)) {
     error("failed to parse the whole program.");
   }
   if (tree) {
@@ -62,7 +63,6 @@ static Node *tokenToNode(Token *token) {
 }
 
 static Token *matchT(List *t, int *ip, Token_t type) {
-  if (listSize(t) <= *ip) return 0;
   Token *token = (Token *)listGet(t, *ip);
   if (token->type == type) {
     (*ip)++;
@@ -81,14 +81,9 @@ static Node *tokenMatch(Node **p, List *t, int *ip, Token_t type) {
   return *p = matchM(t, ip, type);
 }
 
-#define TM(n, T) tokenMatch(&n, t, ip, T)
-#define M(TYPE) matchT(t, ip, TYPE)
-#define M2(T1, T2) M(T1) && M(T2)
-#define LF(i, T) (listSize(t) > *ip + i && ((Token*)(listGet(t, *ip + i)))->type == T)
-
 Node *stmts(List *t, int *ip) {
   Node *fst = 0, *rst = 0;
-  if (*ip == listSize(t) || LF(0, CLO_CB_T)) {
+  if (LF(0, EOF_T) || LF(0, CLO_CB_T)) {
     return newNode2(STMTS_TYPE, 0);
   }
   assert(PM(fst, stmt) && PM(rst, stmts));

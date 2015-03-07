@@ -51,6 +51,7 @@ typedef enum {
   CLO_SB_T,
   SEMICOLON_T,
   COLON_T,
+  EOF_T,
 } Token_t;
 
 struct Token {
