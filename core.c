@@ -17,10 +17,6 @@ Env *globalEnv;
 int memoryLimit = 64 * 1024 * 1024;
 List *path;  // where import loads from
 int isInitialized = 0;
-
-int shouldDumpGCHistory = 0;
-int gcTestMode = 0;
-List *gcHistory;
 int sysArgc;
 char **sysArgv;
 
@@ -53,7 +49,28 @@ void listCreatedObjectsCount() {
   fprintf(stderr, "memory usage: %d\n", memoryUsage);
 }
 
+static void initPath(int argc, char** args) {
+  path = newList();
+  char *tlDir = getFolder(args[0]);
+  listPush(path, catStr(tlDir, "lib/"));
+  tlFree(tlDir);
+  listPush(path, copyStr("./"));
+  char *srcDir = getFolder(args[1]);
+  if (strcmp(srcDir, "./")) {
+    listPush(path, srcDir);
+  }
+}
+
+static void cleanupPath() {
+  int i, n = listSize(path);
+  for (i = 0; i < n; i++) {
+    tlFree(listGet(path, i));
+  }
+  freeList(path);
+}
+
 void init(int argc, char **args) {
+  initPath(argc, args);
   initValuesBlock();
   initIdMap();
   initOpStack();
@@ -64,14 +81,8 @@ void init(int argc, char **args) {
   opStackPush(globalEnv->envValue);
   registerBuiltinFunctions(globalEnv);
 
-  path = newList();
-  char *tlDir = getFolder(args[0]);
-  listPush(path, catStr(tlDir, "lib/"));
-  tlFree(tlDir);
   parseTrees = newList();
-  gcHistory = newList();
 
-  listPush(path, copyStr("./"));
   isInitialized = 1;
 }
 
@@ -81,27 +92,11 @@ void cleanup() {
   cleanupOpStack();
   cleanupValuesBlock();
   cleanupIdMap();
+  cleanupPath();
   int i, n = listSize(parseTrees);
   for (i = 0; i < n; i++) {
     freeNode(listGet(parseTrees, i));
   }
-  n = listSize(path);
-  for (i = 0; i < n; i++) tlFree(listGet(path, i));
-  freeList(path);
-  if (!shouldDumpGCHistory) clearGCHistory();
-
   isInitialized = 0;
 }
 
-FILE *openFromPath(char *s, char *mode) {
-  int i, n = listSize(path);
-  FILE *f = 0;
-  for (i = 0; i < n; i++) {
-    char *p = listGet(path, i);
-    char *fname = catStr(p, s);
-    f = fopen(fname, mode);
-    tlFree(fname);
-    if (f) break;
-  }
-  return f;
-}

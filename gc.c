@@ -8,8 +8,6 @@
 #include "opStack.h"
 #include "mem.h"
 
-extern List *gcHistory;
-
 static void mark() {
   Value *v;
   List *q = newList();
@@ -53,23 +51,7 @@ static void mark() {
   freeList(q);
 }
 
-static void pushGCHistory(int before, int after) {
-  GCRecord *r = (GCRecord *)MALLOC(GCRecord);
-  r->before = before;
-  r->after = after;
-  listPush(gcHistory, r);
-}
-
-void clearGCHistory() {
-  int i, n = listSize(gcHistory);
-  for (i = 0; i < n; i++) {
-    tlFree(listGet(gcHistory, i));
-  }
-  freeList(gcHistory);
-}
-
 void forceGC() {
-  int before = getInMemoryValueCount();
 #ifdef DEBUG_GC
   printf("gc start\n\n");
   showOpStack();
@@ -78,10 +60,6 @@ void forceGC() {
   mark();
   freeUnmarkedValues();
   consolidateMarkedValues();
-  int after = getInMemoryValueCount();
-  if (shouldDumpGCHistory) {
-    pushGCHistory(before, after);
-  }
 #ifdef DEBUG_GC
   dumpValueMemory();
   showOpStack();
@@ -89,13 +67,9 @@ void forceGC() {
 #endif
 }
 
-extern int memoryUsage, memoryLimit, gcTestMode;
+extern int memoryUsage, memoryLimit;
 
 void gc() {
-  if (isInitialized && gcTestMode) {
-    forceGC();
-    return;
-  }
   if (isInitialized && memoryUsage >= memoryLimit) {
     forceGC();
     if (memoryUsage >= memoryLimit) {

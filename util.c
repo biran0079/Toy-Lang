@@ -150,3 +150,18 @@ int getStringLength(char *format, ...) {
   va_end(ap);
   return len;
 }
+
+extern List* path;
+
+FILE *openFromPath(char *s, char *mode) {
+  int i, n = listSize(path);
+  FILE *f = 0;
+  for (i = 0; i < n; i++) {
+    char *p = listGet(path, i);
+    char *fname = catStr(p, s);
+    f = fopen(fname, mode);
+    tlFree(fname);
+    if (f) break;
+  }
+  return f;
+}

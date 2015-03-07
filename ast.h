@@ -65,8 +65,6 @@ Node *newNode2(NodeType type, int n, ...);
 
 void freeNode(Node *t);
 
-void markTailRecursions(Node *t);
-
 char *nodeTypeToString(NodeType type);
 
 Value *nodeToListValue(Node *p);

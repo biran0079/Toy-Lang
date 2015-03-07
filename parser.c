@@ -54,7 +54,7 @@ static Node *tokenToNode(Token *token) {
     case STRING_T:
       return newNode(STRING_TYPE, copyStr(token->data));
     case ID_T:
-      return newNode(ID_TYPE, (void *)getIntId(token->data));
+      return newNode(ID_TYPE, token->data);
     case NONE_T:
       return newNode2(NONE_TYPE, 0);
     default:
@@ -136,7 +136,6 @@ Node *stmt(List *t, int *ip) {
   } else if (M(FUN_T)) {
     assert(TM(n1, ID_T) && M(OP_B_T) && PM(n2, idList)
            && M(CLO_B_T) && M(OP_CB_T) && PM(n3, stmts) && M(CLO_CB_T));
-    markTailRecursions(n3);
     return newNode2(FUN_TYPE, 3, n1, n2, n3);
   } else if (M(TRY_T)) {
     assert(PM(n1, block) && M(CATCH_T) && M(OP_B_T) && TM(n2, ID_T)
@@ -369,8 +368,7 @@ Node *lambdaExpr(List *t, int *ip) {
   Node *n1 = 0, *n2 = 0;
   if (M2(LAMBDA_T, OP_B_T) && PM(n1, idList) && M2(CLO_B_T, OP_CB_T) &&
       PM(n2, stmts) && M(CLO_CB_T)) {
-    return newNode2(FUN_TYPE, 3, newNode(ID_TYPE, (void *)getIntId("lambda")),
-                    n1, n2);
+    return newNode2(FUN_TYPE, 3, newNode(ID_TYPE, copyStr("lambda")), n1, n2);
   }
   maybeFree(n1);
   maybeFree(n2);

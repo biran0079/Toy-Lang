@@ -1,5 +1,6 @@
 #include "value.h"
 #include "eval.h"
+#include "idMap.h"
 #include "ast.h"
 #include "util.h"
 #include "list.h"
@@ -33,7 +34,7 @@ Node *newNode2(NodeType t, int n, ...) {
   return res;
 }
 
-void markTailRecursions(Node *t) {
+static void markTailRecursions(Node *t) {
   switch (t->type) {
     case STMTS_TYPE: {
       int n = chldNum(t);
@@ -270,9 +271,13 @@ Node *postProcessAst(Node *p) {
     case RETURN_TYPE:
       p->eval = evalReturn;
       break;
-    case ID_TYPE:
+    case ID_TYPE: {
+      char *s = p->data;
+      p->data = (void*) getIntId(s);
+      tlFree(s);
       p->eval = evalId;
       break;
+    }
     case INT_TYPE:
       p->eval = evalInt;
       break;
@@ -345,9 +350,11 @@ Node *postProcessAst(Node *p) {
     case NOT_TYPE:
       p->eval = evalNot;
       break;
-    case FUN_TYPE:
+    case FUN_TYPE: {
       p->eval = evalFun;
+      markTailRecursions(chld(p, 2));
       break;
+    }
     case TIME_TYPE:
       p->eval = evalTime;
       break;
@@ -377,7 +384,7 @@ Node *postProcessAst(Node *p) {
     case INT_TYPE:
     case STRING_TYPE:
     case ID_TYPE:
-      break;  // leaves
+      break;
     default: {
       int n = chldNum(p), i;
       for (i = 0; i < n; i++) postProcessAst(chld(p, i));

@@ -1,6 +1,5 @@
 #include "tokenizer.h"
 #include "util.h"
-#include "idMap.h"
 
 int main(int argc, char **args) {
   initIdMap();

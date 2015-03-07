@@ -215,16 +215,6 @@ void freeUnmarkedValues() {
   freeIterator(it);
 }
 
-int getInMemoryValueCount() {
-  ValuesBlock* b = head;
-  int res = 0;
-  while (b) {
-    res += b->top;
-    b = b->next;
-  }
-  return res;
-}
-
 void dumpValueMemory() {
   Iterator* it = newIterator(head, 0);
   printf("Value memory:\n");

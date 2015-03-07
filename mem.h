@@ -18,7 +18,5 @@ Value* allocValue();
 void consolidateMarkedValues();
 void freeUnmarkedValues();
 
-int getInMemoryValueCount();
-
 void dumpValueMemory();
 #endif
