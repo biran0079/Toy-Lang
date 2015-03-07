@@ -27,15 +27,16 @@ static Node *buildTree(Node *fst, List *rst) {
 }
 
 #define PM(n, pred) predMatch(&n, pred(t, ip))
+#define TM(n, T) tokenMatch(&n, t, ip, T)
+#define M(TYPE) matchT(t, ip, TYPE)
+#define M2(T1, T2) M(T1) && M(T2)
+#define LF(i, T) ((Token*)(listGet(t, *ip + i)))->type == T
 
-Node *parse(List *tokens) {
+Node *parse(List *t) {
   int idx = 0;
-  Node *tree = stmts(tokens, &idx);
-  if (idx < listSize(tokens)) {
-    int i;
-    for (i = 0; i < idx; i++) {
-      printf("%s\n", tokenTypeToStr(((Token *)listGet(tokens, i))->type));
-    }
+  int *ip = &idx;
+  Node *tree = stmts(t, ip);
+  if (!LF(0, EOF_T)) {
     error("failed to parse the whole program.");
   }
   if (tree) {
@@ -44,15 +45,6 @@ Node *parse(List *tokens) {
     return tree;
   }
   return 0;
-}
-
-Node *stmts(List *t, int *ip) {
-  Node *fst = 0, *rst = 0;
-  if (PM(fst, stmt) && PM(rst, stmts)) {
-    listPushFront(rst->data, fst);
-    return rst;
-  }
-  return newNode2(STMTS_TYPE, 0);
 }
 
 static Node *tokenToNode(Token *token) {
@@ -71,7 +63,6 @@ static Node *tokenToNode(Token *token) {
 }
 
 static Token *matchT(List *t, int *ip, Token_t type) {
-  if (listSize(t) <= *ip) return 0;
   Token *token = (Token *)listGet(t, *ip);
   if (token->type == type) {
     (*ip)++;
@@ -90,172 +81,160 @@ static Node *tokenMatch(Node **p, List *t, int *ip, Token_t type) {
   return *p = matchM(t, ip, type);
 }
 
-#define TM(n, type) tokenMatch(&n, t, ip, type)
-#define M(TYPE) matchT(t, ip, TYPE)
-#define M2(T1, T2) M(T1) && M(T2)
+Node *stmts(List *t, int *ip) {
+  Node *fst = 0, *rst = 0;
+  if (LF(0, EOF_T) || LF(0, CLO_CB_T)) {
+    return newNode2(STMTS_TYPE, 0);
+  }
+  assert(PM(fst, stmt) && PM(rst, stmts));
+  listPushFront(rst->data, fst);
+  return rst;
+}
 
 Node *stmt(List *t, int *ip) {
   Node *n1 = 0, *n2 = 0, *n3 = 0, *n4 = 0;
-  int i0 = *ip;
   if (M(RETURN_T)) {
     if (M(SEMICOLON_T)) {
       return newNode2(RETURN_TYPE, 1, newNode2(NONE_TYPE, 0));
-    } else {
-      assert(PM(n1, expr) && M(SEMICOLON_T));
-      return newNode2(RETURN_TYPE, 1, n1);
     }
-  } else if ((*ip = i0), M2(CONTINUE_T, SEMICOLON_T)) {
+    assert(PM(n1, expr) && M(SEMICOLON_T));
+    return newNode2(RETURN_TYPE, 1, n1);
+  } else if (M(CONTINUE_T)) {
+    assert(M(SEMICOLON_T));
     return newNode2(CONTINUE_TYPE, 0);
-  } else if ((*ip = i0), M2(BREAK_T, SEMICOLON_T)) {
+  } else if (M(BREAK_T)) {
+    assert(M(SEMICOLON_T));
     return newNode2(BREAK_TYPE, 0);
-  } else if ((*ip = i0), PM(n1, expr) && M(SEMICOLON_T)) {
-    return n1;
-  } else if ((*ip = i0), M(IMPORT_T) && TM(n1, ID_T) && M(SEMICOLON_T)) {
+  } else if (M(IMPORT_T)) {
+    assert(TM(n1, ID_T) && M(SEMICOLON_T));
     return newNode2(IMPORT_TYPE, 1, n1);
-  } else if ((*ip = i0), M(LOCAL_T) && PM(n1, idList) && M(SEMICOLON_T)) {
+  } else if (M(LOCAL_T)) {
+    assert(PM(n1, idList) && M(SEMICOLON_T));
     return newNode2(LOCAL_TYPE, 1, n1);
-  } else if ((*ip = i0), M(THROW_T) && PM(n1, expr) && M(SEMICOLON_T)) {
+  } else if (M(THROW_T)) {
+    assert(PM(n1, expr) && M(SEMICOLON_T));
     return newNode2(THROW_TYPE, 1, n1);
-  } else if ((*ip = i0),
-             M2(IF_T, OP_B_T) && PM(n1, expr) && M(CLO_B_T) && PM(n2, block)) {
-    int i1 = *ip;
-    if (M(ELSE_T) && PM(n3, block)) {
+  } else if (M(IF_T)) {
+    assert(M(OP_B_T) && PM(n1, expr) && M(CLO_B_T) && PM(n2, block));
+    if (M(ELSE_T)) {
+      assert(PM(n3, block));
       return newNode2(IF_TYPE, 3, n1, n2, n3);
-    } else {
-      *ip = i1;
-      return newNode2(IF_TYPE, 2, n1, n2);
     }
-  } else if ((*ip = i0), M2(WHILE_T, OP_B_T) && PM(n1, expr) && M(CLO_B_T) &&
-                             PM(n2, block)) {
+    return newNode2(IF_TYPE, 2, n1, n2);
+  } else if (M(WHILE_T)) {
+    assert(M(OP_B_T) && PM(n1, expr) && M(CLO_B_T) && PM(n2, block));
     return newNode2(WHILE_TYPE, 2, n1, n2);
-  } else if ((*ip = i0), M2(FOR_T, OP_B_T) && TM(n1, ID_T) && M(COLON_T) &&
-                             PM(n2, expr) && M(CLO_B_T) && PM(n3, block)) {
-    return newNode2(FOREACH_TYPE, 3, n1, n2, n3);
-  } else if ((*ip = i0), M(FUN_T) && TM(n1, ID_T) && M(OP_B_T) &&
-                             PM(n2, idList) && M(CLO_B_T) && M(OP_CB_T) &&
-                             PM(n3, stmts) && M(CLO_CB_T)) {
+  } else if (M(FOR_T)) {
+    assert(M(OP_B_T));
+    if (LF(1, COLON_T)) {
+      assert(TM(n1, ID_T) && M(COLON_T) && PM(n2, expr) && M(CLO_B_T) && PM(n3, block));
+      return newNode2(FOREACH_TYPE, 3, n1, n2, n3);
+    }
+    assert(PM(n1, expList) && M(SEMICOLON_T) && PM(n2, expList)
+           && M(SEMICOLON_T) && PM(n3, expList) && M(CLO_B_T) && PM(n4, block));
+    return newNode2(FOR_TYPE, 4, n1, n2, n3, n4);
+  } else if (M(FUN_T)) {
+    assert(TM(n1, ID_T) && M(OP_B_T) && PM(n2, idList)
+           && M(CLO_B_T) && M(OP_CB_T) && PM(n3, stmts) && M(CLO_CB_T));
     markTailRecursions(n3);
     return newNode2(FUN_TYPE, 3, n1, n2, n3);
-  } else if ((*ip = i0), M(TRY_T) && PM(n1, block) && M(CATCH_T) && M(OP_B_T) &&
-                             TM(n2, ID_T) && M(CLO_B_T) && PM(n3, block)) {
-    int i1 = *ip;
+  } else if (M(TRY_T)) {
+    assert(PM(n1, block) && M(CATCH_T) && M(OP_B_T) && TM(n2, ID_T)
+           && M(CLO_B_T) && PM(n3, block));
     if (M(FINALLY_T) && PM(n4, block)) {
       return newNode2(TRY_TYPE, 4, n1, n2, n3, n4);
-    } else {
-      *ip = i1;
-      return newNode2(TRY_TYPE, 3, n1, n2, n3);
     }
-  } else if ((*ip = i0), M2(FOR_T, OP_B_T) && PM(n1, expList) &&
-                             M(SEMICOLON_T) && PM(n2, expList) &&
-                             M(SEMICOLON_T) && PM(n3, expList) && M(CLO_B_T) &&
-                             PM(n4, block)) {
-    return newNode2(FOR_TYPE, 4, n1, n2, n3, n4);
+    return newNode2(TRY_TYPE, 3, n1, n2, n3);
   }
-  maybeFree(n1);
-  maybeFree(n2);
-  maybeFree(n3);
-  maybeFree(n4);
-  return 0;
+  assert(PM(n1, expr) && M(SEMICOLON_T));
+  return n1;
 }
 
 Node *idList(List *t, int *ip) {
-  int i0 = *ip;
-  Node *n = 0;
-  if (PM(n, nonEmptyIdList)) {
-    return n;
-  } else {
-    *ip = i0;
-    return newNode2(ID_LIST_TYPE, 0);
-  }
-}
-
-Node *nonEmptyIdList(List *t, int *ip) {
-  int i0 = *ip;
   Node *n1 = 0, *n2 = 0;
-  if (TM(n1, ID_T) && M(COMMA_T) && PM(n2, nonEmptyIdList)) {
-    listPushFront(n2->data, n1);
-    return n2;
-  } else if ((*ip = i0), TM(n1, ID_T)) {
+  if (TM(n1, ID_T)) {
+    if (M(COMMA_T) && PM(n2, idList)) {
+      listPushFront(n2->data, n1);
+      return n2;
+    }
     return newNode2(ID_LIST_TYPE, 1, n1);
   }
-  maybeFree(n1);
-  maybeFree(n2);
-  return 0;
+  return newNode2(ID_LIST_TYPE, 0);
 }
 
 // module access
 Node *moduleAccess(List *t, int *ip) {
-  int i0 = *ip;
   Node *n1 = 0, *n2 = 0;
-  if (TM(n1, ID_T) && M(DOT_T) && PM(n2, moduleAccess)) {
-    listPushFront(n2->data, n1);
-    return n2;
-  } else if ((*ip = i0), TM(n1, ID_T) && M(DOT_T) && TM(n2, ID_T)) {
+  if (TM(n1, ID_T) && M(DOT_T)) {
+    if (LF(1, DOT_T)) {
+      PM(n2, moduleAccess);
+      listPushFront(n2->data, n1);
+      return n2;
+    }
+    assert(TM(n2, ID_T));
     return newNode2(MODULE_ACCESS_TYPE, 2, n1, n2);
   }
-  maybeFree(n1);
-  maybeFree(n2);
-  return 0;
+  assert(0);
 }
 
 Node *listExpr(List *t, int *ip) {
   Node *n = 0;
-  if (M(OP_SB_T) && PM(n, expList) && M(CLO_SB_T)) {
-    n->type = LIST_TYPE;
-    return n;
-  }
-  maybeFree(n);
-  return 0;
+  assert(M(OP_SB_T) && PM(n, expList) && M(CLO_SB_T));
+  n->type = LIST_TYPE;
+  return n;
 }
 
 List *listAccessOrCallInternal(List *t, int *ip) {
-  int i0 = *ip;
   Node *n = 0;
   List *l;
-  if (M(OP_SB_T) && PM(n, expr) && M(CLO_SB_T)) {
+  if (M(OP_SB_T)) {
+    assert(PM(n, expr) && M(CLO_SB_T));
     n = newNode2(LIST_ACCESS_TYPE, 2, (void *)0, n);
     l = listAccessOrCallInternal(t, ip);
     listPush(l, n);
     return l;
-  } else if ((*ip = i0), M(OP_B_T) && PM(n, expList) && M(CLO_B_T)) {
+  } else if (M(OP_B_T)) {
+    assert(PM(n, expList) && M(CLO_B_T));
     n = newNode2(CALL_TYPE, 2, (void *)0, n);
     l = listAccessOrCallInternal(t, ip);
     listPush(l, n);
     return l;
-  } else if ((*ip = i0), M(ADDADD_T)) {
+  } else if (M(ADDADD_T)) {
     n = newNode2(ADDADD_TYPE, 1, (void *)0);
     // no [] and () can follow ++
     l = newList();
     listPush(l, n);
     return l;
   }
-  // Restore *ip value if no matching found.
   // This is different from normal production matcher, because there is no
   // "maching failure".
-  *ip = i0;
   return newList();
 }
 
 // id, string, int literal, list literal
 Node *expr0(List *t, int *ip) {
-  int i0 = *ip;
   Node *n = 0;
   if (TM(n, INT_T)) {
     return n;
-  } else if ((*ip = i0), TM(n, NONE_T)) {
+  } else if (TM(n, NONE_T)) {
     return n;
-  } else if ((*ip = i0), M(SUB_T) && TM(n, INT_T)) {
+  } else if (M(SUB_T)) {
+    assert(TM(n, INT_T));
     n->data = (void *)(-(long)n->data);
     return n;
-  } else if ((*ip = i0), M(OP_B_T) && PM(n, expr) && M(CLO_B_T)) {
+  } else if (M(OP_B_T)) {
+    assert(PM(n, expr) && M(CLO_B_T));
     return buildTree(n, listAccessOrCallInternal(t, ip));
-  } else if ((*ip = i0), PM(n, moduleAccess)) {
+  } else if (LF(0, ID_T)) {
+    if (LF(1, DOT_T)) {
+      assert(PM(n, moduleAccess));
+    } else {
+      assert(TM(n, ID_T));
+    }
     return buildTree(n, listAccessOrCallInternal(t, ip));
-  } else if ((*ip = i0), TM(n, ID_T)) {
+  } else if (TM(n, STRING_T)) {
     return buildTree(n, listAccessOrCallInternal(t, ip));
-  } else if ((*ip = i0), TM(n, STRING_T)) {
-    return buildTree(n, listAccessOrCallInternal(t, ip));
-  } else if ((*ip = i0), PM(n, listExpr)) {
+  } else if (LF(0, OP_SB_T) && PM(n, listExpr)) {
     return buildTree(n, listAccessOrCallInternal(t, ip));
   }
   maybeFree(n);
@@ -263,23 +242,24 @@ Node *expr0(List *t, int *ip) {
 }
 
 List *mulDivModInternal(List *t, int *ip) {
-  int i0 = *ip;
   List *l;
   Node *n = 0;
-  if (M(MUL_T) && PM(n, expr0)) {
+  if (M(MUL_T)) {
+    assert(PM(n, expr0));
     l = mulDivModInternal(t, ip);
     listPush(l, newNode2(MUL_TYPE, 2, 0, n));
     return l;
-  } else if ((*ip = i0), M(DIV_T) && PM(n, expr0)) {
+  } else if (M(DIV_T)) {
+    assert(PM(n, expr0));
     l = mulDivModInternal(t, ip);
     listPush(l, newNode2(DIV_TYPE, 2, 0, n));
     return l;
-  } else if ((*ip = i0), M(MOD_T) && PM(n, expr0)) {
+  } else if (M(MOD_T)) {
+    assert(PM(n, expr0));
     l = mulDivModInternal(t, ip);
     listPush(l, newNode2(MOD_TYPE, 2, 0, n));
     return l;
   }
-  *ip = i0;
   return newList();
 }
 
@@ -294,85 +274,65 @@ Node *expr1(List *t, int *ip) {
 }
 
 List *addSubInternal(List *t, int *ip) {
-  int i0 = *ip;
   List *l;
   Node *n = 0;
-  if (M(ADD_T) && PM(n, expr1)) {
+  if (M(ADD_T)) {
+    assert(PM(n, expr1));
     l = addSubInternal(t, ip);
     listPush(l, newNode2(ADD_TYPE, 2, 0, n));
     return l;
-  } else if ((*ip = i0), M(SUB_T) && PM(n, expr1)) {
+  } else if (M(SUB_T)) {
+    assert(PM(n, expr1));
     l = addSubInternal(t, ip);
     listPush(l, newNode2(SUB_TYPE, 2, 0, n));
     return l;
   }
-  *ip = i0;
   return newList();
 }
 // + -
 Node *expr2(List *t, int *ip) {
   Node *n = 0;
-  if (PM(n, expr1)) {
-    return buildTree(n, addSubInternal(t, ip));
-  }
-  maybeFree(n);
-  return 0;
-}
-
-// = +=
-Node *assignmentExpr(List *t, int *ip) {
-  Node *n1 = 0, *n2 = 0;
-  if (PM(n1, expr0)) {
-    int i0 = *ip;
-    if (M(ASSIGN_T) && PM(n2, expr)) {
-      return newNode2(ASSIGN_TYPE, 2, n1, n2);
-    } else if ((*ip = i0), M(ADDEQ_T) && PM(n2, expr)) {
-      return newNode2(ADDEQ_TYPE, 2, n1, n2);
-    }
-  }
-  maybeFree(n1);
-  maybeFree(n2);
-  return 0;
+  assert(PM(n, expr1));
+  return buildTree(n, addSubInternal(t, ip));
 }
 
 Node *expr3(List *t, int *ip) {
   Node *n1 = 0, *n2 = 0;
-  int i0 = *ip;
-  if (M(NOT_T) && PM(n1, expr3)) {
+  if (M(NOT_T)) {
+    assert(PM(n1, expr3));
     return newNode2(NOT_TYPE, 1, n1);
-  } else if ((*ip = i0), PM(n1, expr2)) {
-    int i1 = *ip;
-    if (M(EQ_T) && PM(n2, expr2)) {
-      return newNode2(EQ_TYPE, 2, n1, n2);
-    } else if ((*ip = i1), M(NE_T) && PM(n2, expr2)) {
-      return newNode2(NE_TYPE, 2, n1, n2);
-    } else if ((*ip = i1), M(GE_T) && PM(n2, expr2)) {
-      return newNode2(GE_TYPE, 2, n1, n2);
-    } else if ((*ip = i1), M(LE_T) && PM(n2, expr2)) {
-      return newNode2(LE_TYPE, 2, n1, n2);
-    } else if ((*ip = i1), M(GT_T) && PM(n2, expr2)) {
-      return newNode2(GT_TYPE, 2, n1, n2);
-    } else if ((*ip = i1), M(LT_T) && PM(n2, expr2)) {
-      return newNode2(LT_TYPE, 2, n1, n2);
-    }
-    *ip = i1;
-    return n1;
   }
-  maybeFree(n1);
-  maybeFree(n2);
-  return 0;
+  assert(PM(n1, expr2));
+  if (M(EQ_T) ) {
+    assert(PM(n2, expr2));
+    return newNode2(EQ_TYPE, 2, n1, n2);
+  } else if (M(NE_T)) {
+    assert(PM(n2, expr2));
+    return newNode2(NE_TYPE, 2, n1, n2);
+  } else if (M(GE_T)) {
+    assert(PM(n2, expr2));
+    return newNode2(GE_TYPE, 2, n1, n2);
+  } else if (M(LE_T)) {
+    assert(PM(n2, expr2));
+    return newNode2(LE_TYPE, 2, n1, n2);
+  } else if (M(GT_T)) {
+    assert(PM(n2, expr2));
+    return newNode2(GT_TYPE, 2, n1, n2);
+  } else if (M(LT_T)) {
+    assert( PM(n2, expr2));
+    return newNode2(LT_TYPE, 2, n1, n2);
+  }
+  return n1;
 }
 
 List *andInternal(List *t, int *ip) {
-  int i0 = *ip;
-  List *l;
   Node *n = 0;
-  if (M(AND_T) && PM(n, expr3)) {
-    l = andInternal(t, ip);
+  if (M(AND_T)) {
+    assert(PM(n, expr3));
+    List* l = andInternal(t, ip);
     listPush(l, newNode2(AND_TYPE, 2, 0, n));
     return l;
   }
-  *ip = i0;
   return newList();
 }
 
@@ -386,15 +346,13 @@ Node *expr4(List *t, int *ip) {
 }
 
 List *orInternal(List *t, int *ip) {
-  int i0 = *ip;
-  List *l;
   Node *n = 0;
-  if (M(OR_T) && PM(n, expr4)) {
-    l = orInternal(t, ip);
+  if (M(OR_T)) {
+    assert(PM(n, expr4));
+    List* l = orInternal(t, ip);
     listPush(l, newNode2(OR_TYPE, 2, 0, n));
     return l;
   }
-  *ip = i0;
   return newList();
 }
 
@@ -429,57 +387,49 @@ Node *timeExpr(List *t, int *ip) {
 }
 
 Node *expr(List *t, int *ip) {
-  int i0 = *ip;
-  Node *n = 0;
-  if (PM(n, assignmentExpr)) {
-    return n;
-  } else if ((*ip = i0), PM(n, lambdaExpr)) {
-    return n;
-  } else if ((*ip = i0), PM(n, timeExpr)) {
-    return n;
+  Node *n1 = 0, *n2 = 0;
+  if (LF(0, LAMBDA_T)) {
+    assert(PM(n1, lambdaExpr));
+    return n1;
+  } else if (LF(0, TIME_T)) {
+    assert(PM(n1, timeExpr));
+    return n1;
+  } else {
+    assert(PM(n1, expr5)); // this accept more than correct code
+    // TODO verify expr5 is left value
+    if (M(ASSIGN_T)) {
+      assert(PM(n2, expr));
+      return newNode2(ASSIGN_TYPE, 2, n1, n2);
+    } else if (M(ADDEQ_T)) {
+      assert(PM(n2, expr));
+      return newNode2(ADDEQ_TYPE, 2, n1, n2);
+    }
+    return n1;
   }
-  *ip = i0;
-  return expr5(t, ip);
 }
 
 Node *block(List *t, int *ip) {
-  if (listSize(t) <= *ip) return 0;
-  int i0 = *ip;
   Node *n = 0;
-  if (M(OP_CB_T) && PM(n, stmts) && M(CLO_CB_T)) {
-    return n;
-  } else if ((*ip = i0), PM(n, stmt)) {
+  if (M(OP_CB_T)) {
+    assert(PM(n, stmts) && M(CLO_CB_T));
     return n;
   }
-  maybeFree(n);
-  return 0;
+  assert(PM(n, stmt));
+  return n;
 }
 
 Node *expList(List *t, int *ip) {
-  if (listSize(t) < *ip) return 0;
-  int i0 = *ip;
-  Node *n = 0;
-  if (PM(n, nonEmptyExpList)) {
-    return n;
-  } else {
-    *ip = i0;
+  if (LF(0, SEMICOLON_T) || LF(0, CLO_SB_T) || LF(0, CLO_B_T)) {
     return newNode2(EXP_LIST_TYPE, 0);
   }
-}
-
-Node *nonEmptyExpList(List *t, int *ip) {
-  if (listSize(t) <= *ip) return 0;
-  int i0 = *ip;
   Node *n1 = 0, *n2 = 0;
-  if (PM(n1, expr) && M(COMMA_T) && PM(n2, nonEmptyExpList)) {
+  assert(PM(n1, expr));
+  if (M(COMMA_T)) {
+    assert(PM(n2, expList));
     listPushFront(n2->data, n1);
     return n2;
-  } else if ((*ip = i0), n1 = expr(t, ip)) {
-    return newNode2(EXP_LIST_TYPE, 1, n1);
   }
-  maybeFree(n1);
-  maybeFree(n2);
-  return 0;
+  return newNode2(EXP_LIST_TYPE, 1, n1);
 }
 
 #undef M

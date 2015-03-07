@@ -98,6 +98,8 @@ char *tokenTypeToStr(Token_t type) {
       return "semicolon";
     case COLON_T:
       return "colon";
+    case EOF_T:
+      return "<EOF>";
     default:
       return "unknown";
   }
@@ -260,7 +262,10 @@ List *tokenize(char *s) {
   while (1) {
     char **sp = &s;
     skipWhiteSpaces(sp);
-    if (0 == *s) break;
+    if (0 == *s) {
+      listPush(res, newToken(EOF_T, (void*) 0));
+      break;
+    }
     if (isDigit(*s))
       listPush(res, newToken(INT_T, (void *)parseInt(sp)));
     else if (*s == '"')
