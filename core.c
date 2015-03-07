@@ -70,8 +70,8 @@ static void cleanupPath() {
 }
 
 void init(int argc, char **args) {
+  initMem();
   initPath(argc, args);
-  initValuesBlock();
   initIdMap();
   initOpStack();
 
@@ -90,9 +90,9 @@ void cleanup() {
   assert(globalEnv->envValue == opStackPop());  // make sure global env get GCed
   forceGC();
   cleanupOpStack();
-  cleanupValuesBlock();
   cleanupIdMap();
   cleanupPath();
+  cleanupMem();
   int i, n = listSize(parseTrees);
   for (i = 0; i < n; i++) {
     freeNode(listGet(parseTrees, i));

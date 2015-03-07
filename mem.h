@@ -3,20 +3,15 @@
 
 #include "value.h"
 
-typedef struct ValuesBlock ValuesBlock;
-struct ValuesBlock {
-  Value* a;
-  int top;
-  int capacity;
-  ValuesBlock* next;
-};
+extern List* allValues, *deadValues;
 
-void initValuesBlock();
-void cleanupValuesBlock();
+void initMem();
+void cleanupMem();
 
 Value* allocValue();
-void consolidateMarkedValues();
 void freeUnmarkedValues();
+
+int getInMemoryValueCount();
 
 void dumpValueMemory();
 #endif

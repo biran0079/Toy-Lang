@@ -59,7 +59,6 @@ void forceGC() {
 #endif
   mark();
   freeUnmarkedValues();
-  consolidateMarkedValues();
 #ifdef DEBUG_GC
   dumpValueMemory();
   showOpStack();
