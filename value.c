@@ -27,9 +27,6 @@ Value *newNoneValue() {
 }
 
 Value *newIntValue(long x) {
-  if (x >= 0 && listSize(intCache) > x) {
-    return listGet(intCache, x);
-  }
   newIntValueC++;
   Value *res = allocValue();
   res->type = INT_VALUE_TYPE;
