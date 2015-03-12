@@ -52,18 +52,8 @@ static void mark() {
 }
 
 void forceGC() {
-#ifdef DEBUG_GC
-  printf("gc start\n\n");
-  showOpStack();
-  dumpValueMemory();
-#endif
   mark();
   freeUnmarkedValues();
-#ifdef DEBUG_GC
-  dumpValueMemory();
-  showOpStack();
-  printf("gc done\n\n");
-#endif
 }
 
 extern int memoryUsage, memoryLimit;
