@@ -247,12 +247,6 @@ fun process(l) {
     return lambda(e) {
       throw ["exception", f(e)];
     };
-  } else if(tag == "time") {
-    local f;
-    f = process(l[1]);
-    return lambda(e) {
-      return time(f(e));
-    };
   } else if(tag == "list_access") {
     local lst, idx;
     lst = process(l[1]);

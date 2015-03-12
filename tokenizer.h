@@ -14,7 +14,6 @@ typedef enum {
   LAMBDA_T,
   NONE_T,
   LOCAL_T,
-  TIME_T,
   BREAK_T,
   CONTINUE_T,
   TRY_T,

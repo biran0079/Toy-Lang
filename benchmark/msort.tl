@@ -55,5 +55,5 @@ fun getRandomList(n){
 }
 
 l = getRandomList(50000);
-time(msort(l));
+msort(l);
 

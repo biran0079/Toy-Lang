@@ -79,14 +79,11 @@ expr5 = expr4 orInternal
 
 lambdaExpr = LAMBDA ( idList ) { stmts }
 
-timeExpr = time ( expr )
-
 assignmentExpr = expr0 = expr
                | expr0 += expr
 
 expr = assignmentExpr
      | lambdaExpr
-     | timeExpr
      | expr5
 
 block = { stmts }

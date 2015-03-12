@@ -134,8 +134,6 @@ fun eval(e, l){
     local ex;
     ex = ["exception", eval(e, l[1])];
     throw ex;
-  } else if(tag == "time") {
-    time(eval(e, l[1]));
   } else if(tag == "list_access") {
     local lst, idx;
     lst = eval(e, l[1]);

@@ -24,8 +24,6 @@ char *tokenTypeToStr(Token_t type) {
       return "none";
     case LOCAL_T:
       return "local";
-    case TIME_T:
-      return "time";
     case BREAK_T:
       return "break";
     case CONTINUE_T:
@@ -237,8 +235,6 @@ Token *newTokenForId(char *s) {
     return newToken(LAMBDA_T, (void *)0);
   else if (0 == strcmp(s, "return"))
     return newToken(RETURN_T, (void *)0);
-  else if (0 == strcmp(s, "time"))
-    return newToken(TIME_T, (void *)0);
   else if (0 == strcmp(s, "none"))
     return newToken(NONE_T, (void *)0);
   else if (0 == strcmp(s, "try"))

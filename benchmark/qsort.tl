@@ -57,5 +57,5 @@ fun qsort(l){
 }
 
 l = getRandomList(50000);
-time(qsort(l));
+qsort(l);
 

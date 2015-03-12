@@ -163,8 +163,6 @@ char *nodeTypeToString(NodeType type) {
       return "=";
     case ADDEQ_TYPE:
       return "+=";
-    case TIME_TYPE:
-      return "time";
     case RETURN_TYPE:
       return "return";
     case EXP_LIST_TYPE:
@@ -355,9 +353,6 @@ Node *postProcessAst(Node *p) {
       markTailRecursions(chld(p, 2));
       break;
     }
-    case TIME_TYPE:
-      p->eval = evalTime;
-      break;
     case TRY_TYPE:
       p->eval = evalTry;
       break;

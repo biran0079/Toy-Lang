@@ -11,4 +11,4 @@ fun test() {
   f(1000000);
   sum(1000000, 0);
 }
-time(test());
+test();

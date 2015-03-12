@@ -58,7 +58,6 @@ EvalResult *evalAnd(Env *ev, Node *p);
 EvalResult *evalOr(Env *ev, Node *p);
 EvalResult *evalNot(Env *ev, Node *p);
 EvalResult *evalFun(Env *ev, Node *p);
-EvalResult *evalTime(Env *ev, Node *p);
 EvalResult *evalTry(Env *ev, Node *p);
 EvalResult *evalThrow(Env *ev, Node *p);
 EvalResult *evalAddAdd(Env *ev, Node *p);

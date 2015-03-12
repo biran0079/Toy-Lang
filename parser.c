@@ -375,22 +375,10 @@ Node *lambdaExpr(List *t, int *ip) {
   return 0;
 }
 
-Node *timeExpr(List *t, int *ip) {
-  Node *n = 0;
-  if (M2(TIME_T, OP_B_T) && PM(n, expr) && M(CLO_B_T)) {
-    return newNode2(TIME_TYPE, 1, n);
-  }
-  maybeFree(n);
-  return 0;
-}
-
 Node *expr(List *t, int *ip) {
   Node *n1 = 0, *n2 = 0;
   if (LF(0, LAMBDA_T)) {
     assert(PM(n1, lambdaExpr));
-    return n1;
-  } else if (LF(0, TIME_T)) {
-    assert(PM(n1, timeExpr));
     return n1;
   } else {
     assert(PM(n1, expr5)); // this accept more than correct code

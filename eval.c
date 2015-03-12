@@ -645,15 +645,6 @@ EvalResult *evalBreak(Env *ev, Node *p) {
   return newEvalResult(BREAK_RESULT, 0);
 }
 
-EvalResult *evalTime(Env *ev, Node *p) {
-  clock_t st = clock();
-  Node *t = chld(p, 0);
-  EvalResult *er = eval(ev, t);
-  if (er) return er;
-  fprintf(stderr, "time: %lf secs\n", (clock() - st) * 1.0 / CLOCKS_PER_SEC);
-  return 0;
-}
-
 EvalResult *evalTry(Env *ev, Node *p) {
   int beforeStackSize = opStackSize();
   Node *tryBlock = chld(p, 0);

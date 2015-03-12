@@ -7,7 +7,6 @@
 #include <string.h>
 #include <assert.h>
 #include <setjmp.h>
-#include <time.h>
 #include <stdarg.h>
 
 void *tlMalloc(int size);
